@@ -46,8 +46,20 @@ const sb = {
     });
     return r.json();
   },
+  async updatePassword(token, newPassword) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ password: newPassword }),
+    });
+    return r.json();
+  },
   async signOut(t) {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) });
+  },
+  async getUser(t) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: sb.h(t) });
+    return r.json();
   },
   async select(t, table, q) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q || ""}`, { headers: sb.h(t) });
@@ -133,6 +145,70 @@ function Err({ msg }) {
   return <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"10px 14px", margin:"1rem", fontSize:13, color:B.danger }}>{msg}</div>;
 }
 
+// ── Accept Invite / First-time Setup ─────────────────────────────
+function AccountSetup({ session, onComplete }) {
+  const [fullName, setFullName] = useState(session.profile.full_name || "");
+  const [newPass, setNewPass]   = useState("");
+  const [confirm, setConfirm]   = useState("");
+  const [busy, setBusy]         = useState(false);
+  const [err, setErr]           = useState("");
+
+  async function save() {
+    if (!fullName.trim())            { setErr("Please enter your full name."); return; }
+    if (newPass.length < 8)          { setErr("Password must be at least 8 characters."); return; }
+    if (newPass !== confirm)         { setErr("Passwords do not match."); return; }
+    setBusy(true); setErr("");
+    // Update password in auth
+    const r = await sb.updatePassword(session.token, newPass);
+    if (r.error) { setErr(r.error.message || "Failed to update password."); setBusy(false); return; }
+    // Update name in profile
+    await sb.update(session.token, "profiles", `id=eq.${session.userId}`, { full_name: fullName });
+    onComplete({ ...session, profile: { ...session.profile, full_name: fullName } });
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0F2640 0%,#1A3A5C 60%,#0E4D38 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
+      <div style={{ marginBottom:"2rem", textAlign:"center" }}>
+        <svg width="56" height="56" viewBox="0 0 32 32" fill="none" style={{ marginBottom:12 }}>
+          <rect width="32" height="32" rx="8" fill={B.accent} />
+          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4" />
+        </svg>
+        <div style={{ color:B.white, fontWeight:800, fontSize:26, letterSpacing:"0.06em" }}>CONTROLIT</div>
+        <div style={{ color:"rgba(255,255,255,0.55)", fontSize:13, marginTop:4 }}>Complete your account setup</div>
+      </div>
+      <div style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(12px)", border:"0.5px solid rgba(255,255,255,0.15)", borderRadius:16, padding:"2rem", width:"100%", maxWidth:380 }}>
+        <p style={{ color:"rgba(255,255,255,0.8)", fontSize:13, marginBottom:"1.25rem", fontWeight:500 }}>
+          Welcome to <strong style={{ color:B.accent }}>{session.org.name}</strong> on CONTROLIT. Please confirm your name and set a secure password.
+        </p>
+        {err && <div style={{ background:"rgba(192,57,43,0.2)", border:"0.5px solid rgba(192,57,43,0.5)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#ffaaaa" }}>{err}</div>}
+        <div style={{ marginBottom:12 }}>
+          <label style={{ fontSize:11, color:"rgba(255,255,255,0.55)", display:"block", marginBottom:4 }}>Your full name *</label>
+          <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name" style={{ background:"rgba(255,255,255,0.1)", border:"0.5px solid rgba(255,255,255,0.2)", color:B.white, borderRadius:8 }} />
+        </div>
+        <div style={{ marginBottom:12 }}>
+          <label style={{ fontSize:11, color:"rgba(255,255,255,0.55)", display:"block", marginBottom:4 }}>New password * (min 8 characters)</label>
+          <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="Choose a strong password" style={{ background:"rgba(255,255,255,0.1)", border:"0.5px solid rgba(255,255,255,0.2)", color:B.white, borderRadius:8 }} />
+        </div>
+        <div style={{ marginBottom:"1.5rem" }}>
+          <label style={{ fontSize:11, color:"rgba(255,255,255,0.55)", display:"block", marginBottom:4 }}>Confirm password *</label>
+          <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat password" style={{ background:"rgba(255,255,255,0.1)", border:"0.5px solid rgba(255,255,255,0.2)", color:B.white, borderRadius:8 }} />
+        </div>
+        <div style={{ background:"rgba(14,158,110,0.15)", border:"0.5px solid rgba(14,158,110,0.4)", borderRadius:8, padding:"8px 12px", marginBottom:"1.25rem" }}>
+          <p style={{ margin:0, fontSize:11, color:"rgba(255,255,255,0.7)" }}>
+            🔒 Your role: <strong style={{ color:B.accent, textTransform:"capitalize" }}>{(session.profile.role||"").replace("_"," ")}</strong> · Organisation: <strong style={{ color:B.accent }}>{session.org.name}</strong>
+          </p>
+        </div>
+        <button onClick={save} disabled={busy} style={{ width:"100%", background:busy?"#555":B.accent, color:B.white, border:"none", borderRadius:8, padding:"12px", fontSize:14, fontWeight:700, cursor:busy?"not-allowed":"pointer" }}>
+          {busy ? "Saving…" : "Complete setup & sign in"}
+        </button>
+        <p style={{ textAlign:"center", color:"rgba(255,255,255,0.3)", fontSize:11, marginTop:"1rem" }}>CONTROLIT v1.0 · Invite-only access</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Login ─────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -145,11 +221,17 @@ function Login({ onLogin }) {
     setBusy(true); setErr("");
     try {
       const d = await sb.signIn(email, pass);
-      if (d.error) { setErr(d.error.message || "Login failed."); setBusy(false); return; }
+      if (d.error) { setErr(d.error.message || "Login failed. Check your credentials."); setBusy(false); return; }
       const token = d.access_token, uid = d.user?.id;
-      const profiles = await sb.select(token, "profiles", `id=eq.${uid}&select=*,organisations(*)`);
+      // Fetch profile separately (avoids RLS join issue)
+      const profiles = await sb.select(token, "profiles", `id=eq.${uid}`);
       if (!profiles || !profiles[0]) { setErr("No profile found. Contact your administrator."); setBusy(false); return; }
-      onLogin({ token, userId: uid, profile: profiles[0], org: profiles[0].organisations });
+      const profile = profiles[0];
+      // Fetch org separately
+      const orgs = await sb.select(token, "organisations", `id=eq.${profile.org_id}`);
+      const org = orgs && orgs[0] ? orgs[0] : { name: "Your Organisation" };
+      // Check if this is a first-time invite user (password still default)
+      onLogin({ token, userId: uid, profile, org, firstTime: false });
     } catch(e) { setErr("Connection error. Please try again."); }
     setBusy(false);
   }
@@ -586,6 +668,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
+  const [setupDone, setSetupDone] = useState(false);
 
   const fetchPermits = useCallback(async () => {
     if (!session) return;
@@ -605,9 +688,14 @@ function App() {
 
   if (!session) return <Login onLogin={s=>setSession(s)} />;
 
+  // Show account setup for first-time invited users
+  if (session.firstTime && !setupDone) {
+    return <AccountSetup session={session} onComplete={s=>{ setSession(s); setSetupDone(true); }} />;
+  }
+
   async function logout() {
     await sb.signOut(session.token);
-    setSession(null); setPermits([]); setScreen("dashboard");
+    setSession(null); setPermits([]); setScreen("dashboard"); setSetupDone(false);
   }
 
   function selectPermit(p) { setSelected(p); setScreen("detail"); }
