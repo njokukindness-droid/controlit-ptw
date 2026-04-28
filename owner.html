@@ -29,7 +29,7 @@ const SUPABASE_URL      = "https://sguptjhsfyygwazmxfpk.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
 
 // ── CHANGE THIS to your own secret owner password ─────────────────
-const OWNER_PASSWORD = "Controlit@ceokind1!";
+const OWNER_PASSWORD = "Controlit@CEOKind!";
 // ── CHANGE THIS to your own email ────────────────────────────────
 const OWNER_EMAIL    = "kindnessnjoku@outlook.com";
 
@@ -407,7 +407,7 @@ function OwnerDashboard({ token, onLogout }) {
           {users.map(u=>{
             const org = orgs.find(o=>o.id===u.org_id);
             return (
-              <div key={u.id} style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:10, padding:"10px 14px`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div key={u.id} style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:10, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div style={{ display:"flex", gap:10, alignItems:"center" }}>
                   <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(14,158,110,0.15)", border:`0.5px solid ${B.accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:B.accent, flexShrink:0 }}>
                     {u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}
