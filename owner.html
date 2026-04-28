@@ -32,6 +32,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const OWNER_PASSWORD = "Controlit@CEOKind!";
 // ── CHANGE THIS to your own email ────────────────────────────────
 const OWNER_EMAIL    = "kindnessnjoku@outlook.com";
+  const OWNER_SUPABASE_PASS = "YourChosenPassword123!";
 
 // ── Supabase helpers ──────────────────────────────────────────────
 const sb = {
@@ -470,7 +471,7 @@ function App() {
   async function login() {
     setBusy(true); setErr("");
     try {
-      const d = await sb.signIn(OWNER_EMAIL, OWNER_PASSWORD);
+      const d = await sb.signIn(OWNER_EMAIL, OWNER_SUPABASE_PASS);
       if (d.error) { setErr("Auth failed: " + d.error.message); setBusy(false); return; }
       setSession({ token: d.access_token });
     } catch(e) { setErr("Connection error."); }
