@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONTROLIT — Permit to Work Platform</title>
+  <meta name="description" content="CONTROLIT — Digital Permit to Work Management Platform" />
+  <meta name="theme-color" content="#1A3A5C" />
+  <link rel="manifest" href="manifest.json" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F4F6F9; color: #1A2B3C; }
+    input, select, textarea { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 0.5px solid #D1D8E0; border-radius: 8px; width: 100%; background: #fff; color: #1A2B3C; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #1A3A5C; }
+    button { font-family: inherit; }
+    ::-webkit-scrollbar { width: 4px; } 
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D1D8E0; border-radius: 4px; }
+    #root { max-width: 680px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ── CONTROLIT Supabase Credentials ───────────────────────────────
+const SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+
+// ── Supabase Client ───────────────────────────────────────────────
+const sb = {
+  h: (t) => ({
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}`,
+    "Prefer": "return=representation",
+  }),
+  async signIn(email, password) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email, password }),
+    });
+    return r.json();
+  },
+  async signOut(t) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) });
+  },
+  async select(t, table, q) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q || ""}`, { headers: sb.h(t) });
+    return r.json();
+  },
+  async insert(t, table, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: "POST", headers: sb.h(t), body: JSON.stringify(data),
+    });
+    return r.json();
+  },
+  async update(t, table, match, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
+      method: "PATCH", headers: sb.h(t), body: JSON.stringify(data),
+    });
+    return r.json();
+  },
+};
+
+// ── Brand ─────────────────────────────────────────────────────────
+const B = {
+  primary: "#1A3A5C", accent: "#0E9E6E", accentLight: "#E0F5EE",
+  accentBorder: "#0B7A55", warn: "#D97B00", warnLight: "#FEF3DC",
+  danger: "#C0392B", dangerLight: "#FDECEA", neutral: "#F4F6F9",
+  neutralBorder: "#D1D8E0", text: "#1A2B3C", textSub: "#5A6A7A", white: "#FFFFFF",
+};
+
+const PERMIT_TYPES = [
+  { id:"hot_work",       label:"Hot Work",                        color:"#D85A30" },
+  { id:"cold_work",      label:"Cold Work (Critical)",            color:"#185FA5" },
+  { id:"confined_space", label:"Confined Space Entry",            color:"#D97B00" },
+  { id:"electrical",     label:"Electrical Isolation (LOTO)",     color:"#7F77DD" },
+  { id:"height",         label:"Working at Height",               color:"#0E9E6E" },
+  { id:"excavation",     label:"Excavation & Ground Disturbance", color:"#3B6D11" },
+  { id:"lifting",        label:"Critical Lifting Operation",      color:"#7F77DD" },
+];
+
+const STAGES = ["Requesting Party","Area Authority","Safety Officer","Issuer"];
+const ROLES  = ["requester","area_authority","safety_officer","issuer","admin"];
+const MAX_EXT = 2;
+
+// ── Helpers ───────────────────────────────────────────────────────
+const { useState, useEffect, useCallback } = React;
+const pt = (id) => PERMIT_TYPES.find(t => t.id === id) || {};
+const nowStr = () => new Date().toISOString();
+
+function Logo({ size = 28 }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill={B.primary} />
+        <path d="M8 16 L14 22 L24 10" stroke={B.accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="16" cy="16" r="10" stroke={B.accent} strokeWidth="1.5" fill="none" opacity="0.35" />
+      </svg>
+      <span style={{ fontWeight:700, fontSize:size*0.6, letterSpacing:"0.04em", color:B.primary }}>CONTROLIT</span>
+    </div>
+  );
+}
+
+function Topbar({ title, onBack, right }) {
+  return (
+    <div style={{ background:B.primary, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        {onBack && <button onClick={onBack} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.7)", cursor:"pointer", fontSize:22, lineHeight:1, padding:0 }}>‹</button>}
+        {!onBack ? <Logo size={24} /> : <span style={{ color:B.white, fontWeight:600, fontSize:15 }}>{title}</span>}
+      </div>
+      {right && <div>{right}</div>}
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"4rem", gap:12 }}>
+      <div style={{ width:36, height:36, border:`3px solid ${B.neutralBorder}`, borderTop:`3px solid ${B.accent}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <p style={{ color:B.textSub, fontSize:13 }}>Loading…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
+function Err({ msg }) {
+  return <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"10px 14px", margin:"1rem", fontSize:13, color:B.danger }}>{msg}</div>;
+}
+
+// ── Login ─────────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [pass, setPass]   = useState("");
+  const [busy, setBusy]   = useState(false);
+  const [err, setErr]     = useState("");
+
+  async function go() {
+    if (!email || !pass) return;
+    setBusy(true); setErr("");
+    try {
+      const d = await sb.signIn(email, pass);
+      if (d.error) { setErr(d.error.message || "Login failed."); setBusy(false); return; }
+      const token = d.access_token, uid = d.user?.id;
+      const profiles = await sb.select(token, "profiles", `id=eq.${uid}&select=*,organisations(*)`);
+      if (!profiles || !profiles[0]) { setErr("No profile found. Contact your administrator."); setBusy(false); return; }
+      onLogin({ token, userId: uid, profile: profiles[0], org: profiles[0].organisations });
+    } catch(e) { setErr("Connection error. Please try again."); }
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0F2640 0%,#1A3A5C 60%,#0E4D38 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
+      <div style={{ marginBottom:"2rem", textAlign:"center" }}>
+        <svg width="60" height="60" viewBox="0 0 32 32" fill="none" style={{ marginBottom:12 }}>
+          <rect width="32" height="32" rx="8" fill={B.accent} />
+          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4" />
+        </svg>
+        <div style={{ color:B.white, fontWeight:800, fontSize:30, letterSpacing:"0.06em" }}>CONTROLIT</div>
+        <div style={{ color:"rgba(255,255,255,0.55)", fontSize:13, marginTop:4 }}>Permit to Work Management Platform</div>
+      </div>
+      <div style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(12px)", border:"0.5px solid rgba(255,255,255,0.15)", borderRadius:16, padding:"2rem", width:"100%", maxWidth:360 }}>
+        <p style={{ color:"rgba(255,255,255,0.8)", fontSize:13, marginBottom:"1.25rem", fontWeight:500 }}>Sign in to your account</p>
+        {err && <div style={{ background:"rgba(192,57,43,0.2)", border:"0.5px solid rgba(192,57,43,0.5)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#ffaaaa" }}>{err}</div>}
+        <div style={{ marginBottom:12 }}>
+          <label style={{ fontSize:11, color:"rgba(255,255,255,0.55)", display:"block", marginBottom:4 }}>Email address</label>
+          <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="you@company.com" style={{ background:"rgba(255,255,255,0.1)", border:"0.5px solid rgba(255,255,255,0.2)", color:B.white, borderRadius:8 }} />
+        </div>
+        <div style={{ marginBottom:"1.5rem" }}>
+          <label style={{ fontSize:11, color:"rgba(255,255,255,0.55)", display:"block", marginBottom:4 }}>Password</label>
+          <input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="••••••••" style={{ background:"rgba(255,255,255,0.1)", border:"0.5px solid rgba(255,255,255,0.2)", color:B.white, borderRadius:8 }} />
+        </div>
+        <button onClick={go} disabled={busy} style={{ width:"100%", background:busy?"#555":B.accent, color:B.white, border:"none", borderRadius:8, padding:"12px", fontSize:14, fontWeight:700, cursor:busy?"not-allowed":"pointer" }}>
+          {busy ? "Signing in…" : "Sign in"}
+        </button>
+        <p style={{ textAlign:"center", color:"rgba(255,255,255,0.3)", fontSize:11, marginTop:"1rem" }}>Access by invitation only · CONTROLIT v1.0</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
+function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs, unread, onAdmin, onWorkflow, onLogout }) {
+  const [filter, setFilter] = useState("all");
+  const counts = {
+    active:  permits.filter(p=>p.status==="active").length,
+    pending: permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,
+    revoked: permits.filter(p=>p.status==="revoked").length,
+    closed:  permits.filter(p=>p.status==="closed").length,
+  };
+  const filtered = filter==="all" ? permits : permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
+
+  return (
+    <div>
+      <Topbar right={
+        <div style={{ display:"flex", gap:6 }}>
+          <button onClick={onNotifs} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer", position:"relative" }}>
+            🔔{unread>0&&<span style={{ position:"absolute", top:-4, right:-4, background:B.danger, color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:9, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center" }}>{unread}</span>}
+          </button>
+          {session.profile.role==="admin"&&<button onClick={onAdmin} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Admin</button>}
+          <button onClick={onWorkflow} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Workflow</button>
+          <button onClick={onLogout} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Sign out</button>
+        </div>
+      } />
+      <div style={{ padding:"1.25rem 1.25rem 0" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+          <div>
+            <p style={{ fontSize:13, color:B.textSub }}>Welcome, <strong style={{ color:B.text }}>{session.profile.full_name}</strong></p>
+            <p style={{ fontSize:11, color:B.textSub }}>{session.org.name} · <span style={{ textTransform:"capitalize" }}>{session.profile.role.replace("_"," ")}</span></p>
+          </div>
+          <button onClick={onNew} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:12, fontWeight:700, cursor:"pointer" }}>+ New permit</button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:"1.25rem" }}>
+          {[["Active",counts.active,B.accent],["Pending",counts.pending,B.warn],["Revoked",counts.revoked,B.danger],["Closed",counts.closed,B.textSub]].map(([l,v,c])=>(
+            <div key={l} style={{ background:B.neutral, borderRadius:8, padding:"12px 14px", borderTop:`3px solid ${c}` }}>
+              <p style={{ fontSize:11, color:B.textSub }}>{l}</p>
+              <p style={{ fontSize:22, fontWeight:700, color:c }}>{v}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display:"flex", gap:6, marginBottom:"1rem", flexWrap:"wrap" }}>
+          {["all","active","pending","revoked","closed"].map(s=>(
+            <button key={s} onClick={()=>setFilter(s)} style={{ border:`0.5px solid ${filter===s?B.primary:B.neutralBorder}`, background:filter===s?B.primary:"transparent", color:filter===s?"#fff":B.textSub, borderRadius:20, padding:"4px 14px", fontSize:12, cursor:"pointer", textTransform:"capitalize" }}>{s==="all"?"All permits":s}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding:"0 1.25rem 2rem" }}>
+        {loading && <Spinner />}
+        {error && <Err msg={error} />}
+        {!loading && !error && filtered.length===0 && (
+          <div style={{ textAlign:"center", padding:"3rem 1rem" }}>
+            <p style={{ fontSize:32 }}>📋</p>
+            <p style={{ fontSize:14, fontWeight:600, color:B.text, marginTop:8 }}>No permits yet</p>
+            <p style={{ fontSize:13, color:B.textSub }}>Create your first permit to get started.</p>
+          </div>
+        )}
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {filtered.map(p=>{
+            const t = pt(p.type);
+            return (
+              <div key={p.id} onClick={()=>onSelect(p)} style={{ background:"#fff", border:`0.5px solid ${B.neutralBorder}`, borderRadius:10, padding:"12px 14px", cursor:"pointer", borderLeft:`3px solid ${t.color||B.textSub}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{p.title}</p>
+                    <p style={{ fontSize:11, color:B.textSub }}>{p.permit_number} · {p.area}</p>
+                  </div>
+                  <span style={{ background:B.accentLight, color:B.accentBorder, border:`0.5px solid ${B.accent}`, borderRadius:20, padding:"2px 10px", fontSize:11, fontWeight:600, textTransform:"capitalize", whiteSpace:"nowrap" }}>{(p.status||"").replace("_"," ")}</span>
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ background:B.neutral, color:B.textSub, border:`0.5px solid ${B.neutralBorder}`, borderRadius:20, padding:"2px 10px", fontSize:11 }}>{t.label||p.type}</span>
+                  <div style={{ display:"flex", gap:3, minWidth:100, alignItems:"center" }}>
+                    {[0,1,2,3].map(i=><div key={i} style={{ height:4, flex:1, borderRadius:2, background:i<p.stage?B.accent:i===p.stage?B.warn:"#D1D8E0" }} />)}
+                    <span style={{ fontSize:10, color:B.textSub, marginLeft:4 }}>{p.stage}/4</span>
+                  </div>
+                </div>
+                {(p.extensions||0)>=MAX_EXT&&p.status==="active"&&<p style={{ fontSize:10, color:B.danger, marginTop:5 }}>Max extensions reached — new permit required after closure</p>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Permit Detail ─────────────────────────────────────────────────
+function PermitDetail({ permit, session, onBack, onRefresh }) {
+  const [tab, setTab]         = useState("detail");
+  const [audit, setAudit]     = useState([]);
+  const [busy, setBusy]       = useState(false);
+  const [note, setNote]       = useState("");
+  const [showNote, setShowNote] = useState(false);
+  const t = pt(permit.type);
+
+  useEffect(()=>{
+    sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`).then(d=>{ if(Array.isArray(d)) setAudit(d); });
+  },[permit.id]);
+
+  async function action(act) {
+    setBusy(true);
+    let ns = permit.status, st = permit.stage, ex = permit.extensions||0;
+    if (act==="approve")           { st=Math.min(permit.stage+1,4); ns=st>=4?"active":"pending"; }
+    else if (act==="issue")        { st=4; ns="active"; }
+    else if (act==="reject")       ns="rejected";
+    else if (act==="suspend")      ns="revoked";
+    else if (act==="close")        ns="closed";
+    else if (act==="ext_request")  ns="extension_pending";
+    else if (act==="ext_approve")  { ns="active"; ex=(permit.extensions||0)+1; }
+    else if (act==="ext_reject")   ns="active";
+
+    const labels = { approve:"Approved & forwarded", issue:"Permit issued — field verification complete", reject:"Rejected", suspend:"Permit revoked", close:"Permit closed", ext_request:"Extension requested", ext_approve:"Extension approved", ext_reject:"Extension rejected" };
+
+    await sb.update(session.token,"permits",`id=eq.${permit.id}`,{ status:ns, stage:st, extensions:ex, ...(act==="issue"?{issued_by:session.userId,issued_at:nowStr()}:{}), ...(act==="close"?{closed_at:nowStr()}:{}) });
+    await sb.insert(session.token,"permit_audit",{ org_id:session.profile.org_id, permit_id:permit.id, user_id:session.userId, user_name:session.profile.full_name, user_role:session.profile.role, action:labels[act]||act, note:note||"" });
+    setNote(""); setShowNote(false);
+    await onRefresh();
+    setBusy(false);
+  }
+
+  const canExtend = permit.status==="active" && (permit.extensions||0)<MAX_EXT;
+
+  return (
+    <div>
+      <Topbar title={permit.permit_number} onBack={onBack} />
+      <div style={{ padding:"1.25rem" }}>
+        <div style={{ background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, borderLeft:`3px solid ${t.color||B.textSub}`, borderRadius:10, padding:"1rem 1.25rem", marginBottom:"1rem" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <p style={{ fontSize:11, color:B.textSub, fontWeight:600 }}>{t.label}</p>
+              <h2 style={{ fontSize:16, fontWeight:600, color:B.text, margin:"4px 0 2px" }}>{permit.title}</h2>
+              <p style={{ fontSize:12, color:B.textSub }}>{permit.area}</p>
+            </div>
+            <span style={{ background:B.accentLight, color:B.accentBorder, border:`0.5px solid ${B.accent}`, borderRadius:20, padding:"3px 12px", fontSize:11, fontWeight:600, textTransform:"capitalize", whiteSpace:"nowrap" }}>{(permit.status||"").replace("_"," ")}</span>
+          </div>
+        </div>
+
+        <div style={{ display:"flex", gap:6, marginBottom:"1rem" }}>
+          {["detail","audit"].map(tb=>(
+            <button key={tb} onClick={()=>setTab(tb)} style={{ border:`0.5px solid ${tab===tb?B.primary:B.neutralBorder}`, background:tab===tb?B.primary:"transparent", color:tab===tb?"#fff":B.textSub, borderRadius:20, padding:"5px 14px", fontSize:12, cursor:"pointer", textTransform:"capitalize" }}>{tb}</button>
+          ))}
+        </div>
+
+        {tab==="detail" && (
+          <>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:"1rem" }}>
+              {[["Team leader",permit.requester_name],["Supervisor",permit.supervisor_name],["Date",permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"],["Extensions",(permit.extensions||0)+" / "+MAX_EXT]].map(([k,v])=>(
+                <div key={k} style={{ background:B.neutral, borderRadius:8, padding:"10px 12px" }}>
+                  <p style={{ fontSize:11, color:B.textSub }}>{k}</p>
+                  <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{v}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize:12, color:B.textSub, marginBottom:8 }}>Approval progress</p>
+            {STAGES.map((s,i)=>{
+              const sn=i+1, done=sn<permit.stage||(sn===4&&permit.status==="active"), cur=sn===permit.stage&&permit.status==="pending";
+              return (
+                <div key={s} style={{ display:"flex", alignItems:"center", gap:10, background:done?B.accentLight:cur?B.warnLight:B.neutral, border:`0.5px solid ${done?B.accent:cur?B.warn:B.neutralBorder}`, borderRadius:8, padding:"8px 12px", marginBottom:6 }}>
+                  <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background:done?B.accent:cur?B.warn:"#C0CAD5", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:"#fff", fontWeight:700 }}>{done?"✓":sn}</div>
+                  <div>
+                    <p style={{ fontSize:12, fontWeight:600, color:done?B.accentBorder:cur?B.warn:B.textSub }}>{s}</p>
+                    <p style={{ fontSize:10, color:done?B.accent:cur?B.warn:B.textSub }}>{done?"Approved":cur?"Awaiting approval":"Pending"}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {tab==="audit" && (
+          <div>
+            <p style={{ fontSize:12, color:B.textSub, marginBottom:10, fontWeight:500 }}>Audit trail</p>
+            {audit.length===0&&<p style={{ fontSize:12, color:B.textSub }}>No activity yet.</p>}
+            {audit.map((e,i)=>(
+              <div key={e.id} style={{ display:"flex", gap:10, marginBottom:10 }}>
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                  <div style={{ width:28, height:28, borderRadius:"50%", background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600, color:B.text }}>{(e.user_name||"?")[0]}</div>
+                  {i<audit.length-1&&<div style={{ width:1, flex:1, background:B.neutralBorder, margin:"3px 0" }} />}
+                </div>
+                <div style={{ paddingBottom:10, flex:1 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between" }}>
+                    <p style={{ fontSize:12, fontWeight:600, color:B.text }}>{e.action}</p>
+                    <p style={{ fontSize:10, color:B.textSub }}>{e.created_at?new Date(e.created_at).toLocaleString():""}</p>
+                  </div>
+                  <p style={{ fontSize:11, color:B.textSub }}>{e.user_name} · {e.user_role}</p>
+                  {e.note&&<p style={{ fontSize:11, color:B.textSub, background:B.neutral, borderRadius:6, padding:"4px 8px", marginTop:3 }}>{e.note}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showNote && (
+          <div style={{ marginBottom:10 }}>
+            <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Add a note (optional)..." rows={2} style={{ width:"100%", resize:"vertical" }} />
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:8 }}>
+          {permit.status==="pending"&&permit.stage!==4&&(
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>{ setShowNote(true); setTimeout(()=>action("approve"),100); }} disabled={busy} style={{ flex:1, background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"10px", fontSize:12, fontWeight:600, cursor:"pointer" }}>Approve &amp; forward</button>
+              <button onClick={()=>action("reject")} disabled={busy} style={{ flex:1, border:`0.5px solid ${B.danger}`, background:B.dangerLight, color:B.danger, borderRadius:8, padding:"10px", fontSize:12, cursor:"pointer" }}>Reject</button>
+            </div>
+          )}
+          {permit.status==="pending"&&permit.stage===4&&(
+            <button onClick={()=>action("issue")} disabled={busy} style={{ width:"100%", background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>Issue permit</button>
+          )}
+          {permit.status==="active"&&(
+            <div style={{ display:"flex", gap:8 }}>
+              {canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{ flex:1, border:`0.5px solid ${B.warn}`, background:B.warnLight, color:B.warn, borderRadius:8, padding:"10px", fontSize:12, cursor:"pointer" }}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}
+              <button onClick={()=>action("suspend")} disabled={busy} style={{ flex:1, border:`0.5px solid ${B.danger}`, background:B.dangerLight, color:B.danger, borderRadius:8, padding:"10px", fontSize:12, cursor:"pointer" }}>Suspend</button>
+              <button onClick={()=>action("close")} disabled={busy} style={{ flex:1, border:`0.5px solid ${B.accentBorder}`, background:B.accentLight, color:B.accentBorder, borderRadius:8, padding:"10px", fontSize:12, cursor:"pointer" }}>Close</button>
+            </div>
+          )}
+          {permit.status==="extension_pending"&&(
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>action("ext_approve")} disabled={busy} style={{ flex:1, background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"10px", fontSize:12, fontWeight:600, cursor:"pointer" }}>Approve extension</button>
+              <button onClick={()=>action("ext_reject")} disabled={busy} style={{ flex:1, border:`0.5px solid ${B.danger}`, background:B.dangerLight, color:B.danger, borderRadius:8, padding:"10px", fontSize:12, cursor:"pointer" }}>Reject</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── New Permit ────────────────────────────────────────────────────
+function NewPermit({ session, onBack, onSuccess }) {
+  const [type, setType]           = useState("");
+  const [title, setTitle]         = useState("");
+  const [area, setArea]           = useState("");
+  const [requester, setRequester] = useState(session.profile.full_name);
+  const [supervisor, setSupervisor] = useState("");
+  const [busy, setBusy]           = useState(false);
+  const [err, setErr]             = useState("");
+
+  async function submit() {
+    if (!type||!title||!area||!requester||!supervisor) { setErr("Please fill all required fields."); return; }
+    setBusy(true); setErr("");
+    const num = "PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
+    const res = await sb.insert(session.token,"permits",{ org_id:session.profile.org_id, permit_number:num, type, title, area, requester_name:requester, supervisor_name:supervisor, status:"pending", stage:1, priority:"medium", extensions:0 });
+    if (res&&res[0]&&!res.error) {
+      await sb.insert(session.token,"permit_audit",{ org_id:session.profile.org_id, permit_id:res[0].id, user_id:session.userId, user_name:session.profile.full_name, user_role:session.profile.role, action:"Permit submitted", note:"" });
+      onSuccess();
+    } else { setErr("Failed to create permit. Please try again."); }
+    setBusy(false);
+  }
+
+  return (
+    <div>
+      <Topbar title="New Permit Request" onBack={onBack} />
+      <div style={{ padding:"1.25rem" }}>
+        {err&&<Err msg={err} />}
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <div>
+            <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Permit type *</label>
+            <select value={type} onChange={e=>setType(e.target.value)}>
+              <option value="">Select permit type…</option>
+              {PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Work title *</label>
+            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work" />
+          </div>
+          <div>
+            <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Work area / location *</label>
+            <input value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g. Zone A - Process Unit" />
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div>
+              <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Team leader *</label>
+              <input value={requester} onChange={e=>setRequester(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Supervisor *</label>
+              <input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor name" />
+            </div>
+          </div>
+        </div>
+        <button onClick={submit} disabled={busy} style={{ marginTop:"1.5rem", width:"100%", background:busy?"#999":B.primary, color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:700, cursor:busy?"not-allowed":"pointer" }}>
+          {busy?"Submitting…":"Submit permit request"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Notifications ─────────────────────────────────────────────────
+function Notifs({ session, permits, onBack, onSelectPermit }) {
+  const [read, setRead] = useState({});
+  const notes = [];
+  const stageMap = { area_authority:2, safety_officer:3, issuer:4 };
+
+  permits.forEach(p=>{
+    if (p.status==="pending"&&stageMap[session.profile.role]===p.stage)
+      notes.push({ id:"apr-"+p.id, icon:"✓", title:"Awaiting your approval", body:p.title+" ("+p.permit_number+") is pending your sign-off.", permit:p, priority:"high" });
+    if (p.status==="extension_pending"&&["area_authority","safety_officer","issuer"].includes(session.profile.role))
+      notes.push({ id:"ext-"+p.id, icon:"⟳", title:"Extension requires re-approval", body:p.permit_number+" has an active extension request.", permit:p, priority:"high" });
+    if (p.status==="active"&&(p.extensions||0)>=MAX_EXT)
+      notes.push({ id:"mxe-"+p.id, icon:"⚠", title:"Max extensions reached", body:p.permit_number+" cannot be extended further.", permit:p, priority:"medium" });
+    if (p.status==="active")
+      notes.push({ id:"exp-"+p.id, icon:"⏱", title:"Active permit — review expiry", body:p.permit_number+" is active. Ensure timely closure.", permit:p, priority:"low" });
+  });
+
+  const unread = notes.filter(n=>!read[n.id]).length;
+
+  return (
+    <div>
+      <Topbar title="Notifications" onBack={onBack} right={
+        unread>0?<button onClick={()=>{const r={}; notes.forEach(n=>{r[n.id]=true;}); setRead(r);}} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Mark all read</button>:null
+      } />
+      <div style={{ padding:"1.25rem" }}>
+        {notes.length===0&&<div style={{ textAlign:"center", padding:"3rem 1rem" }}><p style={{ fontSize:32 }}>✓</p><p style={{ fontSize:14, fontWeight:600, color:B.text, marginTop:8 }}>All clear</p><p style={{ fontSize:13, color:B.textSub }}>No notifications at this time.</p></div>}
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {notes.map(n=>{
+            const isRead = read[n.id];
+            return (
+              <div key={n.id} onClick={()=>{ setRead(r=>({...r,[n.id]:true})); if(n.permit) onSelectPermit(n.permit); }} style={{ background:isRead?"#fff":B.accentLight, border:`0.5px solid ${isRead?B.neutralBorder:B.accent}`, borderLeft:`3px solid ${isRead?B.neutralBorder:B.accent}`, borderRadius:10, padding:"12px 14px", cursor:"pointer", opacity:isRead?0.65:1 }}>
+                <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <div style={{ width:30, height:30, borderRadius:"50%", background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>{n.icon}</div>
+                  <div style={{ flex:1 }}>
+                    <p style={{ fontSize:12, fontWeight:isRead?500:700, color:isRead?B.textSub:B.text }}>{n.title}</p>
+                    <p style={{ fontSize:11, color:isRead?B.textSub:B.accentBorder, lineHeight:1.5 }}>{n.body}</p>
+                    <span style={{ fontSize:10, background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, color:B.textSub, borderRadius:20, padding:"1px 8px", marginTop:4, display:"inline-block", textTransform:"capitalize" }}>{n.priority} priority</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Admin ─────────────────────────────────────────────────────────
+function Admin({ session, onBack }) {
+  const [users, setUsers]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [inviteEmail, setIE]      = useState("");
+  const [inviteRole, setIR]       = useState("requester");
+  const [busy, setBusy]           = useState(false);
+  const [msg, setMsg]             = useState("");
+
+  useEffect(()=>{
+    sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc").then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); });
+  },[]);
+
+  async function invite() {
+    if (!inviteEmail) return;
+    setBusy(true);
+    await sb.insert(session.token,"org_invites",{ org_id:session.profile.org_id, email:inviteEmail, role:inviteRole });
+    setMsg("Invite recorded for "+inviteEmail+". Go to Supabase Auth → Invite user to send the email link, then add their profile via SQL.");
+    setIE(""); setBusy(false);
+  }
+
+  return (
+    <div>
+      <Topbar title="Admin Panel" onBack={onBack} />
+      <div style={{ padding:"1.25rem" }}>
+        <p style={{ fontSize:13, fontWeight:600, color:B.text, marginBottom:"1rem" }}>Invite a team member</p>
+        {msg&&<div style={{ background:B.accentLight, border:`0.5px solid ${B.accent}`, borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:B.accentBorder }}>{msg}</div>}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+          <input value={inviteEmail} onChange={e=>setIE(e.target.value)} placeholder="Email address" />
+          <select value={inviteRole} onChange={e=>setIR(e.target.value)}>
+            {ROLES.map(r=><option key={r} value={r}>{r.replace("_"," ")}</option>)}
+          </select>
+        </div>
+        <button onClick={invite} disabled={busy} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:"1.5rem" }}>{busy?"Sending…":"Record invite"}</button>
+
+        <p style={{ fontSize:13, fontWeight:600, color:B.text, marginBottom:10 }}>Team members ({users.length})</p>
+        {loading&&<Spinner />}
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {users.map(u=>(
+            <div key={u.id} style={{ background:"#fff", border:`0.5px solid ${B.neutralBorder}`, borderRadius:10, padding:"12px 14px", opacity:u.active?1:0.55 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                  <div style={{ width:34, height:34, borderRadius:"50%", background:B.accentLight, border:`0.5px solid ${B.accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:B.accentBorder, flexShrink:0 }}>{u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}</div>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{u.full_name}</p>
+                    <p style={{ fontSize:11, color:B.textSub }}>{u.email} · <span style={{ textTransform:"capitalize" }}>{(u.role||"").replace("_"," ")}</span></p>
+                  </div>
+                </div>
+                <span style={{ background:u.active?B.accentLight:B.neutral, color:u.active?B.accentBorder:B.textSub, border:`0.5px solid ${u.active?B.accent:B.neutralBorder}`, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:600 }}>{u.active?"Active":"Inactive"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App Root ──────────────────────────────────────────────────────
+function App() {
+  const [session, setSession]   = useState(null);
+  const [screen, setScreen]     = useState("dashboard");
+  const [permits, setPermits]   = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+
+  const fetchPermits = useCallback(async () => {
+    if (!session) return;
+    setLoading(true); setError("");
+    try {
+      const d = await sb.select(session.token,"permits","order=created_at.desc");
+      if (Array.isArray(d)) setPermits(d);
+      else setError("Failed to load permits.");
+    } catch(e) { setError("Connection error."); }
+    setLoading(false);
+  },[session]);
+
+  useEffect(()=>{ fetchPermits(); },[fetchPermits]);
+
+  const stageMap = { area_authority:2, safety_officer:3, issuer:4 };
+  const unread = session ? permits.filter(p=>(p.status==="pending"&&stageMap[session.profile.role]===p.stage)||p.status==="extension_pending").length : 0;
+
+  if (!session) return <Login onLogin={s=>setSession(s)} />;
+
+  async function logout() {
+    await sb.signOut(session.token);
+    setSession(null); setPermits([]); setScreen("dashboard");
+  }
+
+  function selectPermit(p) { setSelected(p); setScreen("detail"); }
+
+  return (
+    <div>
+      {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={selectPermit} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onLogout={logout} />}
+      {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{ fetchPermits(); setScreen("dashboard"); }} onRefresh={fetchPermits} />}
+      {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{ fetchPermits(); setScreen("dashboard"); }} />}
+      {screen==="notifs"&&<Notifs session={session} permits={permits} onBack={()=>setScreen("dashboard")} onSelectPermit={selectPermit} />}
+      {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")} />}
+      {screen==="workflow"&&(
+        <div>
+          <Topbar title="Permit Workflow" onBack={()=>setScreen("dashboard")} />
+          <div style={{ padding:"1.25rem" }}>
+            {STAGES.map((s,i)=>(
+              <div key={s} style={{ display:"flex", gap:12, alignItems:"flex-start", marginBottom:16 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:B.primary, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:13, flexShrink:0 }}>{i+1}</div>
+                <div style={{ background:B.neutral, borderRadius:8, padding:"10px 14px", flex:1 }}>
+                  <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{s}</p>
+                </div>
+                {i<STAGES.length-1&&<div style={{ position:"absolute" }} />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
