@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONTROLIT — No Connection</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0F2640 0%, #1A3A5C 60%, #0E4D38 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; color: #fff; }
+    .card { text-align: center; max-width: 360px; }
+    svg { margin-bottom: 1.5rem; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 2rem; }
+    p { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 2rem; }
+    .info { background: rgba(14,158,110,0.12); border: 0.5px solid rgba(14,158,110,0.3); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left; }
+    .info p { font-size: 12px; color: rgba(255,255,255,0.65); margin: 0; line-height: 1.6; }
+    .info p strong { color: #0E9E6E; }
+    button { background: #0E9E6E; color: #fff; border: none; border-radius: 10px; padding: 13px 28px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+    button:hover { background: #0B7A55; }
+    .version { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg width="64" height="64" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#0E9E6E"/>
+      <path d="M8 16 L14 22 L24 10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="16" cy="16" r="10" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.4"/>
+    </svg>
+    <h1>CONTROLIT</h1>
+    <div class="sub">Permit to Work Platform</div>
+    <p>You appear to be offline. CONTROLIT requires an internet connection to load permits, process approvals, and sync data.</p>
+    <div class="info">
+      <p><strong>While offline you cannot:</strong><br/>Submit or approve permits · View live permit board · Run AI risk assessments</p>
+    </div>
+    <div class="info">
+      <p><strong>When you reconnect:</strong><br/>All permit data will sync automatically. No data is lost.</p>
+    </div>
+    <button onclick="window.location.reload()">Try again</button>
+    <div class="version">CONTROLIT v1.0 · HSE Field Operations</div>
+  </div>
+</body>
+</html>
