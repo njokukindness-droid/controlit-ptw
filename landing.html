@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONTROLIT — Digital Permit to Work Platform</title>
+  <meta name="description" content="CONTROLIT is the enterprise-grade digital Permit to Work platform for HSE-critical industries. Streamline permits, enforce compliance, and protect your workforce." />
+  <meta name="keywords" content="permit to work, PTW, HSE, safety management, digital permit, oil and gas, construction" />
+  <meta property="og:title" content="CONTROLIT — Digital Permit to Work Platform" />
+  <meta property="og:description" content="Enterprise-grade PTW management for HSE-critical industries." />
+  <meta property="og:type" content="website" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0F1F2E;
+      --navy2: #152535;
+      --navy3: #1A3A5C;
+      --accent: #0E9E6E;
+      --accent2: #0B7A55;
+      --gold: #D97B00;
+      --text: #E8EDF2;
+      --textsub: #7A9AB0;
+      --border: #1E3448;
+      --white: #ffffff;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--navy); color: var(--text); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(15,31,46,0.95); backdrop-filter: blur(12px); border-bottom: 0.5px solid var(--border); padding: 0 5%; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo svg { flex-shrink: 0; }
+    .nav-logo span { font-weight: 800; font-size: 18px; letter-spacing: 0.05em; color: var(--white); }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a { font-size: 13px; color: var(--textsub); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-cta { background: var(--accent); color: var(--white); border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--accent2); }
+
+    /* HERO */
+    .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 120px 5% 80px; background: linear-gradient(180deg, #0A1520 0%, #0F1F2E 60%, #0F2A1E 100%); position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(14,158,110,0.08) 0%, transparent 70%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.3); borderRadius: 20px; padding: 6px 16px; font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 2rem; border-radius: 20px; }
+    .hero h1 { font-size: clamp(36px, 6vw, 72px); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 1.5rem; max-width: 900px; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: clamp(16px, 2vw, 20px); color: var(--textsub); max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.7; }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
+    .btn-primary { background: var(--accent); color: var(--white); border: none; border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: all 0.2s; }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-secondary { background: transparent; color: var(--white); border: 0.5px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat .num { font-size: 32px; font-weight: 800; color: var(--accent); }
+    .hero-stat .lbl { font-size: 12px; color: var(--textsub); margin-top: 2px; }
+
+    /* TRUSTED */
+    .trusted { background: var(--navy2); border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); padding: 1.5rem 5%; text-align: center; }
+    .trusted p { font-size: 12px; color: var(--textsub); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem; }
+    .trusted-logos { display: flex; gap: 3rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .trusted-logos span { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.25); letter-spacing: 0.06em; }
+
+    /* SECTION */
+    section { padding: 6rem 5%; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+    .section-title { font-size: clamp(28px, 4vw, 44px); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 1rem; }
+    .section-sub { font-size: 17px; color: var(--textsub); max-width: 560px; line-height: 1.7; }
+    .centered { text-align: center; }
+    .centered .section-sub { margin: 0 auto; }
+
+    /* FEATURES */
+    .features { background: var(--navy); }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 4rem; }
+    .feature-card { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 16px; padding: 1.75rem; transition: border-color 0.2s; }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-icon { width: 48px; height: 48px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 1.25rem; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--textsub); line-height: 1.6; }
+
+    /* WORKFLOW */
+    .workflow { background: linear-gradient(180deg, var(--navy) 0%, #0A1E14 100%); }
+    .workflow-steps { display: flex; gap: 0; margin-top: 4rem; position: relative; flex-wrap: wrap; }
+    .workflow-step { flex: 1; min-width: 200px; text-align: center; padding: 2rem 1.5rem; position: relative; }
+    .workflow-step::after { content: '→'; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--accent); z-index: 1; }
+    .workflow-step:last-child::after { display: none; }
+    .step-num { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: var(--white); font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+    .step-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .step-desc { font-size: 12px; color: var(--textsub); line-height: 1.5; }
+
+    /* PERMIT TYPES */
+    .permit-types { background: var(--navy2); }
+    .types-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 3rem; }
+    .type-card { background: var(--navy); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s; }
+    .type-card:hover { border-color: var(--accent); }
+    .type-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .type-card span { font-size: 13px; font-weight: 600; }
+
+    /* TESTIMONIAL */
+    .testimonial { background: var(--navy); }
+    .testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+    .testimonial-card { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 16px; padding: 1.75rem; }
+    .stars { color: var(--gold); font-size: 14px; margin-bottom: 1rem; }
+    .testimonial-card p { font-size: 14px; color: var(--textsub); line-height: 1.7; margin-bottom: 1.25rem; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 10px; }
+    .author-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(14,158,110,0.2); border: 0.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); }
+    .author-name { font-size: 13px; font-weight: 700; }
+    .author-role { font-size: 11px; color: var(--textsub); }
+
+    /* PRICING */
+    .pricing { background: linear-gradient(180deg, var(--navy) 0%, #0A1520 100%); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 3rem; max-width: 960px; margin-left: auto; margin-right: auto; }
+    .pricing-card { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 16px; padding: 2rem; position: relative; }
+    .pricing-card.featured { border-color: var(--accent); background: linear-gradient(135deg, #0F2A1E 0%, var(--navy2) 100%); }
+    .featured-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--white); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.04em; white-space: nowrap; }
+    .plan-name { font-size: 13px; font-weight: 700; color: var(--textsub); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+    .plan-price { font-size: 40px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+    .plan-price span { font-size: 16px; font-weight: 500; color: var(--textsub); }
+    .plan-desc { font-size: 13px; color: var(--textsub); margin-bottom: 1.5rem; }
+    .plan-features { list-style: none; margin-bottom: 2rem; }
+    .plan-features li { font-size: 13px; color: var(--textsub); padding: 6px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .plan-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .plan-btn-outline { background: transparent; color: var(--white); border: 0.5px solid rgba(255,255,255,0.2); }
+    .plan-btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .plan-btn-filled { background: var(--accent); color: var(--white); border: none; }
+    .plan-btn-filled:hover { background: var(--accent2); }
+
+    /* CTA SECTION */
+    .cta-section { background: linear-gradient(135deg, #0A1E14 0%, #0F1F2E 50%, #0A1520 100%); text-align: center; padding: 6rem 5%; position: relative; overflow: hidden; }
+    .cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(14,158,110,0.06) 0%, transparent 70%); pointer-events: none; }
+    .cta-section h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.02em; }
+    .cta-section p { font-size: 17px; color: var(--textsub); margin-bottom: 2.5rem; max-width: 520px; margin-left: auto; margin-right: auto; }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* CONTACT */
+    .contact { background: var(--navy2); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .contact-form { display: flex; flex-direction: column; gap: 14px; }
+    .contact-form input, .contact-form select, .contact-form textarea { background: var(--navy); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; transition: border-color 0.2s; }
+    .contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus { border-color: var(--accent); }
+    .contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--textsub); }
+    .contact-form textarea { resize: vertical; min-height: 120px; }
+    .contact-form select option { background: var(--navy2); }
+    .submit-btn { background: var(--accent); color: var(--white); border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .submit-btn:hover { background: var(--accent2); }
+    .contact-info { }
+    .contact-info h3 { font-size: 22px; font-weight: 700; margin-bottom: 1rem; }
+    .contact-info p { font-size: 14px; color: var(--textsub); line-height: 1.7; margin-bottom: 2rem; }
+    .contact-detail { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 1.25rem; }
+    .contact-detail-icon { width: 36px; height: 36px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .contact-detail-text p:first-child { font-size: 12px; color: var(--textsub); }
+    .contact-detail-text p:last-child { font-size: 14px; font-weight: 600; }
+
+    /* FOOTER */
+    footer { background: #080F18; border-top: 0.5px solid var(--border); padding: 3rem 5% 2rem; }
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+    .footer-brand p { font-size: 13px; color: var(--textsub); margin-top: 1rem; max-width: 280px; line-height: 1.6; }
+    .footer-col h4 { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--textsub); margin-bottom: 1rem; }
+    .footer-col a { display: block; font-size: 13px; color: var(--textsub); margin-bottom: 8px; transition: color 0.2s; }
+    .footer-col a:hover { color: var(--white); }
+    .footer-bottom { border-top: 0.5px solid var(--border); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .footer-bottom p { font-size: 12px; color: var(--textsub); }
+    .footer-suite { display: flex; gap: 1rem; }
+    .suite-badge { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--textsub); font-weight: 600; }
+    .suite-badge.active { border-color: var(--accent); color: var(--accent); }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 16px; width: 100%; max-width: 480px; overflow: hidden; }
+    .modal-header { background: #0A1E2E; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid var(--border); }
+    .modal-header h3 { font-size: 15px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--textsub); font-size: 22px; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 1.5rem; }
+    .modal-body p { font-size: 13px; color: var(--textsub); margin-bottom: 1.25rem; line-height: 1.6; }
+    .modal-form { display: flex; flex-direction: column; gap: 12px; }
+    .modal-form input, .modal-form select { background: var(--navy); border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+    .modal-form input:focus, .modal-form select:focus { border-color: var(--accent); }
+    .modal-form input::placeholder { color: var(--textsub); }
+    .modal-submit { background: var(--accent); color: var(--white); border: none; border-radius: 8px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; }
+    .modal-success { text-align: center; padding: 1rem 0; }
+    .modal-success .check { font-size: 48px; margin-bottom: 1rem; }
+    .modal-success h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .modal-success p { font-size: 13px; color: var(--textsub); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .workflow-step::after { display: none; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .footer-top { grid-template-columns: 1fr; }
+      .hero-stats { gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#0E9E6E"/>
+      <path d="M8 16 L14 22 L24 10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="16" cy="16" r="10" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.35"/>
+    </svg>
+    <span>CONTROLIT</span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#workflow">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+    <a href="index.html" style="color: #7A9AB0;">Sign in</a>
+  </div>
+  <button class="nav-cta" onclick="openModal('demo')">Request a demo</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div>
+    <div class="hero-badge">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#0E9E6E" stroke-width="1.5"/><path d="M4 6l1.5 1.5L8 4" stroke="#0E9E6E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Enterprise HSE Platform · Multi-tenant · AI-powered
+    </div>
+    <h1>The Digital <span>Permit to Work</span><br/>Platform Built for the Field</h1>
+    <p>CONTROLIT digitises your entire PTW system — from request to issuance, extension to closure — with multi-stage approvals, SIMOPS detection, and mandatory field verification. Built for Oil & Gas, Construction, and heavy industry.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openModal('signup')">Sign up your organisation</button>
+      <button class="btn-secondary" onclick="openModal('demo')">Book a demo</button>
+      <a href="index.html"><button class="btn-secondary">Sign in →</button></a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">7</div><div class="lbl">Permit types</div></div>
+      <div class="hero-stat"><div class="num">4</div><div class="lbl">Approval stages</div></div>
+      <div class="hero-stat"><div class="num">100%</div><div class="lbl">Digital audit trail</div></div>
+      <div class="hero-stat"><div class="num">AI</div><div class="lbl">Risk assessment</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUSTED -->
+<div class="trusted">
+  <p>Trusted by teams in</p>
+  <div class="trusted-logos">
+    <span>OIL & GAS</span>
+    <span>CONSTRUCTION</span>
+    <span>PETROCHEMICAL</span>
+    <span>ENERGY</span>
+    <span>MINING</span>
+    <span>MARINE</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="centered">
+    <div class="section-label">Platform capabilities</div>
+    <h2 class="section-title">Everything your HSE team needs</h2>
+    <p class="section-sub">CONTROLIT is benchmarked against the ADNOC PTW standard and built for real field conditions — including low-literacy environments.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <h3>Multi-stage approval workflow</h3>
+      <p>Requesting Party → Area Authority → Safety Officer → Issuer. Every stage digitally signed with timestamp and role verification.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>Mandatory field verification</h3>
+      <p>The Issuer must physically verify all site controls on a permit-specific checklist before the permit can go live. No shortcuts.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>SIMOPS conflict detection</h3>
+      <p>Automatically detects conflicting active permits in the same zone. Hot Work, Confined Space, Excavation, Lifting — all cross-checked in real time.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>AI risk assessment</h3>
+      <p>Claude-powered risk analysis generates key hazards, precautionary controls, and emergency procedures for every permit type.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏢</div>
+      <h3>Multi-tenant architecture</h3>
+      <p>Each organisation operates in complete isolation. Row-level security enforced at the database level — no cross-tenant data leakage.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Immutable audit trail</h3>
+      <p>Every action — approval, rejection, extension, revocation — is timestamped and logged. Full permit history for inspections and incidents.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔔</div>
+      <h3>Role-aware notifications</h3>
+      <p>Approvers are alerted when permits reach their stage. Escalation alerts for overdue permits. Expiry warnings before validity lapses.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>Mobile-first PWA</h3>
+      <p>Designed for field use. Works on any device without an app store. Installable on Android and iOS for offline-capable access.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖨️</div>
+      <h3>Branded permit printout</h3>
+      <p>Once issued, a professional permit document is generated and ready to print for posting at the job site — as required by regulations.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW -->
+<section class="workflow" id="workflow">
+  <div class="centered">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">From request to job site<br/>in four stages</h2>
+    <p class="section-sub">CONTROLIT enforces a structured, auditable permit lifecycle that mirrors international PTW standards.</p>
+  </div>
+  <div class="workflow-steps">
+    <div class="workflow-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Requesting Party</div>
+      <div class="step-desc">Team leader and supervisor jointly complete and submit the permit form with all job details and hazard information.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Area Authority</div>
+      <div class="step-desc">Confirms area readiness, checks for SIMOPS conflicts, and verifies all isolations are in place before approving.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">3</div>
+      <div class="step-title">Safety Officer</div>
+      <div class="step-desc">Reviews the risk assessment, PPE requirements, gas tests, and HSE compliance before forwarding for issuance.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">4</div>
+      <div class="step-title">Issuer</div>
+      <div class="step-desc">Goes to site, verifies all controls physically via checklist, signs digitally, and issues the permit. Work may now commence.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PERMIT TYPES -->
+<section class="permit-types">
+  <div class="centered">
+    <div class="section-label">Permit coverage</div>
+    <h2 class="section-title">7 permit types. Every job covered.</h2>
+    <p class="section-sub">From routine maintenance to critical tandem lifts — CONTROLIT handles every high-risk work category your site requires.</p>
+  </div>
+  <div class="types-grid">
+    <div class="type-card"><div class="type-dot" style="background:#D85A30"></div><span>Hot Work</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#185FA5"></div><span>Cold Work (Critical)</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#D97B00"></div><span>Confined Space Entry</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#7F77DD"></div><span>Electrical Isolation (LOTO)</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#0E9E6E"></div><span>Working at Height</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#3B6D11"></div><span>Excavation & Ground Disturbance</span></div>
+    <div class="type-card"><div class="type-dot" style="background:#7F77DD"></div><span>Critical Lifting Operations</span></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonial">
+  <div class="centered">
+    <div class="section-label">What our users say</div>
+    <h2 class="section-title">Built for people who work in the field</h2>
+  </div>
+  <div class="testimonial-grid">
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"CONTROLIT replaced a paper-based PTW system that was causing delays and compliance gaps. The SIMOPS detection alone has prevented three potential incidents in our first month."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">AO</div>
+        <div><div class="author-name">Ahmed O.</div><div class="author-role">HSE Manager · Oil & Gas</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"The field verification checklist is the feature that impressed our auditors most. Every permit has a complete, timestamped record of what was physically verified before work started."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SK</div>
+        <div><div class="author-name">Sarah K.</div><div class="author-role">Safety Officer · Construction</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"We onboarded our entire 200-person site in under a week. The role-based access means each person only sees what they need to act on. It's genuinely changed how we work."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">JN</div>
+        <div><div class="author-name">James N.</div><div class="author-role">Operations Director · Petrochemical</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="centered">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Straightforward pricing.<br/>No surprises.</h2>
+    <p class="section-sub">Every plan includes the full CONTROLIT platform. Scale as your organisation grows.</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$199 <span>/ month</span></div>
+      <div class="plan-desc">For smaller teams getting started with digital PTW.</div>
+      <ul class="plan-features">
+        <li>Up to 25 users</li>
+        <li>All 7 permit types</li>
+        <li>Full approval workflow</li>
+        <li>AI risk assessment</li>
+        <li>Audit trail</li>
+        <li>Email support</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline" onclick="openModal('signup')">Get started</button>
+    </div>
+    <div class="pricing-card featured">
+      <div class="featured-badge">MOST POPULAR</div>
+      <div class="plan-name">Professional</div>
+      <div class="plan-price">$499 <span>/ month</span></div>
+      <div class="plan-desc">For growing organisations with multiple sites or zones.</div>
+      <ul class="plan-features">
+        <li>Up to 100 users</li>
+        <li>All 7 permit types</li>
+        <li>Full approval workflow</li>
+        <li>SIMOPS detection</li>
+        <li>AI risk assessment</li>
+        <li>Advanced notifications</li>
+        <li>Priority support</li>
+        <li>Custom branding</li>
+      </ul>
+      <button class="plan-btn plan-btn-filled" onclick="openModal('signup')">Get started</button>
+    </div>
+    <div class="pricing-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">Custom</div>
+      <div class="plan-desc">For large organisations with complex requirements.</div>
+      <ul class="plan-features">
+        <li>Unlimited users</li>
+        <li>Multi-site management</li>
+        <li>SSO / LDAP integration</li>
+        <li>Custom permit types</li>
+        <li>Dedicated support</li>
+        <li>SLA guarantee</li>
+        <li>On-premise option</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline" onclick="openModal('contact')">Contact sales</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="cta-section">
+  <h2>Ready to control your permits?</h2>
+  <p>Join organisations across the Middle East, Africa, and beyond who have digitised their PTW systems with CONTROLIT.</p>
+  <div class="cta-btns">
+    <button class="btn-primary" onclick="openModal('signup')">Sign up your organisation</button>
+    <button class="btn-secondary" onclick="openModal('demo')">Book a demo first</button>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="section-label">Get in touch</div>
+  <h2 class="section-title" style="margin-bottom: 0.5rem">Talk to our team</h2>
+  <p style="color: var(--textsub); font-size: 15px; margin-bottom: 3rem;">Whether you're ready to onboard or just exploring, we're here to help.</p>
+  <div class="contact-grid">
+    <div class="contact-form">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <input placeholder="First name" id="cf-first" />
+        <input placeholder="Last name" id="cf-last" />
+      </div>
+      <input placeholder="Work email" type="email" id="cf-email" />
+      <input placeholder="Company name" id="cf-company" />
+      <select id="cf-interest">
+        <option value="">I'm interested in…</option>
+        <option>Requesting a demo</option>
+        <option>Signing up my organisation</option>
+        <option>Enterprise pricing</option>
+        <option>Technical integration</option>
+        <option>General enquiry</option>
+      </select>
+      <textarea placeholder="Tell us about your organisation and PTW needs…" id="cf-msg"></textarea>
+      <button class="submit-btn" onclick="submitContact()">Send message</button>
+      <p id="cf-success" style="color: #0E9E6E; font-size: 13px; display:none;">✓ Message sent. We'll be in touch within one business day.</p>
+    </div>
+    <div class="contact-info">
+      <h3>We typically respond within one business day.</h3>
+      <p>CONTROLIT is actively onboarding new organisations. Our team will walk you through a personalised demo, answer your compliance questions, and get your team set up quickly.</p>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">✉</div>
+        <div class="contact-detail-text">
+          <p>Email us</p>
+          <p>kindnessnjoku@outlook.com</p>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">🌍</div>
+        <div class="contact-detail-text">
+          <p>Serving</p>
+          <p>Middle East · Africa · Global</p>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-detail-icon">🏭</div>
+        <div class="contact-detail-text">
+          <p>Industries</p>
+          <p>Oil & Gas · Construction · Energy · Mining</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo" style="margin-bottom: 0.75rem;">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#0E9E6E"/><path d="M8 16 L14 22 L24 10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="10" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.35"/></svg>
+        <span>CONTROLIT</span>
+      </div>
+      <p>The enterprise-grade digital Permit to Work platform for HSE-critical industries. Built for the field. Trusted by safety professionals.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <a href="#features">Features</a>
+      <a href="#workflow">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="index.html">Sign in</a>
+    </div>
+    <div class="footer-col">
+      <h4>Permit types</h4>
+      <a href="#">Hot Work</a>
+      <a href="#">Confined Space</a>
+      <a href="#">Electrical (LOTO)</a>
+      <a href="#">Critical Lifting</a>
+      <a href="#">Working at Height</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#contact">Contact us</a>
+      <a href="#" onclick="openModal('demo')">Book a demo</a>
+      <a href="#" onclick="openModal('signup')">Sign up</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 CONTROLIT. All rights reserved. · kindnessnjoku@outlook.com</p>
+    <div class="footer-suite">
+      <span class="suite-badge active">CONTROLIT — PTW</span>
+      <span class="suite-badge">FLAGIT — Observations</span>
+    </div>
+  </div>
+</footer>
+
+<!-- MODALS -->
+<!-- Demo Modal -->
+<div class="modal-overlay" id="modal-demo">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Request a demo</h3>
+      <button class="modal-close" onclick="closeModal('demo')">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Tell us about your organisation and we'll arrange a personalised walkthrough of CONTROLIT for your team.</p>
+      <div class="modal-form">
+        <input placeholder="Full name *" id="demo-name" />
+        <input placeholder="Work email *" type="email" id="demo-email" />
+        <input placeholder="Company name *" id="demo-company" />
+        <select id="demo-industry">
+          <option value="">Industry</option>
+          <option>Oil & Gas</option><option>Construction</option><option>Petrochemical</option><option>Energy</option><option>Mining</option><option>Marine</option><option>Other</option>
+        </select>
+        <input placeholder="Team size (approx.)" id="demo-size" />
+        <button class="modal-submit" onclick="submitDemo()">Request demo</button>
+      </div>
+      <div id="demo-success" style="display:none" class="modal-success">
+        <div class="check">✓</div>
+        <h4>Demo requested!</h4>
+        <p>We'll reach out to kindnessnjoku@outlook.com within one business day to schedule your walkthrough.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal-overlay" id="modal-signup">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Sign up your organisation</h3>
+      <button class="modal-close" onclick="closeModal('signup')">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Submit your organisation details and we'll set up your CONTROLIT account within one business day.</p>
+      <div class="modal-form">
+        <input placeholder="Your full name *" id="su-name" />
+        <input placeholder="Work email *" type="email" id="su-email" />
+        <input placeholder="Organisation name *" id="su-org" />
+        <select id="su-industry">
+          <option value="">Industry *</option>
+          <option>Oil & Gas</option><option>Construction</option><option>Petrochemical</option><option>Energy</option><option>Mining</option><option>Marine</option><option>Other</option>
+        </select>
+        <select id="su-country">
+          <option value="">Country *</option>
+          <option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Kuwait</option><option>Nigeria</option><option>Ghana</option><option>UK</option><option>Other</option>
+        </select>
+        <select id="su-plan">
+          <option value="">Plan *</option>
+          <option>Starter — $199/month</option>
+          <option>Professional — $499/month</option>
+          <option>Enterprise — Custom</option>
+        </select>
+        <button class="modal-submit" onclick="submitSignup()">Submit request</button>
+      </div>
+      <div id="signup-success" style="display:none" class="modal-success">
+        <div class="check">✓</div>
+        <h4>Request received!</h4>
+        <p>We'll set up your CONTROLIT account and send your login details to your email within one business day.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Modal -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Contact sales</h3>
+      <button class="modal-close" onclick="closeModal('contact')">×</button>
+    </div>
+    <div class="modal-body">
+      <p>For enterprise pricing, custom integrations, or large-scale deployments — reach out and we'll get back to you within one business day.</p>
+      <div class="modal-form">
+        <input placeholder="Full name *" id="cs-name" />
+        <input placeholder="Work email *" type="email" id="cs-email" />
+        <input placeholder="Organisation *" id="cs-org" />
+        <input placeholder="Number of users (approx.)" id="cs-users" />
+        <button class="modal-submit" onclick="submitContact2()">Contact sales</button>
+      </div>
+      <div id="contact2-success" style="display:none" class="modal-success">
+        <div class="check">✓</div>
+        <h4>Message sent!</h4>
+        <p>Our team will be in touch shortly to discuss your enterprise requirements.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(type) {
+  document.getElementById('modal-' + type).classList.add('open');
+}
+function closeModal(type) {
+  document.getElementById('modal-' + type).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(function(el) {
+  el.addEventListener('click', function(e) {
+    if (e.target === el) el.classList.remove('open');
+  });
+});
+
+function submitDemo() {
+  var name = document.getElementById('demo-name').value;
+  var email = document.getElementById('demo-email').value;
+  var company = document.getElementById('demo-company').value;
+  if (!name || !email || !company) { alert('Please fill in all required fields.'); return; }
+  document.querySelector('#modal-demo .modal-form').style.display = 'none';
+  document.getElementById('demo-success').style.display = 'block';
+}
+
+function submitSignup() {
+  var name = document.getElementById('su-name').value;
+  var email = document.getElementById('su-email').value;
+  var org = document.getElementById('su-org').value;
+  if (!name || !email || !org) { alert('Please fill in all required fields.'); return; }
+  document.querySelector('#modal-signup .modal-form').style.display = 'none';
+  document.getElementById('signup-success').style.display = 'block';
+}
+
+function submitContact2() {
+  var name = document.getElementById('cs-name').value;
+  var email = document.getElementById('cs-email').value;
+  if (!name || !email) { alert('Please fill in all required fields.'); return; }
+  document.querySelector('#modal-contact .modal-form').style.display = 'none';
+  document.getElementById('contact2-success').style.display = 'block';
+}
+
+function submitContact() {
+  var email = document.getElementById('cf-email').value;
+  var first = document.getElementById('cf-first').value;
+  if (!first || !email) { alert('Please fill in your name and email.'); return; }
+  document.getElementById('cf-success').style.display = 'block';
+}
+
+// Smooth scroll for nav links
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    var target = document.querySelector(this.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+</script>
+</body>
+</html>
