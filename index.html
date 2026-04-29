@@ -21,6 +21,26 @@
     ::-webkit-scrollbar-thumb { background: #D1D8E0; border-radius: 4px; }
     #root { max-width: 680px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
   </style>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1A3A5C" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CONTROLIT" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-startup-image" href="icons/icon-512.png" />
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/controlit-ptw/sw.js')
+          .then(function(reg) { console.log('CONTROLIT SW registered:', reg.scope); })
+          .catch(function(err) { console.warn('CONTROLIT SW registration failed:', err); });
+      });
+    }
+  </script>
 </head>
 <body>
 <div id="root"></div>
