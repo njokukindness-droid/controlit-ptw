@@ -64,11 +64,19 @@ const sb = {
     });
     return r.json();
   },
-  async inviteUser(email) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/invite`, {
+  async inviteUser(email, password) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ email }),
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_SECRET,
+        "Authorization": `Bearer ${SUPABASE_SECRET}`,
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        email_confirm: true,
+      }),
     });
     return r.json();
   },
@@ -175,26 +183,33 @@ function OnboardModal({ token, onClose, onSuccess }) {
   const [result, setResult]     = useState(null);
 
   async function onboard() {
-    if (!orgName||!adminName||!adminEmail) { setErr("All fields are required."); return; }
+    if (!orgName||!adminName||!adminEmail||!tempPass) { setErr("All fields are required."); return; }
     setBusy(true); setErr("");
     try {
-      // 1. Create organisation
       const orgs = await sb.insert(token, "organisations", {
         name: orgName, slug: slugify(orgName), industry, country, active: true,
       });
       if (!orgs || !orgs[0]) { setErr("Failed to create organisation."); setBusy(false); return; }
       const org = orgs[0];
 
-      // 2. Create auth user via sign-in trick — use admin credentials
-      // We insert to org_invites to record the intent
-      await sb.insert(token, "org_invites", {
-        org_id: org.id, email: adminEmail, role: "admin", accepted: false,
+      const authUser = await sb.inviteUser(adminEmail, tempPass);
+      if (!authUser || authUser.error || !authUser.id) {
+        setErr("Failed to create auth user: " + (authUser?.error?.message || authUser?.msg || "Unknown error"));
+        setBusy(false); return;
+      }
+
+      await sb.insert(token, "profiles", {
+        id: authUser.id,
+        org_id: org.id,
+        full_name: adminName,
+        email: adminEmail,
+        role: "admin",
+        active: true,
       });
 
-      // 3. Show instructions for manual auth user creation
-      setResult({ org, orgName, adminName, adminEmail, tempPass });
+      setResult({ org, orgName, adminName, adminEmail, tempPass, fullyAutomated: true });
       setStep(2);
-    } catch(e) { setErr("Error during onboarding. Please try again."); }
+    } catch(e) { setErr("Error during onboarding: " + e.message); }
     setBusy(false);
   }
 
@@ -262,47 +277,27 @@ function OnboardModal({ token, onClose, onSuccess }) {
           )}
 
           {step === 2 && result && (
-            <>
-              <div style={{ background:"rgba(14,158,110,0.12)", border:`0.5px solid ${B.accent}`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
-                <p style={{ fontSize:13, fontWeight:700, color:B.accent, marginBottom:4 }}>✓ Organisation registered successfully</p>
-                <p style={{ fontSize:12, color:B.textSub }}><strong style={{ color:B.text }}>{result.orgName}</strong> is now on CONTROLIT.</p>
-              </div>
-
-              <p style={{ fontSize:12, fontWeight:600, color:B.accent, marginBottom:10, letterSpacing:"0.04em" }}>COMPLETE THESE 2 MANUAL STEPS</p>
-
-              <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:"1.25rem" }}>
-                <div style={{ background:"#0F2A3E", border:`0.5px solid ${B.border}`, borderRadius:10, padding:"1rem" }}>
-                  <p style={{ fontSize:12, fontWeight:600, color:B.text, marginBottom:6 }}>Step 1 — Create auth user in Supabase</p>
-                  <p style={{ fontSize:11, color:B.textSub, lineHeight:1.6, marginBottom:8 }}>Go to your Supabase dashboard → Authentication → Users → Add user → Create new user. Enter:</p>
-                  <div style={{ background:"#0A1E2E", borderRadius:8, padding:"10px 12px", fontSize:11, fontFamily:"monospace", color:B.accent }}>
-                    <div>Email: <span style={{ color:B.text }}>{result.adminEmail}</span></div>
-                    <div>Password: <span style={{ color:B.text }}>{result.tempPass}</span></div>
-                  </div>
-                  <p style={{ fontSize:11, color:B.textSub, marginTop:8 }}>After creating, copy the UUID from the Users list.</p>
-                </div>
-
-                <div style={{ background:"#0F2A3E", border:`0.5px solid ${B.border}`, borderRadius:10, padding:"1rem" }}>
-                  <p style={{ fontSize:12, fontWeight:600, color:B.text, marginBottom:6 }}>Step 2 — Run this SQL to create their profile</p>
-                  <p style={{ fontSize:11, color:B.textSub, marginBottom:8 }}>Go to SQL Editor and run (replace UUID with the one you just copied):</p>
-                  <div style={{ background:"#0A1E2E", borderRadius:8, padding:"10px 12px", fontSize:11, fontFamily:"monospace", color:B.accent, lineHeight:1.8, overflowX:"auto", whiteSpace:"pre" }}>{`insert into profiles (id, org_id, full_name, email, role, active)\nvalues (\n  'PASTE-AUTH-UUID-HERE',\n  '${result.org.id}',\n  '${result.adminName}',\n  '${result.adminEmail}',\n  'admin',\n  true\n);`}</div>
-                </div>
-
-                <div style={{ background:"#0F2A3E", border:`0.5px solid ${B.border}`, borderRadius:10, padding:"1rem" }}>
-                  <p style={{ fontSize:12, fontWeight:600, color:B.text, marginBottom:6 }}>Step 3 — Share login details with admin</p>
-                  <div style={{ background:"#0A1E2E", borderRadius:8, padding:"10px 12px", fontSize:11, fontFamily:"monospace", color:B.accent, lineHeight:1.8 }}>
-                    <div>URL: <span style={{ color:B.text }}>https://njokukindness-droid.github.io/controlit-ptw</span></div>
-                    <div>Email: <span style={{ color:B.text }}>{result.adminEmail}</span></div>
-                    <div>Password: <span style={{ color:B.text }}>{result.tempPass}</span></div>
-                  </div>
-                  <p style={{ fontSize:11, color:B.textSub, marginTop:8 }}>The admin logs in, changes their password, and then invites their team from inside CONTROLIT. Your job is done.</p>
-                </div>
-              </div>
-
-              <div style={{ display:"flex", gap:8 }}>
-                <button onClick={()=>{ onSuccess(); onClose(); }} style={{ flex:1, background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>Done — close</button>
-              </div>
-            </>
-          )}
+  <>
+    <div style={{ background:"rgba(14,158,110,0.12)", border:`0.5px solid ${B.accent}`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
+      <p style={{ fontSize:13, fontWeight:700, color:B.accent, marginBottom:4 }}>✓ Client onboarded successfully — fully automated</p>
+      <p style={{ fontSize:12, color:B.textSub }}><strong style={{ color:B.text }}>{result.orgName}</strong> is live on CONTROLIT. Organisation, auth user, and admin profile all created automatically.</p>
+    </div>
+    <p style={{ fontSize:12, fontWeight:600, color:B.accent, marginBottom:10, letterSpacing:"0.04em" }}>SHARE THESE LOGIN DETAILS WITH THE ADMIN</p>
+    <div style={{ background:"#0F2A3E", border:`0.5px solid ${B.border}`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
+      <div style={{ background:"#0A1E2E", borderRadius:8, padding:"10px 12px", fontSize:12, fontFamily:"monospace", color:B.accent, lineHeight:2 }}>
+        <div>URL: <span style={{ color:B.text }}>https://njokukindness-droid.github.io/controlit-ptw</span></div>
+        <div>Email: <span style={{ color:B.text }}>{result.adminEmail}</span></div>
+        <div>Password: <span style={{ color:B.text }}>{result.tempPass}</span></div>
+        <div>Organisation: <span style={{ color:B.text }}>{result.orgName}</span></div>
+        <div>Role: <span style={{ color:B.text }}>Admin</span></div>
+      </div>
+    </div>
+    <div style={{ background:"rgba(14,158,110,0.08)", border:`0.5px solid rgba(14,158,110,0.2)`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
+      <p style={{ fontSize:12, color:B.textSub, lineHeight:1.6 }}>The admin can log in immediately. They should change their password after first login. From the Admin panel they can invite their own team members.</p>
+    </div>
+    <button onClick={()=>{ onSuccess(); onClose(); }} style={{ width:"100%", background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>Done — close</button>
+  </>
+)}
         </div>
       </div>
     </div>
