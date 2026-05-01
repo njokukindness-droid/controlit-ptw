@@ -70,6 +70,12 @@ const sb = {
     });
     return r.json();
   },
+  async update(t, table, match, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
+      method: "PATCH", headers: sb.h(t), body: JSON.stringify(data),
+    });
+    return r.json();
+  },
   async inviteUser(email, password) {
     // Create auth user directly using secret key
     const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
@@ -355,13 +361,13 @@ function OwnerDashboard({ token, onLogout }) {
 
   async function toggleSuspend(org) {
     const newActive = !org.active;
-    await sb.update(token, "organisations", `id=eq.${org.id}`, { active: newActive });
-    setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
+    const result = await sb.update(token, "organisations", `id=eq.${org.id}`, { active: newActive });
+    if (result && !result.error) {
+      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
+    }
   }
-
-  async function deleteOrg(org) {
+ async function deleteOrg(org) {
     if (!window.confirm(`Permanently delete "${org.name}" and all its data? This cannot be undone.`)) return;
-    // Delete profiles first
     const orgUsers = users.filter(u => u.org_id === org.id);
     for (const u of orgUsers) {
       await sb.deleteUser(u.id);
@@ -371,7 +377,10 @@ function OwnerDashboard({ token, onLogout }) {
     await sb.delete(token, "permit_audit", `org_id=eq.${org.id}`);
     await sb.delete(token, "org_invites", `org_id=eq.${org.id}`);
     await sb.delete(token, "organisations", `id=eq.${org.id}`);
-    load();
+    // Update state immediately without waiting for reload
+    setOrgs(prev => prev.filter(o => o.id !== org.id));
+    setUsers(prev => prev.filter(u => u.org_id !== org.id));
+    setPermits(prev => prev.filter(p => p.org_id !== org.id));
   }
 
   useEffect(()=>{ load(); },[]);
