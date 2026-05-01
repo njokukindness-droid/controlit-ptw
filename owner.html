@@ -36,9 +36,10 @@ const SUPABASE_SECRET = (function(){
 })();
 
 // ── CHANGE THIS to your own secret owner password ─────────────────
-const OWNER_PASSWORD = "Controlit@Owner2024!";
+const OWNER_PASSWORD = "Controlit@CEOKind!";
 // ── CHANGE THIS to your own email ────────────────────────────────
 const OWNER_EMAIL    = "kindnessnjoku@outlook.com";
+const OWNER_SUPABASE_PASS = "YourChosenPassword123!";
 
 // ── Supabase helpers ──────────────────────────────────────────────
 const sb = {
@@ -144,6 +145,7 @@ function StatCard({ label, value, color, sub }) {
 // ── Gate Screen ───────────────────────────────────────────────────
 function GateScreen({ onUnlock }) {
   const [pass, setPass] = useState("");
+  const [show, setShow] = useState(false);
   const [err, setErr]   = useState("");
 
   function check() {
@@ -164,7 +166,12 @@ function GateScreen({ onUnlock }) {
         <div style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:14, padding:"1.5rem" }}>
           {err && <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:B.danger }}>{err}</div>}
           <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:6, textAlign:"left" }}>Owner password</label>
-          <input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&check()} placeholder="Enter owner password" style={{ marginBottom:12 }} />
+          <div style={{ position:"relative", marginBottom:12 }}>
+            <input type={show?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&check()} placeholder="Enter owner password" style={{ paddingRight:40 }} />
+            <button onClick={()=>setShow(!show)} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:B.textSub, fontSize:16, lineHeight:1, padding:0 }}>
+              {show ? "🙈" : "👁"}
+            </button>
+          </div>
           <button onClick={check} style={{ width:"100%", background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
             Access owner dashboard
           </button>
