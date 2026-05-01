@@ -21,29 +21,6 @@
     ::-webkit-scrollbar-thumb { background: #D1D8E0; border-radius: 4px; }
     #root { max-width: 680px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
   </style>
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#1A3A5C" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CONTROLIT" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <link rel="apple-touch-startup-image" href="icons/android-chrome-512x512.png" />
-
-  <!-- Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/controlit-ptw/sw.js')
-          .then(function(reg) { console.log('CONTROLIT SW registered:', reg.scope); })
-          .catch(function(err) { console.warn('CONTROLIT SW registration failed:', err); });
-      });
-    }
-  </script>
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png" />
-<link rel="shortcut icon" href="icons/favicon.ico" />
 </head>
 <body>
 <div id="root"></div>
@@ -274,7 +251,11 @@ function Login({ onLogin }) {
       // Fetch org separately
       const orgs = await sb.select(token, "organisations", `id=eq.${profile.org_id}`);
       const org = orgs && orgs[0] ? orgs[0] : { name: "Your Organisation" };
-      // Check if this is a first-time invite user (password still default)
+      // Check if organisation is suspended
+      if (org && org.active === false) {
+        setErr("Your organisation account has been suspended. Please contact support at kindnessnjoku@outlook.com");
+        setBusy(false); return;
+      }
       onLogin({ token, userId: uid, profile, org, firstTime: false });
     } catch(e) { setErr("Connection error. Please try again."); }
     setBusy(false);
@@ -312,7 +293,7 @@ function Login({ onLogin }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────
-function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs, unread, onAdmin, onWorkflow, onLogout }) {
+function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs, unread, onAdmin, onWorkflow, onChangePass, onLogout }) {
   const [filter, setFilter] = useState("all");
   const counts = {
     active:  permits.filter(p=>p.status==="active").length,
@@ -331,6 +312,7 @@ function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs
           </button>
           {session.profile.role==="admin"&&<button onClick={onAdmin} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Admin</button>}
           <button onClick={onWorkflow} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Workflow</button>
+          <button onClick={onChangePass} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>🔑</button>
           <button onClick={onLogout} style={{ border:"0.5px solid rgba(255,255,255,0.3)", background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:6, padding:"6px 12px", fontSize:11, cursor:"pointer" }}>Sign out</button>
         </div>
       } />
@@ -598,6 +580,71 @@ function NewPermit({ session, onBack, onSuccess }) {
   );
 }
 
+// ── Change Password ───────────────────────────────────────────────
+function ChangePassword({ session, onBack }) {
+  const [current, setCurrent] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy]       = useState(false);
+  const [err, setErr]         = useState("");
+  const [success, setSuccess] = useState(false);
+
+  async function save() {
+    if (!current)              { setErr("Enter your current password."); return; }
+    if (newPass.length < 8)    { setErr("New password must be at least 8 characters."); return; }
+    if (newPass !== confirm)   { setErr("Passwords do not match."); return; }
+    if (newPass === current)   { setErr("New password must be different from current."); return; }
+    setBusy(true); setErr("");
+    // Re-authenticate to verify current password
+    const check = await sb.signIn(session.profile.email, current);
+    if (check.error) { setErr("Current password is incorrect."); setBusy(false); return; }
+    // Update password
+    const r = await sb.updatePassword(session.token, newPass);
+    if (r.error) { setErr(r.error.message || "Failed to update password."); setBusy(false); return; }
+    setSuccess(true); setBusy(false);
+  }
+
+  return (
+    <div>
+      <Topbar title="Change Password" onBack={onBack} />
+      <div style={{ padding:"1.25rem" }}>
+        {success ? (
+          <div style={{ textAlign:"center", padding:"2rem 1rem" }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>✓</div>
+            <p style={{ fontSize:16, fontWeight:600, color:B.text, marginBottom:8 }}>Password updated successfully</p>
+            <p style={{ fontSize:13, color:B.textSub, marginBottom:"1.5rem" }}>Your new password is active. Use it next time you sign in.</p>
+            <button onClick={onBack} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:13, fontWeight:600, cursor:"pointer" }}>Back to dashboard</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, borderRadius:10, padding:"10px 14px", marginBottom:"1.25rem" }}>
+              <p style={{ fontSize:12, color:B.textSub }}>Signed in as <strong style={{ color:B.text }}>{session.profile.email}</strong></p>
+            </div>
+            {err && <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"10px 12px", marginBottom:12, fontSize:13, color:B.danger }}>{err}</div>}
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <div>
+                <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Current password *</label>
+                <input type="password" value={current} onChange={e=>setCurrent(e.target.value)} placeholder="Enter current password" />
+              </div>
+              <div>
+                <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>New password * (min 8 characters)</label>
+                <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="Choose a strong password" />
+              </div>
+              <div>
+                <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Confirm new password *</label>
+                <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat new password" />
+              </div>
+            </div>
+            <button onClick={save} disabled={busy} style={{ marginTop:"1.5rem", width:"100%", background:busy?"#999":B.primary, color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:700, cursor:busy?"not-allowed":"pointer" }}>
+              {busy ? "Updating…" : "Update password"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Notifications ─────────────────────────────────────────────────
 function Notifs({ session, permits, onBack, onSelectPermit }) {
   const [read, setRead] = useState({});
@@ -648,140 +695,53 @@ function Notifs({ session, permits, onBack, onSelectPermit }) {
 
 // ── Admin ─────────────────────────────────────────────────────────
 function Admin({ session, onBack }) {
-  const [users, setUsers]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [inviteName, setInviteName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("requester");
-  const [invitePass, setInvitePass] = useState("Controlit@2024!");
-  const [busy, setBusy]         = useState(false);
-  const [result, setResult]     = useState(null);
-  const [err, setErr]           = useState("");
+  const [users, setUsers]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [inviteEmail, setIE]      = useState("");
+  const [inviteRole, setIR]       = useState("requester");
+  const [busy, setBusy]           = useState(false);
+  const [msg, setMsg]             = useState("");
 
-  const SERVICE_KEY = ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",".",
-    "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ",".",
-    "7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"].join("");
+  useEffect(()=>{
+    sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc").then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); });
+  },[]);
 
-  function loadUsers() {
-    setLoading(true);
-    sb.select(session.token, "profiles", "org_id=eq."+session.profile.org_id+"&order=full_name.asc")
-      .then(d => { if (Array.isArray(d)) setUsers(d); setLoading(false); });
-  }
-
-  useEffect(() => { loadUsers(); }, []);
-
-  async function sendInvite() {
-    if (!inviteName || !inviteEmail) { setErr("Name and email are required."); return; }
-    setBusy(true); setErr(""); setResult(null);
-    try {
-      const authRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SERVICE_KEY,
-          "Authorization": `Bearer ${SERVICE_KEY}`,
-        },
-        body: JSON.stringify({ email: inviteEmail, password: invitePass, email_confirm: true }),
-      });
-      const authUser = await authRes.json();
-      if (!authUser.id) {
-        setErr("Failed to create user: " + (authUser.message || authUser.msg || "Unknown error"));
-        setBusy(false); return;
-      }
-      await sb.insert(session.token, "profiles", {
-        id: authUser.id,
-        org_id: session.profile.org_id,
-        full_name: inviteName,
-        email: inviteEmail,
-        role: inviteRole,
-        active: true,
-      });
-      setResult({ name: inviteName, email: inviteEmail, pass: invitePass, role: inviteRole });
-      setInviteName(""); setInviteEmail(""); setInvitePass("Controlit@2024!"); setInviteRole("requester");
-      loadUsers();
-    } catch(e) { setErr("Error: " + e.message); }
-    setBusy(false);
+  async function invite() {
+    if (!inviteEmail) return;
+    setBusy(true);
+    await sb.insert(session.token,"org_invites",{ org_id:session.profile.org_id, email:inviteEmail, role:inviteRole });
+    setMsg("Invite recorded for "+inviteEmail+". Go to Supabase Auth → Invite user to send the email link, then add their profile via SQL.");
+    setIE(""); setBusy(false);
   }
 
   return (
     <div>
       <Topbar title="Admin Panel" onBack={onBack} />
       <div style={{ padding:"1.25rem" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-          <p style={{ fontSize:13, fontWeight:600, color:B.text }}>Team members ({users.length})</p>
-          <button onClick={() => { setShowForm(!showForm); setResult(null); setErr(""); }} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"8px 14px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-            {showForm ? "Cancel" : "+ Invite member"}
-          </button>
+        <p style={{ fontSize:13, fontWeight:600, color:B.text, marginBottom:"1rem" }}>Invite a team member</p>
+        {msg&&<div style={{ background:B.accentLight, border:`0.5px solid ${B.accent}`, borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:B.accentBorder }}>{msg}</div>}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+          <input value={inviteEmail} onChange={e=>setIE(e.target.value)} placeholder="Email address" />
+          <select value={inviteRole} onChange={e=>setIR(e.target.value)}>
+            {ROLES.map(r=><option key={r} value={r}>{r.replace("_"," ")}</option>)}
+          </select>
         </div>
+        <button onClick={invite} disabled={busy} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:12, fontWeight:600, cursor:"pointer", marginBottom:"1.5rem" }}>{busy?"Sending…":"Record invite"}</button>
 
-        {showForm && (
-          <div style={{ background:B.neutral, border:`0.5px solid ${B.neutralBorder}`, borderRadius:12, padding:"1rem 1.25rem", marginBottom:"1rem" }}>
-            <p style={{ fontSize:13, fontWeight:600, color:B.text, marginBottom:"1rem" }}>New team member</p>
-            {err && <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"8px 12px", marginBottom:10, fontSize:12, color:B.danger }}>{err}</div>}
-            {result && (
-              <div style={{ background:B.accentLight, border:`0.5px solid ${B.accent}`, borderRadius:10, padding:"1rem", marginBottom:"1rem" }}>
-                <p style={{ fontSize:12, fontWeight:700, color:B.accentBorder, marginBottom:8 }}>✓ {result.name} added successfully</p>
-                <p style={{ fontSize:11, color:B.textSub, marginBottom:8 }}>Share these login details:</p>
-                <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", fontSize:12, fontFamily:"monospace", color:B.text, lineHeight:2 }}>
-                  <div>URL: <span style={{ color:B.accentBorder }}>https://getcontrolit.com/app.html</span></div>
-                  <div>Email: <span style={{ color:B.accentBorder }}>{result.email}</span></div>
-                  <div>Password: <span style={{ color:B.accentBorder }}>{result.pass}</span></div>
-                  <div>Role: <span style={{ color:B.accentBorder, textTransform:"capitalize" }}>{result.role.replace("_"," ")}</span></div>
-                </div>
-                <button onClick={() => setResult(null)} style={{ marginTop:10, background:"transparent", border:`0.5px solid ${B.neutralBorder}`, borderRadius:6, padding:"6px 12px", fontSize:12, cursor:"pointer", color:B.textSub }}>Invite another</button>
-              </div>
-            )}
-            {!result && (
-              <>
-                <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
-                  <div>
-                    <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Full name *</label>
-                    <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="e.g. John Adeyemi" />
-                  </div>
-                  <div>
-                    <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Email address *</label>
-                    <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="john@company.com" type="email" />
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                    <div>
-                      <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Role *</label>
-                      <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-                        {ROLES.map(r => <option key={r} value={r}>{r.replace("_"," ")}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Temp password</label>
-                      <input value={invitePass} onChange={e => setInvitePass(e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-                <button onClick={sendInvite} disabled={busy} style={{ width:"100%", background:busy?"#999":B.accent, color:"#fff", border:"none", borderRadius:8, padding:"10px", fontSize:13, fontWeight:600, cursor:busy?"not-allowed":"pointer" }}>
-                  {busy ? "Creating account…" : "Create account & invite"}
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {loading && <Spinner />}
+        <p style={{ fontSize:13, fontWeight:600, color:B.text, marginBottom:10 }}>Team members ({users.length})</p>
+        {loading&&<Spinner />}
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {!loading && users.length === 0 && <p style={{ fontSize:13, color:B.textSub }}>No team members yet.</p>}
-          {users.map(u => (
+          {users.map(u=>(
             <div key={u.id} style={{ background:"#fff", border:`0.5px solid ${B.neutralBorder}`, borderRadius:10, padding:"12px 14px", opacity:u.active?1:0.55 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-                  <div style={{ width:34, height:34, borderRadius:"50%", background:B.accentLight, border:`0.5px solid ${B.accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:B.accentBorder, flexShrink:0 }}>
-                    {u.full_name.split(" ").map(n => n[0]).join("").slice(0,2)}
-                  </div>
+                  <div style={{ width:34, height:34, borderRadius:"50%", background:B.accentLight, border:`0.5px solid ${B.accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:B.accentBorder, flexShrink:0 }}>{u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}</div>
                   <div>
                     <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{u.full_name}</p>
                     <p style={{ fontSize:11, color:B.textSub }}>{u.email} · <span style={{ textTransform:"capitalize" }}>{(u.role||"").replace("_"," ")}</span></p>
                   </div>
                 </div>
-                <span style={{ background:u.active?B.accentLight:B.neutral, color:u.active?B.accentBorder:B.textSub, border:`0.5px solid ${u.active?B.accent:B.neutralBorder}`, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:600 }}>
-                  {u.active ? "Active" : "Inactive"}
-                </span>
+                <span style={{ background:u.active?B.accentLight:B.neutral, color:u.active?B.accentBorder:B.textSub, border:`0.5px solid ${u.active?B.accent:B.neutralBorder}`, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:600 }}>{u.active?"Active":"Inactive"}</span>
               </div>
             </div>
           ))}
@@ -833,11 +793,12 @@ function App() {
 
   return (
     <div>
-      {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={selectPermit} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onLogout={logout} />}
+      {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={selectPermit} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onChangePass={()=>setScreen("changepass")} onLogout={logout} />}
       {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{ fetchPermits(); setScreen("dashboard"); }} onRefresh={fetchPermits} />}
       {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{ fetchPermits(); setScreen("dashboard"); }} />}
       {screen==="notifs"&&<Notifs session={session} permits={permits} onBack={()=>setScreen("dashboard")} onSelectPermit={selectPermit} />}
       {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")} />}
+      {screen==="changepass"&&<ChangePassword session={session} onBack={()=>setScreen("dashboard")} />}
       {screen==="workflow"&&(
         <div>
           <Topbar title="Permit Workflow" onBack={()=>setScreen("dashboard")} />
@@ -862,4 +823,3 @@ ReactDOM.render(<App />, document.getElementById("root"));
 </script>
 </body>
 </html>
-
