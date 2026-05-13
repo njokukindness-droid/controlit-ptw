@@ -383,8 +383,8 @@ function OwnerDashboard({ token, onLogout }) {
       setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
     }
   }
- async function deleteOrg(org) {
-    if (!window.confirm(`Permanently delete "${org.name}" and all its data? This cannot be undone.`)) return;
+  async function deleteOrg(org) {
+    if (!window.confirm(`Permanently delete "${org.name}"? This cannot be undone.`)) return;
     const orgUsers = users.filter(u => u.org_id === org.id);
     for (const u of orgUsers) {
       await sb.deleteUser(u.id);
@@ -394,7 +394,6 @@ function OwnerDashboard({ token, onLogout }) {
     await sb.delete(token, "permit_audit", `org_id=eq.${org.id}`);
     await sb.delete(token, "org_invites", `org_id=eq.${org.id}`);
     await sb.delete(token, "organisations", `id=eq.${org.id}`);
-    // Update state immediately without waiting for reload
     setOrgs(prev => prev.filter(o => o.id !== org.id));
     setUsers(prev => prev.filter(u => u.org_id !== org.id));
     setPermits(prev => prev.filter(p => p.org_id !== org.id));
