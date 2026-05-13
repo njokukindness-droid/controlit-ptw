@@ -12,111 +12,83 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0F1F2E; color: #E8EDF2; }
     input, select, textarea { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 0.5px solid #2A3F55; border-radius: 8px; width: 100%; background: #1A2E42; color: #E8EDF2; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: #0E9E6E; }
+    input:focus, select:focus { border-color: #0E9E6E; }
     input::placeholder { color: #4A6070; }
     button { font-family: inherit; }
     #root { max-width: 900px; margin: 0 auto; min-height: 100vh; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #2A3F55; border-radius: 4px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 
-// ── Credentials ───────────────────────────────────────────────────
 const SUPABASE_URL      = "https://sguptjhsfyygwazmxfpk.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
-const SUPABASE_SECRET = (function(){
-  var a = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-  var b = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ";
-  var c = "7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k";
-  var d = ".";
-  return a+d+b+d+c;
-})();
-// ── CHANGE THIS to your own secret owner password ─────────────────
-const OWNER_PASSWORD = "Controlit@CEOKind!";
-// ── CHANGE THIS to your own email ────────────────────────────────
-const OWNER_EMAIL    = "kindnessnjoku@outlook.com";
+const SUPABASE_SECRET   = (function(){ var a="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"; var b="eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ"; var c="7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"; return a+"."+b+"."+c; })();
+const OWNER_PASSWORD    = "Controlit@CEOKind!";
+const OWNER_EMAIL       = "kindnessnjoku@outlook.com";
 const OWNER_SUPABASE_PASS = "YourChosenPassword123!";
 
-// ── Supabase helpers ──────────────────────────────────────────────
-const sb = {
-  h: (t) => ({
-    "Content-Type": "application/json",
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${t || SUPABASE_ANON_KEY}`,
-    "Prefer": "return=representation",
-  }),
-  async signIn(email, password) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-      body: JSON.stringify({ email, password }),
-    });
-    return r.json();
-  },
-  async signOut(t) {
-    await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: sb.h(t) });
-  },
-  async select(t, table, q) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q || ""}`, { headers: sb.h(t) });
-    return r.json();
-  },
-  async insert(t, table, data) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: "POST", headers: sb.h(t), body: JSON.stringify(data),
-    });
-    return r.json();
-  },
-  async inviteUser(email, password) {
-    // Create auth user directly using secret key
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_SECRET,
-        "Authorization": `Bearer ${SUPABASE_SECRET}`,
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        email_confirm: true, // auto-confirm so they can log in immediately
-      }),
-    });
-    return r.json();
-  },
-};
-
-// ── Brand ─────────────────────────────────────────────────────────
 const B = {
-  primary: "#1A3A5C", accent: "#0E9E6E", accentLight: "rgba(14,158,110,0.15)",
-  warn: "#D97B00", warnLight: "rgba(217,123,0,0.15)",
-  danger: "#C0392B", dangerLight: "rgba(192,57,43,0.15)",
-  card: "#152535", border: "#1E3448", text: "#E8EDF2", textSub: "#7A9AB0",
-  green: "#0E9E6E", navy: "#0F1F2E",
+  primary:"#1A3A5C", accent:"#0E9E6E", accentLight:"rgba(14,158,110,0.15)",
+  accentBorder:"#0B7A55", warn:"#D97B00", warnLight:"rgba(217,123,0,0.15)",
+  danger:"#C0392B", dangerLight:"rgba(192,57,43,0.15)",
+  card:"#152535", border:"#1E3448", text:"#E8EDF2", textSub:"#7A9AB0", navy:"#0F1F2E",
 };
 
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect } = React;
 
-// ── Helpers ───────────────────────────────────────────────────────
-function slugify(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-function nowStr() { return new Date().toISOString(); }
+function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
 
-// ── Components ────────────────────────────────────────────────────
+const sb = {
+  h: function(t) {
+    return { "Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY, "Authorization":"Bearer "+(t||SUPABASE_ANON_KEY), "Prefer":"return=representation" };
+  },
+  signIn: async function(email, password) {
+    var r = await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password", { method:"POST", headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY}, body:JSON.stringify({email,password}) });
+    return r.json();
+  },
+  signOut: async function(t) {
+    await fetch(SUPABASE_URL+"/auth/v1/logout", { method:"POST", headers:sb.h(t) });
+  },
+  select: async function(t, table, q) {
+    var r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+(q||""), { headers:sb.h(t) });
+    return r.json();
+  },
+  insert: async function(t, table, data) {
+    var r = await fetch(SUPABASE_URL+"/rest/v1/"+table, { method:"POST", headers:sb.h(t), body:JSON.stringify(data) });
+    return r.json();
+  },
+  update: async function(t, table, match, data) {
+    var r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+match, { method:"PATCH", headers:sb.h(t), body:JSON.stringify(data) });
+    return r.json();
+  },
+  del: async function(t, table, match) {
+    var r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+match, { method:"DELETE", headers:sb.h(t) });
+    return r.ok;
+  },
+  createUser: async function(email, password) {
+    var r = await fetch(SUPABASE_URL+"/auth/v1/admin/users", { method:"POST", headers:{"Content-Type":"application/json","apikey":SUPABASE_SECRET,"Authorization":"Bearer "+SUPABASE_SECRET}, body:JSON.stringify({email,password,email_confirm:true}) });
+    return r.json();
+  },
+  deleteUser: async function(userId) {
+    var r = await fetch(SUPABASE_URL+"/auth/v1/admin/users/"+userId, { method:"DELETE", headers:{"Content-Type":"application/json","apikey":SUPABASE_SECRET,"Authorization":"Bearer "+SUPABASE_SECRET} });
+    return r.ok;
+  },
+};
+
 function Logo() {
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+    <div style={{display:"flex",alignItems:"center",gap:10}}>
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill={B.accent} />
-        <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.35" />
+        <rect width="32" height="32" rx="8" fill={B.accent}/>
+        <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.35"/>
       </svg>
       <div>
-        <div style={{ fontWeight:800, fontSize:18, letterSpacing:"0.05em", color:B.text }}>CONTROLIT</div>
-        <div style={{ fontSize:10, color:B.textSub, letterSpacing:"0.08em" }}>PLATFORM OWNER</div>
+        <div style={{fontWeight:800,fontSize:18,letterSpacing:"0.05em",color:B.text}}>CONTROLIT</div>
+        <div style={{fontSize:10,color:B.textSub,letterSpacing:"0.08em"}}>PLATFORM OWNER</div>
       </div>
     </div>
   );
@@ -124,204 +96,166 @@ function Logo() {
 
 function Spinner() {
   return (
-    <div style={{ display:"flex", justifyContent:"center", padding:"3rem" }}>
-      <div style={{ width:32, height:32, border:`3px solid ${B.border}`, borderTop:`3px solid ${B.accent}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{display:"flex",justifyContent:"center",padding:"3rem"}}>
+      <div style={{width:32,height:32,border:"3px solid "+B.border,borderTop:"3px solid "+B.accent,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
     </div>
   );
 }
 
-function StatCard({ label, value, color, sub }) {
+function StatCard({label,value,color,sub}) {
   return (
-    <div style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:12, padding:"1.25rem", borderTop:`3px solid ${color||B.accent}` }}>
-      <p style={{ fontSize:12, color:B.textSub, marginBottom:6 }}>{label}</p>
-      <p style={{ fontSize:28, fontWeight:700, color:color||B.accent }}>{value}</p>
-      {sub && <p style={{ fontSize:11, color:B.textSub, marginTop:4 }}>{sub}</p>}
+    <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:12,padding:"1.25rem",borderTop:"3px solid "+(color||B.accent)}}>
+      <p style={{fontSize:12,color:B.textSub,marginBottom:6}}>{label}</p>
+      <p style={{fontSize:28,fontWeight:700,color:color||B.accent}}>{value}</p>
+      {sub&&<p style={{fontSize:11,color:B.textSub,marginTop:4}}>{sub}</p>}
     </div>
   );
 }
 
-// ── Gate Screen ───────────────────────────────────────────────────
-function GateScreen({ onUnlock }) {
-  const [pass, setPass] = useState("");
-  const [show, setShow] = useState(false);
-  const [err, setErr]   = useState("");
+function GateScreen({onUnlock}) {
+  var [pass,setPass] = useState("");
+  var [show,setShow] = useState(false);
+  var [err,setErr]   = useState("");
 
   function check() {
-    if (pass === OWNER_PASSWORD) onUnlock();
+    if (pass===OWNER_PASSWORD) onUnlock();
     else setErr("Incorrect owner password.");
   }
 
   return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
-      <div style={{ width:"100%", maxWidth:380, textAlign:"center" }}>
-        <svg width="52" height="52" viewBox="0 0 32 32" fill="none" style={{ marginBottom:16 }}>
-          <rect width="32" height="32" rx="8" fill={B.accent} />
-          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.35" />
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"}}>
+      <div style={{width:"100%",maxWidth:380,textAlign:"center"}}>
+        <svg width="52" height="52" viewBox="0 0 32 32" fill="none" style={{marginBottom:16}}>
+          <rect width="32" height="32" rx="8" fill={B.accent}/>
+          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.35"/>
         </svg>
-        <div style={{ fontWeight:800, fontSize:22, letterSpacing:"0.05em", color:B.text, marginBottom:4 }}>CONTROLIT</div>
-        <div style={{ fontSize:12, color:B.textSub, marginBottom:"2rem", letterSpacing:"0.06em" }}>PLATFORM OWNER ACCESS</div>
-        <div style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:14, padding:"1.5rem" }}>
-          {err && <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:B.danger }}>{err}</div>}
-          <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:6, textAlign:"left" }}>Owner password</label>
-          <div style={{ position:"relative", marginBottom:12 }}>
-            <input type={show?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&check()} placeholder="Enter owner password" style={{ paddingRight:40 }} />
-            <button onClick={()=>setShow(!show)} style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:B.textSub, fontSize:16, lineHeight:1, padding:0 }}>
-              {show ? "🙈" : "👁"}
+        <div style={{fontWeight:800,fontSize:22,letterSpacing:"0.05em",color:B.text,marginBottom:4}}>CONTROLIT</div>
+        <div style={{fontSize:12,color:B.textSub,marginBottom:"2rem",letterSpacing:"0.06em"}}>PLATFORM OWNER ACCESS</div>
+        <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:14,padding:"1.5rem"}}>
+          {err&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:B.danger}}>{err}</div>}
+          <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:6,textAlign:"left"}}>Owner password</label>
+          <div style={{position:"relative",marginBottom:12}}>
+            <input type={show?"text":"password"} value={pass} onChange={function(e){setPass(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")check();}} placeholder="Enter owner password" style={{paddingRight:40}}/>
+            <button onClick={function(){setShow(!show);}} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:B.textSub,fontSize:16,lineHeight:1,padding:0}}>
+              {show?"🙈":"👁"}
             </button>
           </div>
-          <button onClick={check} style={{ width:"100%", background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          <button onClick={check} style={{width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>
             Access owner dashboard
           </button>
         </div>
-        <p style={{ fontSize:11, color:"#2A3F55", marginTop:"1rem" }}>This page is not indexed or publicly linked.</p>
+        <p style={{fontSize:11,color:"#2A3F55",marginTop:"1rem"}}>This page is not indexed or publicly linked.</p>
       </div>
     </div>
   );
 }
 
-// ── Onboard Modal ─────────────────────────────────────────────────
-function OnboardModal({ token, onClose, onSuccess }) {
-  const [step, setStep]         = useState(1);
-  const [orgName, setOrgName]   = useState("");
-  const [industry, setIndustry] = useState("Oil & Gas");
-  const [country, setCountry]   = useState("UAE");
-  const [adminName, setAdminName] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [tempPass, setTempPass] = useState("Controlit@2024!");
-  const [busy, setBusy]         = useState(false);
-  const [err, setErr]           = useState("");
-  const [result, setResult]     = useState(null);
+function OnboardModal({token,onClose,onSuccess}) {
+  var [step,setStep]           = useState(1);
+  var [orgName,setOrgName]     = useState("");
+  var [industry,setIndustry]   = useState("Oil & Gas");
+  var [country,setCountry]     = useState("UAE");
+  var [adminName,setAdminName] = useState("");
+  var [adminEmail,setAdminEmail] = useState("");
+  var [tempPass,setTempPass]   = useState("Controlit@2024!");
+  var [busy,setBusy]           = useState(false);
+  var [err,setErr]             = useState("");
+  var [result,setResult]       = useState(null);
 
   async function onboard() {
     if (!orgName||!adminName||!adminEmail||!tempPass) { setErr("All fields are required."); return; }
     setBusy(true); setErr("");
     try {
-      // 1. Create organisation
-      const orgs = await sb.insert(token, "organisations", {
-        name: orgName, slug: slugify(orgName), industry, country, active: true,
-      });
-      if (!orgs || !orgs[0]) { setErr("Failed to create organisation."); setBusy(false); return; }
-      const org = orgs[0];
-
-      // 2. Create auth user automatically — no Supabase dashboard needed
-      const authUser = await sb.inviteUser(adminEmail, tempPass);
-      if (!authUser || authUser.error || !authUser.id) {
-        setErr("Failed to create auth user: " + (authUser?.error?.message || authUser?.msg || "Unknown error"));
-        setBusy(false); return;
-      }
-      const userId = authUser.id;
-
-      // 3. Create admin profile automatically
-      await sb.insert(token, "profiles", {
-        id: userId,
-        org_id: org.id,
-        full_name: adminName,
-        email: adminEmail,
-        role: "admin",
-        active: true,
-      });
-
-      // 4. Done — show success with login details
-      setResult({ org, orgName, adminName, adminEmail, tempPass, userId, fullyAutomated: true });
+      var orgs = await sb.insert(token,"organisations",{name:orgName,slug:slugify(orgName),industry,country,active:true});
+      if (!orgs||!orgs[0]) { setErr("Failed to create organisation."); setBusy(false); return; }
+      var org = orgs[0];
+      var authUser = await sb.createUser(adminEmail,tempPass);
+      if (!authUser||!authUser.id) { setErr("Failed to create auth user: "+(authUser&&authUser.message?authUser.message:"Unknown error")); setBusy(false); return; }
+      await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+      setResult({org,orgName,adminName,adminEmail,tempPass});
       setStep(2);
-    } catch(e) { setErr("Error during onboarding: " + e.message); }
+      onSuccess();
+    } catch(e) { setErr("Error: "+e.message); }
     setBusy(false);
   }
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100, padding:"1rem" }}>
-      <div style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:16, width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
-
-        {/* Header */}
-        <div style={{ background:"#0F2A3E", borderRadius:"16px 16px 0 0", padding:"1rem 1.25rem", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`0.5px solid ${B.border}` }}>
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem",overflowY:"auto"}}>
+      <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{background:"#0F2A3E",borderRadius:"16px 16px 0 0",padding:"1rem 1.25rem",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"0.5px solid "+B.border}}>
           <div>
-            <p style={{ fontSize:14, fontWeight:700, color:B.text }}>Onboard new client</p>
-            <p style={{ fontSize:11, color:B.textSub }}>Step {step} of 2</p>
+            <p style={{fontSize:14,fontWeight:700,color:B.text}}>Onboard new client</p>
+            <p style={{fontSize:11,color:B.textSub}}>Step {step} of 2</p>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:B.textSub, cursor:"pointer", fontSize:20 }}>×</button>
+          <button onClick={onClose} style={{background:"none",border:"none",color:B.textSub,cursor:"pointer",fontSize:20}}>×</button>
         </div>
-
-        <div style={{ padding:"1.25rem" }}>
-          {step === 1 && (
+        <div style={{padding:"1.25rem"}}>
+          {step===1&&(
             <>
-              <p style={{ fontSize:12, color:B.textSub, marginBottom:"1.25rem" }}>Fill in the new client organisation and their admin details. CONTROLIT will register the organisation and prepare the admin account.</p>
-              {err && <div style={{ background:B.dangerLight, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:B.danger }}>{err}</div>}
-
-              <p style={{ fontSize:12, fontWeight:600, color:B.accent, marginBottom:10, letterSpacing:"0.04em" }}>ORGANISATION DETAILS</p>
-              <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:"1.25rem" }}>
+              <p style={{fontSize:12,color:B.textSub,marginBottom:"1.25rem"}}>Fill in the client organisation and admin details. Everything will be created automatically.</p>
+              {err&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:B.danger}}>{err}</div>}
+              <p style={{fontSize:12,fontWeight:600,color:B.accent,marginBottom:10,letterSpacing:"0.04em"}}>ORGANISATION DETAILS</p>
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:"1.25rem"}}>
                 <div>
-                  <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Company / organisation name *</label>
-                  <input value={orgName} onChange={e=>setOrgName(e.target.value)} placeholder="e.g. XYZ Petroleum Ltd" />
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Company name *</label>
+                  <input value={orgName} onChange={function(e){setOrgName(e.target.value);}} placeholder="e.g. XYZ Petroleum Ltd"/>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
-                    <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Industry *</label>
-                    <select value={industry} onChange={e=>setIndustry(e.target.value)}>
-                      {["Oil & Gas","Construction","Energy","Mining","Petrochemical","Manufacturing","Marine","Aviation","Utilities","Other"].map(i=><option key={i}>{i}</option>)}
+                    <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Industry *</label>
+                    <select value={industry} onChange={function(e){setIndustry(e.target.value);}}>
+                      {["Oil & Gas","Construction","Energy","Mining","Petrochemical","Manufacturing","Marine","Aviation","Utilities","Other"].map(function(i){return <option key={i}>{i}</option>;})}
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Country *</label>
-                    <select value={country} onChange={e=>setCountry(e.target.value)}>
-                      {["UAE","Saudi Arabia","Qatar","Kuwait","Bahrain","Oman","Nigeria","Ghana","UK","USA","Australia","Other"].map(c=><option key={c}>{c}</option>)}
+                    <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Country *</label>
+                    <select value={country} onChange={function(e){setCountry(e.target.value);}}>
+                      {["UAE","Saudi Arabia","Qatar","Kuwait","Bahrain","Oman","Nigeria","Ghana","UK","USA","Australia","Other"].map(function(c){return <option key={c}>{c}</option>;})}
                     </select>
                   </div>
                 </div>
               </div>
-
-              <p style={{ fontSize:12, fontWeight:600, color:B.accent, marginBottom:10, letterSpacing:"0.04em" }}>ADMIN ACCOUNT</p>
-              <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:"1.25rem" }}>
+              <p style={{fontSize:12,fontWeight:600,color:B.accent,marginBottom:10,letterSpacing:"0.04em"}}>ADMIN ACCOUNT</p>
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:"1.25rem"}}>
                 <div>
-                  <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Admin full name *</label>
-                  <input value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="e.g. John Adeyemi" />
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Admin full name *</label>
+                  <input value={adminName} onChange={function(e){setAdminName(e.target.value);}} placeholder="e.g. John Adeyemi"/>
                 </div>
                 <div>
-                  <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Admin email address *</label>
-                  <input value={adminEmail} onChange={e=>setAdminEmail(e.target.value)} placeholder="admin@client.com" type="email" />
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Admin email *</label>
+                  <input value={adminEmail} onChange={function(e){setAdminEmail(e.target.value);}} placeholder="admin@client.com" type="email"/>
                 </div>
                 <div>
-                  <label style={{ fontSize:11, color:B.textSub, display:"block", marginBottom:4 }}>Temporary password (share with admin)</label>
-                  <input value={tempPass} onChange={e=>setTempPass(e.target.value)} />
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Temporary password</label>
+                  <input value={tempPass} onChange={function(e){setTempPass(e.target.value);}}/>
                 </div>
               </div>
-
-              <button onClick={onboard} disabled={busy} style={{ width:"100%", background:busy?"#2A3F55":B.accent, color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:700, cursor:busy?"not-allowed":"pointer" }}>
-                {busy ? "Registering organisation…" : "Register organisation & continue"}
+              <button onClick={onboard} disabled={busy} style={{width:"100%",background:busy?"#2A3F55":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
+                {busy?"Registering…":"Register organisation & continue"}
               </button>
             </>
           )}
-
-          {step === 2 && result && (
+          {step===2&&result&&(
             <>
-              <div style={{ background:"rgba(14,158,110,0.12)", border:`0.5px solid ${B.accent}`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
-                <p style={{ fontSize:13, fontWeight:700, color:B.accent, marginBottom:4 }}>✓ Client onboarded successfully — fully automated</p>
-                <p style={{ fontSize:12, color:B.textSub }}><strong style={{ color:B.text }}>{result.orgName}</strong> is live on CONTROLIT. Organisation, auth user, and admin profile all created automatically.</p>
+              <div style={{background:"rgba(14,158,110,0.12)",border:"0.5px solid "+B.accent,borderRadius:10,padding:"1rem",marginBottom:"1.25rem"}}>
+                <p style={{fontSize:13,fontWeight:700,color:B.accent,marginBottom:4}}>✓ Client onboarded successfully — fully automated</p>
+                <p style={{fontSize:12,color:B.textSub}}><strong style={{color:B.text}}>{result.orgName}</strong> is live on CONTROLIT.</p>
               </div>
-
-              <p style={{ fontSize:12, fontWeight:600, color:B.accent, marginBottom:10, letterSpacing:"0.04em" }}>SHARE THESE LOGIN DETAILS WITH THE ADMIN</p>
-
-              <div style={{ background:"#0F2A3E", border:`0.5px solid ${B.border}`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
-                <p style={{ fontSize:12, fontWeight:600, color:B.text, marginBottom:8 }}>Admin login credentials</p>
-                <div style={{ background:"#0A1E2E", borderRadius:8, padding:"10px 12px", fontSize:12, fontFamily:"monospace", color:B.accent, lineHeight:2 }}>
-                  <div>URL: <span style={{ color:B.text }}>https://njokukindness-droid.github.io/controlit-ptw</span></div>
-                  <div>Email: <span style={{ color:B.text }}>{result.adminEmail}</span></div>
-                  <div>Password: <span style={{ color:B.text }}>{result.tempPass}</span></div>
-                  <div>Organisation: <span style={{ color:B.text }}>{result.orgName}</span></div>
-                  <div>Role: <span style={{ color:B.text }}>Admin</span></div>
+              <p style={{fontSize:12,fontWeight:600,color:B.accent,marginBottom:10,letterSpacing:"0.04em"}}>SHARE THESE LOGIN DETAILS WITH THE ADMIN</p>
+              <div style={{background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:10,padding:"1rem",marginBottom:"1.25rem"}}>
+                <div style={{background:"#0A1E2E",borderRadius:8,padding:"10px 12px",fontSize:12,fontFamily:"monospace",color:B.accent,lineHeight:2}}>
+                  <div>URL: <span style={{color:B.text}}>https://getcontrolit.com/app.html</span></div>
+                  <div>Email: <span style={{color:B.text}}>{result.adminEmail}</span></div>
+                  <div>Password: <span style={{color:B.text}}>{result.tempPass}</span></div>
+                  <div>Organisation: <span style={{color:B.text}}>{result.orgName}</span></div>
+                  <div>Role: <span style={{color:B.text}}>Admin</span></div>
                 </div>
               </div>
-
-              <div style={{ background:"rgba(14,158,110,0.08)", border:`0.5px solid rgba(14,158,110,0.2)`, borderRadius:10, padding:"1rem", marginBottom:"1.25rem" }}>
-                <p style={{ fontSize:12, color:B.textSub, lineHeight:1.6 }}>
-                  The admin can log in immediately with these credentials. They should change their password after first login. From the Admin panel inside CONTROLIT, they can invite their own team members independently.
-                </p>
+              <div style={{background:"rgba(14,158,110,0.08)",border:"0.5px solid rgba(14,158,110,0.2)",borderRadius:10,padding:"1rem",marginBottom:"1.25rem"}}>
+                <p style={{fontSize:12,color:B.textSub,lineHeight:1.6}}>The admin can log in immediately and invite their own team from the Admin panel.</p>
               </div>
-
-              <div style={{ display:"flex", gap:8 }}>
-                <button onClick={()=>{ onSuccess(); onClose(); }} style={{ flex:1, background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:13, fontWeight:700, cursor:"pointer" }}>Done — close</button>
-              </div>
+              <button onClick={onClose} style={{width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Done — close</button>
             </>
           )}
         </div>
@@ -330,120 +264,116 @@ function OnboardModal({ token, onClose, onSuccess }) {
   );
 }
 
-// ── Main Dashboard ────────────────────────────────────────────────
-function OwnerDashboard({ token, onLogout }) {
-  const [orgs, setOrgs]         = useState([]);
-  const [users, setUsers]       = useState([]);
-  const [permits, setPermits]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState("orgs");
-  const [showOnboard, setShowOnboard] = useState(false);
+function OwnerDashboard({token,onLogout}) {
+  var [orgs,setOrgs]       = useState([]);
+  var [users,setUsers]     = useState([]);
+  var [permits,setPermits] = useState([]);
+  var [loading,setLoading] = useState(true);
+  var [tab,setTab]         = useState("orgs");
+  var [showOnboard,setShowOnboard] = useState(false);
 
   async function load() {
     setLoading(true);
-    const [o, u, p] = await Promise.all([
-      sb.select(token, "organisations", "order=created_at.desc"),
-      sb.select(token, "profiles", "order=full_name.asc"),
-      sb.select(token, "permits", "order=created_at.desc"),
+    var results = await Promise.all([
+      sb.select(token,"organisations","order=created_at.desc"),
+      sb.select(token,"profiles","order=full_name.asc"),
+      sb.select(token,"permits","order=created_at.desc"),
     ]);
-    if (Array.isArray(o)) setOrgs(o);
-    if (Array.isArray(u)) setUsers(u);
-    if (Array.isArray(p)) setPermits(p);
+    if (Array.isArray(results[0])) setOrgs(results[0]);
+    if (Array.isArray(results[1])) setUsers(results[1]);
+    if (Array.isArray(results[2])) setPermits(results[2]);
     setLoading(false);
   }
 
+  useEffect(function(){load();},[] );
+
   async function toggleSuspend(org) {
-    const newActive = !org.active;
-    await sb.update(token, "organisations", `id=eq.${org.id}`, { active: newActive });
-    setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
+    var newActive = !org.active;
+    await sb.update(token,"organisations","id=eq."+org.id,{active:newActive});
+    setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,{active:newActive}):o;});});
   }
 
   async function deleteOrg(org) {
-    if (!window.confirm(`Permanently delete "${org.name}" and all its data? This cannot be undone.`)) return;
-    // Delete profiles first
-    const orgUsers = users.filter(u => u.org_id === org.id);
-    for (const u of orgUsers) {
-      await sb.deleteUser(u.id);
-      await sb.delete(token, "profiles", `id=eq.${u.id}`);
+    if (!window.confirm('Permanently delete "'+org.name+'" and all its data? This cannot be undone.')) return;
+    var orgUsers = users.filter(function(u){return u.org_id===org.id;});
+    for (var i=0;i<orgUsers.length;i++) {
+      await sb.deleteUser(orgUsers[i].id);
+      await sb.del(token,"profiles","id=eq."+orgUsers[i].id);
     }
-    await sb.delete(token, "permits", `org_id=eq.${org.id}`);
-    await sb.delete(token, "permit_audit", `org_id=eq.${org.id}`);
-    await sb.delete(token, "org_invites", `org_id=eq.${org.id}`);
-    await sb.delete(token, "organisations", `id=eq.${org.id}`);
-    load();
+    await sb.del(token,"permits","org_id=eq."+org.id);
+    await sb.del(token,"permit_audit","org_id=eq."+org.id);
+    await sb.del(token,"org_invites","org_id=eq."+org.id);
+    await sb.del(token,"organisations","id=eq."+org.id);
+    setOrgs(function(prev){return prev.filter(function(o){return o.id!==org.id;});});
+    setUsers(function(prev){return prev.filter(function(u){return u.org_id!==org.id;});});
+    setPermits(function(prev){return prev.filter(function(p){return p.org_id!==org.id;});});
   }
 
-  useEffect(()=>{ load(); },[]);
-
-  const activeOrgs    = orgs.filter(o=>o.active).length;
-  const activeUsers   = users.filter(u=>u.active).length;
-  const activePermits = permits.filter(p=>p.status==="active").length;
-  const pendingPermits = permits.filter(p=>p.status==="pending").length;
-
-  const STATUS_COLORS = { active:"#0E9E6E", pending:"#D97B00", revoked:"#C0392B", closed:"#4A6070", rejected:"#C0392B", extension_pending:"#7F77DD" };
+  var activeOrgs    = orgs.filter(function(o){return o.active;}).length;
+  var activeUsers   = users.filter(function(u){return u.active;}).length;
+  var activePermits = permits.filter(function(p){return p.status==="active";}).length;
+  var pendingPermits= permits.filter(function(p){return p.status==="pending";}).length;
+  var STATUS_COLORS = {active:"#0E9E6E",pending:"#D97B00",revoked:"#C0392B",closed:"#4A6070",rejected:"#C0392B",extension_pending:"#7F77DD"};
 
   return (
-    <div style={{ minHeight:"100vh", padding:"1.5rem" }}>
-      {showOnboard && <OnboardModal token={token} onClose={()=>setShowOnboard(false)} onSuccess={load} />}
-
-      {/* Top bar */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
-        <Logo />
-        <div style={{ display:"flex", gap:8 }}>
-          <button onClick={()=>setShowOnboard(true)} style={{ background:B.accent, color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:12, fontWeight:700, cursor:"pointer" }}>+ Onboard new client</button>
-          <button onClick={onLogout} style={{ background:"transparent", border:`0.5px solid ${B.border}`, color:B.textSub, borderRadius:8, padding:"9px 14px", fontSize:12, cursor:"pointer" }}>Sign out</button>
+    <div style={{minHeight:"100vh",padding:"1.5rem"}}>
+      {showOnboard&&<OnboardModal token={token} onClose={function(){setShowOnboard(false);}} onSuccess={load}/>}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.5rem"}}>
+        <Logo/>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={function(){setShowOnboard(true);}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Onboard new client</button>
+          <button onClick={onLogout} style={{background:"transparent",border:"0.5px solid "+B.border,color:B.textSub,borderRadius:8,padding:"9px 14px",fontSize:12,cursor:"pointer"}}>Sign out</button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:"1.5rem" }}>
-        <StatCard label="Organisations" value={activeOrgs} color={B.accent} sub={orgs.length+" total registered"} />
-        <StatCard label="Active users" value={activeUsers} color="#185FA5" sub={users.length+" total profiles"} />
-        <StatCard label="Active permits" value={activePermits} color={B.warn} sub={permits.length+" total permits"} />
-        <StatCard label="Pending approval" value={pendingPermits} color={B.danger} sub="across all orgs" />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:"1.5rem"}}>
+        <StatCard label="Organisations" value={activeOrgs} color={B.accent} sub={orgs.length+" total"}/>
+        <StatCard label="Active users" value={activeUsers} color="#185FA5" sub={users.length+" total profiles"}/>
+        <StatCard label="Active permits" value={activePermits} color={B.warn} sub={permits.length+" total permits"}/>
+        <StatCard label="Pending approval" value={pendingPermits} color={B.danger} sub="across all orgs"/>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display:"flex", gap:6, marginBottom:"1rem" }}>
-        {["orgs","users","permits"].map(t=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ border:`0.5px solid ${tab===t?B.accent:B.border}`, background:tab===t?"rgba(14,158,110,0.15)":"transparent", color:tab===t?B.accent:B.textSub, borderRadius:20, padding:"5px 16px", fontSize:12, cursor:"pointer", textTransform:"capitalize" }}>{t==="orgs"?"Organisations":t}</button>
-        ))}
+      <div style={{display:"flex",gap:6,marginBottom:"1rem"}}>
+        {["orgs","users","permits"].map(function(t){
+          return <button key={t} onClick={function(){setTab(t);}} style={{border:"0.5px solid "+(tab===t?B.accent:B.border),background:tab===t?"rgba(14,158,110,0.15)":"transparent",color:tab===t?B.accent:B.textSub,borderRadius:20,padding:"5px 16px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{t==="orgs"?"Organisations":t}</button>;
+        })}
       </div>
 
-      {loading && <Spinner />}
+      {loading&&<Spinner/>}
 
-      {/* Organisations tab */}
-      {!loading && tab==="orgs" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {orgs.length===0 && <p style={{ color:B.textSub, fontSize:13 }}>No organisations yet. Onboard your first client.</p>}
-          {orgs.map(o=>{
-            const orgUsers   = users.filter(u=>u.org_id===o.id);
-            const orgPermits = permits.filter(p=>p.org_id===o.id);
-            const admin      = orgUsers.find(u=>u.role==="admin");
+      {!loading&&tab==="orgs"&&(
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {orgs.length===0&&<p style={{color:B.textSub,fontSize:13}}>No organisations yet. Onboard your first client.</p>}
+          {orgs.map(function(o){
+            var orgUsers   = users.filter(function(u){return u.org_id===o.id;});
+            var orgPermits = permits.filter(function(p){return p.org_id===o.id;});
+            var admin      = orgUsers.find(function(u){return u.role==="admin";});
             return (
-              <div key={o.id} style={{ background:B.card, border:`0.5px solid ${o.active?B.border:B.danger}`, borderRadius:12, padding:"1rem 1.25rem", opacity:o.active?1:0.75 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+              <div key={o.id} style={{background:B.card,border:"0.5px solid "+(o.active?B.border:B.danger),borderRadius:12,padding:"1rem 1.25rem",opacity:o.active?1:0.8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                   <div>
-                    <p style={{ fontSize:14, fontWeight:700, color:B.text }}>{o.name}</p>
-                    <p style={{ fontSize:11, color:B.textSub }}>{o.industry} · {o.country} · Slug: {o.slug}</p>
-                    {!o.active && <p style={{ fontSize:11, color:B.danger, fontWeight:600, marginTop:4 }}>⚠ Suspended — users cannot log in</p>}
+                    <p style={{fontSize:14,fontWeight:700,color:B.text}}>{o.name}</p>
+                    <p style={{fontSize:11,color:B.textSub}}>{o.industry} · {o.country} · {o.slug}</p>
+                    {!o.active&&<p style={{fontSize:11,color:B.danger,fontWeight:600,marginTop:4}}>⚠ Suspended — users cannot log in</p>}
                   </div>
-                  <span style={{ background:o.active?"rgba(14,158,110,0.15)":"rgba(192,57,43,0.15)", color:o.active?B.accent:B.danger, border:`0.5px solid ${o.active?B.accent:B.danger}`, borderRadius:20, padding:"2px 10px", fontSize:11, fontWeight:600 }}>{o.active?"Active":"Suspended"}</span>
+                  <span style={{background:o.active?"rgba(14,158,110,0.15)":"rgba(192,57,43,0.15)",color:o.active?B.accent:B.danger,border:"0.5px solid "+(o.active?B.accent:B.danger),borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600}}>{o.active?"Active":"Suspended"}</span>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:10 }}>
-                  {[["Users",orgUsers.length],["Permits",orgPermits.length],["Admin",admin?admin.full_name:"Not set"]].map(([k,v])=>(
-                    <div key={k} style={{ background:"#0F2A3E", borderRadius:8, padding:"8px 10px" }}>
-                      <p style={{ fontSize:10, color:B.textSub }}>{k}</p>
-                      <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{v}</p>
-                    </div>
-                  ))}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+                  {[["Users",orgUsers.length],["Permits",orgPermits.length],["Admin",admin?admin.full_name:"Not set"]].map(function(item){
+                    return (
+                      <div key={item[0]} style={{background:"#0F2A3E",borderRadius:8,padding:"8px 10px"}}>
+                        <p style={{fontSize:10,color:B.textSub}}>{item[0]}</p>
+                        <p style={{fontSize:13,fontWeight:600,color:B.text}}>{item[1]}</p>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                  <p style={{ fontSize:10, color:"#2A3F55", flex:1 }}>ID: {o.id}</p>
-                  <button onClick={()=>toggleSuspend(o)} style={{ background:o.active?"rgba(217,123,0,0.15)":"rgba(14,158,110,0.15)", color:o.active?B.warn:B.accent, border:`0.5px solid ${o.active?B.warn:B.accent}`, borderRadius:8, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                    {o.active ? "Suspend" : "Reactivate"}
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <p style={{fontSize:10,color:"#2A3F55",flex:1}}>ID: {o.id}</p>
+                  <button onClick={function(){toggleSuspend(o);}} style={{background:o.active?"rgba(217,123,0,0.15)":"rgba(14,158,110,0.15)",color:o.active?B.warn:B.accent,border:"0.5px solid "+(o.active?B.warn:B.accent),borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                    {o.active?"Suspend":"Reactivate"}
                   </button>
-                  <button onClick={()=>deleteOrg(o)} style={{ background:"rgba(192,57,43,0.15)", color:B.danger, border:`0.5px solid ${B.danger}`, borderRadius:8, padding:"6px 14px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                  <button onClick={function(){deleteOrg(o);}} style={{background:"rgba(192,57,43,0.15)",color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
                     Delete
                   </button>
                 </div>
@@ -453,55 +383,53 @@ function OwnerDashboard({ token, onLogout }) {
         </div>
       )}
 
-      {/* Users tab */}
-      {!loading && tab==="users" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {users.length===0 && <p style={{ color:B.textSub, fontSize:13 }}>No users yet.</p>}
-          {users.map(u=>{
-            const org = orgs.find(o=>o.id===u.org_id);
+      {!loading&&tab==="users"&&(
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {users.length===0&&<p style={{color:B.textSub,fontSize:13}}>No users yet.</p>}
+          {users.map(function(u){
+            var org = orgs.find(function(o){return o.id===u.org_id;});
             return (
-              <div key={u.id} style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:10, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-                  <div style={{ width:34, height:34, borderRadius:"50%", background:"rgba(14,158,110,0.15)", border:`0.5px solid ${B.accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:B.accent, flexShrink:0 }}>
-                    {u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+              <div key={u.id} style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{width:34,height:34,borderRadius:"50%",background:"rgba(14,158,110,0.15)",border:"0.5px solid "+B.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:B.accent,flexShrink:0}}>
+                    {u.full_name.split(" ").map(function(n){return n[0];}).join("").slice(0,2)}
                   </div>
                   <div>
-                    <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{u.full_name}</p>
-                    <p style={{ fontSize:11, color:B.textSub }}>{u.email} · <span style={{ textTransform:"capitalize" }}>{(u.role||"").replace("_"," ")}</span></p>
-                    <p style={{ fontSize:10, color:"#2A3F55" }}>{org?org.name:"Unknown org"}</p>
+                    <p style={{fontSize:13,fontWeight:600,color:B.text}}>{u.full_name}</p>
+                    <p style={{fontSize:11,color:B.textSub}}>{u.email} · <span style={{textTransform:"capitalize"}}>{(u.role||"").replace("_"," ")}</span></p>
+                    <p style={{fontSize:10,color:"#2A3F55"}}>{org?org.name:"Unknown org"}</p>
                   </div>
                 </div>
-                <span style={{ background:u.active?"rgba(14,158,110,0.15)":"rgba(74,96,112,0.2)", color:u.active?B.accent:B.textSub, border:`0.5px solid ${u.active?B.accent:B.border}`, borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:600 }}>{u.active?"Active":"Inactive"}</span>
+                <span style={{background:u.active?"rgba(14,158,110,0.15)":"rgba(74,96,112,0.2)",color:u.active?B.accent:B.textSub,border:"0.5px solid "+(u.active?B.accent:B.border),borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:600}}>{u.active?"Active":"Inactive"}</span>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Permits tab — read only */}
-      {!loading && tab==="permits" && (
+      {!loading&&tab==="permits"&&(
         <div>
-          <div style={{ background:"rgba(217,123,0,0.1)", border:`0.5px solid ${B.warn}`, borderRadius:8, padding:"8px 14px", marginBottom:"1rem" }}>
-            <p style={{ fontSize:12, color:B.warn }}>Read-only view — permits across all organisations. No actions available from this panel.</p>
+          <div style={{background:"rgba(217,123,0,0.1)",border:"0.5px solid "+B.warn,borderRadius:8,padding:"8px 14px",marginBottom:"1rem"}}>
+            <p style={{fontSize:12,color:B.warn}}>Read-only view — permits across all organisations. No actions available.</p>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {permits.length===0 && <p style={{ color:B.textSub, fontSize:13 }}>No permits across any organisation yet.</p>}
-            {permits.map(p=>{
-              const org = orgs.find(o=>o.id===p.org_id);
-              const sc  = STATUS_COLORS[p.status] || B.textSub;
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {permits.length===0&&<p style={{color:B.textSub,fontSize:13}}>No permits yet.</p>}
+            {permits.map(function(p){
+              var org = orgs.find(function(o){return o.id===p.org_id;});
+              var sc  = STATUS_COLORS[p.status]||B.textSub;
               return (
-                <div key={p.id} style={{ background:B.card, border:`0.5px solid ${B.border}`, borderRadius:10, padding:"10px 14px" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                <div key={p.id} style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:10,padding:"10px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                     <div>
-                      <p style={{ fontSize:13, fontWeight:600, color:B.text }}>{p.title}</p>
-                      <p style={{ fontSize:11, color:B.textSub }}>{p.permit_number} · {p.area}</p>
-                      <p style={{ fontSize:10, color:"#2A3F55", marginTop:2 }}>{org?org.name:"Unknown org"}</p>
+                      <p style={{fontSize:13,fontWeight:600,color:B.text}}>{p.title}</p>
+                      <p style={{fontSize:11,color:B.textSub}}>{p.permit_number} · {p.area}</p>
+                      <p style={{fontSize:10,color:"#2A3F55",marginTop:2}}>{org?org.name:"Unknown org"}</p>
                     </div>
-                    <span style={{ background:`${sc}22`, color:sc, border:`0.5px solid ${sc}`, borderRadius:20, padding:"2px 10px", fontSize:11, fontWeight:600, textTransform:"capitalize", whiteSpace:"nowrap" }}>{(p.status||"").replace("_"," ")}</span>
+                    <span style={{background:sc+"22",color:sc,border:"0.5px solid "+sc,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(p.status||"").replace("_"," ")}</span>
                   </div>
-                  <div style={{ display:"flex", gap:3 }}>
-                    {[0,1,2,3].map(i=><div key={i} style={{ height:3, flex:1, borderRadius:2, background:i<p.stage?B.accent:i===p.stage?B.warn:B.border }} />)}
-                    <span style={{ fontSize:10, color:B.textSub, marginLeft:4 }}>{p.stage}/4</span>
+                  <div style={{display:"flex",gap:3}}>
+                    {[0,1,2,3].map(function(i){return <div key={i} style={{height:3,flex:1,borderRadius:2,background:i<p.stage?B.accent:i===p.stage?B.warn:B.border}}/>;} )}
+                    <span style={{fontSize:10,color:B.textSub,marginLeft:4}}>{p.stage}/4</span>
                   </div>
                 </div>
               );
@@ -513,45 +441,40 @@ function OwnerDashboard({ token, onLogout }) {
   );
 }
 
-// ── App Root ──────────────────────────────────────────────────────
 function App() {
-  const [unlocked, setUnlocked] = useState(false);
-  const [session, setSession]   = useState(null);
-  const [busy, setBusy]         = useState(false);
-  const [err, setErr]           = useState("");
+  var [unlocked,setUnlocked] = useState(false);
+  var [session,setSession]   = useState(null);
+  var [busy,setBusy]         = useState(false);
+  var [err,setErr]           = useState("");
 
   async function login() {
     setBusy(true); setErr("");
     try {
-      const d = await sb.signIn(OWNER_EMAIL, OWNER_PASSWORD);
-      if (d.error) { setErr("Auth failed: " + d.error.message); setBusy(false); return; }
-      setSession({ token: d.access_token });
+      var d = await sb.signIn(OWNER_EMAIL, OWNER_SUPABASE_PASS);
+      if (d.error) { setErr("Auth failed: "+d.error.message); setBusy(false); return; }
+      setSession({token:d.access_token});
     } catch(e) { setErr("Connection error."); }
     setBusy(false);
   }
 
-  function handleUnlock() {
-    setUnlocked(true);
-    login();
-  }
+  function handleUnlock() { setUnlocked(true); login(); }
 
   async function logout() {
     if (session) await sb.signOut(session.token);
     setSession(null); setUnlocked(false);
   }
 
-  if (!unlocked)        return <GateScreen onUnlock={handleUnlock} />;
-  if (busy || !session) return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-      <Spinner />
-      {err && <p style={{ color:"#C0392B", fontSize:13 }}>{err}</p>}
+  if (!unlocked) return <GateScreen onUnlock={handleUnlock}/>;
+  if (busy||!session) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+      <Spinner/>
+      {err&&<p style={{color:B.danger,fontSize:13}}>{err}</p>}
     </div>
   );
-
-  return <OwnerDashboard token={session.token} onLogout={logout} />;
+  return <OwnerDashboard token={session.token} onLogout={logout}/>;
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<App/>, document.getElementById("root"));
 </script>
 </body>
 </html>
