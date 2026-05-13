@@ -64,11 +64,28 @@ const sb = {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q || ""}`, { headers: sb.h(t) });
     return r.json();
   },
-  async insert(t, table, data) {
+  deleteOrg {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
       method: "POST", headers: sb.h(t), body: JSON.stringify(data),
     });
     return r.json();
+  },
+  async delete(t, table, match) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
+      method: "DELETE", headers: sb.h(t),
+    });
+    return r.ok;
+  },
+  async deleteUser(userId) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_SECRET,
+        "Authorization": `Bearer ${SUPABASE_SECRET}`,
+      },
+    });
+    return r.ok;
   },
   async update(t, table, match, data) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
