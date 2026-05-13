@@ -34,7 +34,6 @@ const SUPABASE_SECRET = (function(){
   var d = ".";
   return a+d+b+d+c;
 })();
-
 // ── CHANGE THIS to your own secret owner password ─────────────────
 const OWNER_PASSWORD = "Controlit@CEOKind!";
 // ── CHANGE THIS to your own email ────────────────────────────────
@@ -64,32 +63,9 @@ const sb = {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q || ""}`, { headers: sb.h(t) });
     return r.json();
   },
-  deleteOrg {
+  async insert(t, table, data) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
       method: "POST", headers: sb.h(t), body: JSON.stringify(data),
-    });
-    return r.json();
-  },
-  async delete(t, table, match) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
-      method: "DELETE", headers: sb.h(t),
-    });
-    return r.ok;
-  },
-  async deleteUser(userId) {
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_SECRET,
-        "Authorization": `Bearer ${SUPABASE_SECRET}`,
-      },
-    });
-    return r.ok;
-  },
-  async update(t, table, match, data) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, {
-      method: "PATCH", headers: sb.h(t), body: JSON.stringify(data),
     });
     return r.json();
   },
@@ -378,13 +354,13 @@ function OwnerDashboard({ token, onLogout }) {
 
   async function toggleSuspend(org) {
     const newActive = !org.active;
-    const result = await sb.update(token, "organisations", `id=eq.${org.id}`, { active: newActive });
-    if (result && !result.error) {
-      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
-    }
+    await sb.update(token, "organisations", `id=eq.${org.id}`, { active: newActive });
+    setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, active: newActive } : o));
   }
+
   async function deleteOrg(org) {
-    if (!window.confirm(`Permanently delete "${org.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Permanently delete "${org.name}" and all its data? This cannot be undone.`)) return;
+    // Delete profiles first
     const orgUsers = users.filter(u => u.org_id === org.id);
     for (const u of orgUsers) {
       await sb.deleteUser(u.id);
@@ -394,9 +370,7 @@ function OwnerDashboard({ token, onLogout }) {
     await sb.delete(token, "permit_audit", `org_id=eq.${org.id}`);
     await sb.delete(token, "org_invites", `org_id=eq.${org.id}`);
     await sb.delete(token, "organisations", `id=eq.${org.id}`);
-    setOrgs(prev => prev.filter(o => o.id !== org.id));
-    setUsers(prev => prev.filter(u => u.org_id !== org.id));
-    setPermits(prev => prev.filter(p => p.org_id !== org.id));
+    load();
   }
 
   useEffect(()=>{ load(); },[]);
