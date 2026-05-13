@@ -97,7 +97,7 @@ const PERMIT_TYPES = [
   { id:"lifting",        label:"Critical Lifting Operation",      color:"#7F77DD" },
 ];
 
-const STAGES = ["Requesting Party","Area Authority","Safety Officer","Issuer"];
+const STAGES = ["Requesting Party","Area Authority","Safety Manager","Issuer"];
 const ROLES  = ["requester","area_authority","safety_officer","issuer","admin"];
 const MAX_EXT = 2;
 
@@ -795,7 +795,7 @@ function Admin({ session, onBack }) {
                     <div>
                       <label style={{ fontSize:12, color:B.textSub, display:"block", marginBottom:4 }}>Role *</label>
                       <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-                        {ROLES.map(r => <option key={r} value={r}>{r.replace("_"," ")}</option>)}
+                        {ROLES.map(r => <option key={r} value={r}>{r==="safety_officer"?"Safety Manager":r.replace("_"," ")}</option>)}
                       </select>
                     </div>
                     <div>
