@@ -57,6 +57,46 @@ const sb = {
   insert: async (t, table, data) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:"POST", headers:sb.h(t), body:JSON.stringify(data) }); return r.json(); },
   update: async (t, table, match, data) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, { method:"PATCH", headers:sb.h(t), body:JSON.stringify(data) }); return r.json(); },
   createUser: async (email, password) => { const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, { method:"POST", headers:{"Content-Type":"application/json","apikey":SERVICE_KEY,"Authorization":`Bearer ${SERVICE_KEY}`}, body:JSON.stringify({email,password,email_confirm:true}) }); return r.json(); },
+
+  // ── FIX: Notification helper ────────────────────────────────────────────────
+  // Inserts one notification row per org member so every user sees the event.
+  // Called after every permit state change.
+  notify: async (token, orgId, permitId, permitRef, permitTitle, eventType, actorName) => {
+    const eventMessages = {
+      submitted:     `New permit submitted — awaiting Area Authority approval`,
+      aa_approved:   `Permit approved by Area Authority — awaiting OSH Manager`,
+      osh_approved:  `Permit approved by OSH Manager — awaiting Issuer`,
+      issued:        `Permit issued — work may now commence`,
+      rejected:      `Permit rejected by ${actorName}`,
+      suspended:     `Permit suspended by ${actorName}`,
+      closed:        `Permit closed by ${actorName}`,
+      ext_requested: `Extension requested by ${actorName}`,
+      ext_approved:  `Extension approved by ${actorName}`,
+      ext_rejected:  `Extension request rejected by ${actorName}`,
+    };
+    const message = eventMessages[eventType] || `Permit status updated by ${actorName}`;
+    try {
+      // Fetch all org members to fan-out the notification
+      const members = await sb.select(token, "profiles", `org_id=eq.${orgId}&active=eq.true&select=id`);
+      if (!Array.isArray(members) || members.length === 0) return;
+      const rows = members.map(m => ({
+        user_id:      m.id,
+        org_id:       orgId,
+        permit_id:    permitId,
+        reference:    permitRef,
+        title:        permitTitle,
+        message,
+        event_type:   eventType,
+        actor_name:   actorName,
+        is_read:      false,
+        created_at:   new Date().toISOString(),
+      }));
+      await sb.insert(token, "notifications", rows);
+    } catch(e) {
+      console.warn("Notification insert failed:", e);
+      // Non-fatal — don't block the main action
+    }
+  },
 };
 
 const B = {
@@ -79,6 +119,17 @@ const PERMIT_TYPES = [
 const STAGES  = ["Requesting Party","Area Authority","OSH Manager","Issuer"];
 const ROLES   = ["requester","area_authority","safety_officer","issuer","admin"];
 const MAX_EXT = 2;
+
+// ── FIX: Role-to-stage map (which role approves at which stage) ────────────────
+// Stage 1 = submitted by requester (no approval needed, moves to stage 2 on submit)
+// Stage 2 = Area Authority approves
+// Stage 3 = OSH Manager (safety_officer) approves
+// Stage 4 = Issuer issues
+const ROLE_STAGE = {
+  area_authority:  2,
+  safety_officer:  3,
+  issuer:          4,
+};
 
 function roleLabel(role) {
   if (role === "safety_officer") return "OSH Manager";
@@ -404,30 +455,129 @@ function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs
 }
 
 // ── Permit Detail ─────────────────────────────────────────────────
-function PermitDetail({ permit, session, onBack, onRefresh }) {
-  const [tab, setTab]   = useState("detail");
-  const [audit, setAudit] = useState([]);
-  const [busy, setBusy] = useState(false);
+// FIX: action() now has role guard, updates selected permit locally,
+//      and calls sb.notify() to fan-out notifications to all org members.
+function PermitDetail({ permit: initialPermit, session, onBack, onRefresh }) {
+  const [tab, setTab]       = useState("detail");
+  const [audit, setAudit]   = useState([]);
+  const [busy, setBusy]     = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+  // FIX: keep a local copy of the permit so UI updates immediately after action
+  const [permit, setPermit] = useState(initialPermit);
   const t = pt(permit.type);
 
-  useEffect(()=>{
-    sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`).then(d=>{ if(Array.isArray(d)) setAudit(d); });
-  },[permit.id]);
+  function loadAudit() {
+    sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`)
+      .then(d=>{ if(Array.isArray(d)) setAudit(d); });
+  }
+
+  useEffect(()=>{ loadAudit(); },[permit.id]);
 
   async function action(act) {
+    setErrMsg("");
+
+    // ── FIX: Role guard ────────────────────────────────────────────────────────
+    // For approve actions, verify the logged-in user's role matches the current stage.
+    // admin can always act (for testing / override scenarios).
+    const role = session.profile.role;
+    if (act === "approve" && role !== "admin") {
+      const expectedStage = ROLE_STAGE[role];
+      if (expectedStage === undefined) {
+        setErrMsg("Your role is not part of the approval chain.");
+        return;
+      }
+      if (permit.stage !== expectedStage) {
+        setErrMsg(`This permit is at stage ${permit.stage}. Your role (${roleLabel(role)}) approves at stage ${expectedStage}.`);
+        return;
+      }
+    }
+    if (act === "issue" && role !== "issuer" && role !== "admin") {
+      setErrMsg("Only the Issuer can issue a permit.");
+      return;
+    }
+
     setBusy(true);
     let ns=permit.status, st=permit.stage, ex=permit.extensions||0;
-    if (act==="approve")      { st=Math.min(permit.stage+1,4); ns=st>=4?"active":"pending"; }
-    else if (act==="issue")   { st=4; ns="active"; }
-    else if (act==="reject")  ns="rejected";
-    else if (act==="suspend") ns="revoked";
-    else if (act==="close")   ns="closed";
+
+    if      (act==="approve")      { st=Math.min(permit.stage+1,4); ns=st>=4?"active":"pending"; }
+    else if (act==="issue")        { st=4; ns="active"; }
+    else if (act==="reject")       ns="rejected";
+    else if (act==="suspend")      ns="revoked";
+    else if (act==="close")        ns="closed";
     else if (act==="ext_request")  ns="extension_pending";
     else if (act==="ext_approve")  { ns="active"; ex=(permit.extensions||0)+1; }
     else if (act==="ext_reject")   ns="active";
-    const labels = { approve:"Approved & forwarded", issue:"Permit issued", reject:"Rejected", suspend:"Permit revoked", close:"Permit closed", ext_request:"Extension requested", ext_approve:"Extension approved", ext_reject:"Extension rejected" };
-    await sb.update(session.token,"permits",`id=eq.${permit.id}`,{ status:ns,stage:st,extensions:ex,...(act==="issue"?{issued_by:session.userId,issued_at:nowStr()}:{}),...(act==="close"?{closed_at:nowStr()}:{}) });
-    await sb.insert(session.token,"permit_audit",{ org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:labels[act]||act,note:"" });
+
+    const actionLabels = {
+      approve:     "Approved & forwarded",
+      issue:       "Permit issued",
+      reject:      "Rejected",
+      suspend:     "Permit suspended",
+      close:       "Permit closed",
+      ext_request: "Extension requested",
+      ext_approve: "Extension approved",
+      ext_reject:  "Extension rejected",
+    };
+
+    // ── FIX: notification event key map ───────────────────────────────────────
+    const notifEvent = {
+      approve:     permit.stage===3 ? "osh_approved" : "aa_approved",
+      issue:       "issued",
+      reject:      "rejected",
+      suspend:     "suspended",
+      close:       "closed",
+      ext_request: "ext_requested",
+      ext_approve: "ext_approved",
+      ext_reject:  "ext_rejected",
+    };
+
+    const extraFields = {};
+    if (act==="issue")  { extraFields.issued_by=session.userId; extraFields.issued_at=nowStr(); }
+    if (act==="close")  { extraFields.closed_at=nowStr(); }
+
+    // ── DB update ─────────────────────────────────────────────────────────────
+    const updateRes = await sb.update(
+      session.token, "permits", `id=eq.${permit.id}`,
+      { status:ns, stage:st, extensions:ex, ...extraFields }
+    );
+
+    // Check for errors returned by Supabase (RLS block returns empty array or error)
+    if (!updateRes || (Array.isArray(updateRes) && updateRes.length === 0 && !updateRes.error)) {
+      // Supabase PATCH with Prefer:return=representation returns the updated row
+      // An empty array here usually means RLS blocked the write — surface the error
+      console.warn("Permit update returned empty — possible RLS block. Response:", updateRes);
+    }
+
+    // ── Audit entry ───────────────────────────────────────────────────────────
+    await sb.insert(session.token,"permit_audit",{
+      org_id:    session.profile.org_id,
+      permit_id: permit.id,
+      user_id:   session.userId,
+      user_name: session.profile.full_name,
+      user_role: roleLabel(session.profile.role),
+      action:    actionLabels[act]||act,
+      note:      "",
+    });
+
+    // ── FIX: Notify all org members ───────────────────────────────────────────
+    await sb.notify(
+      session.token,
+      session.profile.org_id,
+      permit.id,
+      permit.permit_number,
+      permit.title,
+      notifEvent[act] || act,
+      session.profile.full_name
+    );
+
+    // ── FIX: Update local permit state so UI reflects change immediately ──────
+    const updatedPermit = { ...permit, status:ns, stage:st, extensions:ex, ...extraFields };
+    setPermit(updatedPermit);
+
+    // Also reload audit trail to show the new entry
+    loadAudit();
+
+    // Refresh parent permits list in background
     await onRefresh();
     setBusy(false);
   }
@@ -438,6 +588,8 @@ function PermitDetail({ permit, session, onBack, onRefresh }) {
     <div>
       <Topbar title={permit.permit_number} onBack={onBack}/>
       <div style={{padding:"1.25rem"}}>
+        {errMsg&&<Err msg={errMsg}/>}
+
         <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderLeft:`3px solid ${t.color||B.textSub}`,borderRadius:10,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
             <div>
@@ -507,24 +659,28 @@ function PermitDetail({ permit, session, onBack, onRefresh }) {
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
           {permit.status==="pending"&&permit.stage!==4&&(
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve &amp; forward</button>
-              <button onClick={()=>action("reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button>
+              <button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>
+                {busy?"Processing…":"Approve & forward"}
+              </button>
+              <button onClick={()=>action("reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Reject</button>
             </div>
           )}
           {permit.status==="pending"&&permit.stage===4&&(
-            <button onClick={()=>action("issue")} disabled={busy} style={{width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Issue permit</button>
+            <button onClick={()=>action("issue")} disabled={busy} style={{width:"100%",background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
+              {busy?"Processing…":"Issue permit"}
+            </button>
           )}
           {permit.status==="active"&&(
             <div style={{display:"flex",gap:8}}>
-              {canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}
-              <button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Suspend</button>
-              <button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Close</button>
+              {canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}
+              <button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Suspend</button>
+              <button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Close</button>
             </div>
           )}
           {permit.status==="extension_pending"&&(
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button>
-              <button onClick={()=>action("ext_reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button>
+              <button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>Approve extension</button>
+              <button onClick={()=>action("ext_reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Reject</button>
             </div>
           )}
         </div>
@@ -534,24 +690,55 @@ function PermitDetail({ permit, session, onBack, onRefresh }) {
 }
 
 // ── New Permit ────────────────────────────────────────────────────
+// FIX: sends "submitted" notification to all org members on creation
 function NewPermit({ session, onBack, onSuccess }) {
-  const [type, setType]         = useState("");
-  const [title, setTitle]       = useState("");
-  const [area, setArea]         = useState("");
+  const [type, setType]           = useState("");
+  const [title, setTitle]         = useState("");
+  const [area, setArea]           = useState("");
   const [requester, setRequester] = useState(session.profile.full_name);
   const [supervisor, setSupervisor] = useState("");
-  const [busy, setBusy]         = useState(false);
-  const [err, setErr]           = useState("");
+  const [busy, setBusy]           = useState(false);
+  const [err, setErr]             = useState("");
 
   async function submit() {
     if (!type||!title||!area||!requester||!supervisor) { setErr("Please fill all required fields."); return; }
     setBusy(true); setErr("");
     const num = "PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
-    const res = await sb.insert(session.token,"permits",{ org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0 });
+    const res = await sb.insert(session.token,"permits",{
+      org_id:          session.profile.org_id,
+      permit_number:   num,
+      type,title,area,
+      requester_name:  requester,
+      supervisor_name: supervisor,
+      status:          "pending",
+      stage:           1,
+      priority:        "medium",
+      extensions:      0,
+    });
     if (res&&res[0]&&!res.error) {
-      await sb.insert(session.token,"permit_audit",{ org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:"" });
+      await sb.insert(session.token,"permit_audit",{
+        org_id:    session.profile.org_id,
+        permit_id: res[0].id,
+        user_id:   session.userId,
+        user_name: session.profile.full_name,
+        user_role: roleLabel(session.profile.role),
+        action:    "Permit submitted",
+        note:      "",
+      });
+      // FIX: notify all org members of the new submission
+      await sb.notify(
+        session.token,
+        session.profile.org_id,
+        res[0].id,
+        num,
+        title,
+        "submitted",
+        session.profile.full_name
+      );
       onSuccess();
-    } else { setErr("Failed to create permit. Please try again."); }
+    } else {
+      setErr("Failed to create permit. Please try again.");
+    }
     setBusy(false);
   }
 
@@ -596,40 +783,94 @@ function NewPermit({ session, onBack, onSuccess }) {
 }
 
 // ── Notifications ─────────────────────────────────────────────────
-function Notifs({ session, permits, onBack, onSelectPermit }) {
-  const [read, setRead] = useState({});
-  const notes = [];
-  const stageMap = { area_authority:2, safety_officer:3, issuer:4 };
-  permits.forEach(p=>{
-    if (p.status==="pending"&&stageMap[session.profile.role]===p.stage)
-      notes.push({id:"apr-"+p.id,icon:"✓",title:"Awaiting your approval",body:p.title+" ("+p.permit_number+") is pending your sign-off.",permit:p,priority:"high"});
-    if (p.status==="extension_pending"&&["area_authority","safety_officer","issuer"].includes(session.profile.role))
-      notes.push({id:"ext-"+p.id,icon:"⟳",title:"Extension requires re-approval",body:p.permit_number+" has an active extension request.",permit:p,priority:"high"});
-    if (p.status==="active"&&(p.extensions||0)>=MAX_EXT)
-      notes.push({id:"mxe-"+p.id,icon:"⚠",title:"Max extensions reached",body:p.permit_number+" cannot be extended further.",permit:p,priority:"medium"});
-    if (p.status==="active")
-      notes.push({id:"exp-"+p.id,icon:"⏱",title:"Active permit — review expiry",body:p.permit_number+" is active. Ensure timely closure.",permit:p,priority:"low"});
-  });
-  const unread = notes.filter(n=>!read[n.id]).length;
+// FIX: reads from the `notifications` DB table (persistent, cross-user)
+//      instead of deriving state client-side from permits array.
+function Notifs({ session, onBack, onSelectPermit, onUnreadChange }) {
+  const [notes, setNotes]   = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function loadNotifs() {
+    setLoading(true);
+    const data = await sb.select(
+      session.token,
+      "notifications",
+      `user_id=eq.${session.userId}&order=created_at.desc&limit=80`
+    );
+    if (Array.isArray(data)) {
+      setNotes(data);
+      const unread = data.filter(n=>!n.is_read).length;
+      if (onUnreadChange) onUnreadChange(unread);
+    }
+    setLoading(false);
+  }
+
+  useEffect(()=>{ loadNotifs(); },[]);
+
+  async function markAllRead() {
+    await sb.update(
+      session.token, "notifications",
+      `user_id=eq.${session.userId}&is_read=eq.false`,
+      { is_read: true }
+    );
+    setNotes(prev=>prev.map(n=>({...n,is_read:true})));
+    if (onUnreadChange) onUnreadChange(0);
+  }
+
+  async function markRead(notif) {
+    if (!notif.is_read) {
+      await sb.update(
+        session.token, "notifications",
+        `id=eq.${notif.id}`,
+        { is_read: true }
+      );
+      setNotes(prev=>prev.map(n=>n.id===notif.id?{...n,is_read:true}:n));
+      const remaining = notes.filter(n=>!n.is_read&&n.id!==notif.id).length;
+      if (onUnreadChange) onUnreadChange(remaining);
+    }
+    // Navigate to the permit if we have permit_id
+    if (notif.permit_id) {
+      const permits = await sb.select(session.token,"permits",`id=eq.${notif.permit_id}`);
+      if (Array.isArray(permits)&&permits[0]) onSelectPermit(permits[0]);
+    }
+  }
+
+  const unread = notes.filter(n=>!n.is_read).length;
+
+  // Map event_type to icon
+  const icons = { submitted:"📋", aa_approved:"✓", osh_approved:"✓", issued:"🟢", rejected:"✗", suspended:"⚠", closed:"🔒", ext_requested:"⟳", ext_approved:"✓", ext_rejected:"✗" };
 
   return (
     <div>
       <Topbar title="Notifications" onBack={onBack} right={
-        unread>0?<button onClick={()=>{const r={}; notes.forEach(n=>{r[n.id]=true;}); setRead(r);}} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Mark all read</button>:null
+        unread>0
+          ? <button onClick={markAllRead} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Mark all read</button>
+          : null
       }/>
       <div style={{padding:"1.25rem"}}>
-        {notes.length===0&&<div style={{textAlign:"center",padding:"3rem 1rem"}}><p style={{fontSize:32}}>✓</p><p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>All clear</p><p style={{fontSize:13,color:B.textSub}}>No notifications at this time.</p></div>}
+        {loading&&<Spinner/>}
+        {!loading&&notes.length===0&&(
+          <div style={{textAlign:"center",padding:"3rem 1rem"}}>
+            <p style={{fontSize:32}}>✓</p>
+            <p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>All clear</p>
+            <p style={{fontSize:13,color:B.textSub}}>No notifications yet.</p>
+          </div>
+        )}
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {notes.map(n=>{
-            const isRead=read[n.id];
+            const isRead = n.is_read;
+            const icon = icons[n.event_type]||"🔔";
             return (
-              <div key={n.id} onClick={()=>{setRead(r=>({...r,[n.id]:true})); if(n.permit) onSelectPermit(n.permit);}} style={{background:isRead?"#fff":B.accentLight,border:`0.5px solid ${isRead?B.neutralBorder:B.accent}`,borderLeft:`3px solid ${isRead?B.neutralBorder:B.accent}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",opacity:isRead?0.65:1}}>
+              <div key={n.id} onClick={()=>markRead(n)}
+                style={{background:isRead?"#fff":B.accentLight,border:`0.5px solid ${isRead?B.neutralBorder:B.accent}`,borderLeft:`3px solid ${isRead?B.neutralBorder:B.accent}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",opacity:isRead?0.7:1}}>
                 <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{n.icon}</div>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icon}</div>
                   <div style={{flex:1}}>
-                    <p style={{fontSize:12,fontWeight:isRead?500:700,color:isRead?B.textSub:B.text}}>{n.title}</p>
-                    <p style={{fontSize:11,color:isRead?B.textSub:B.accentBorder,lineHeight:1.5}}>{n.body}</p>
-                    <span style={{fontSize:10,background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,color:B.textSub,borderRadius:20,padding:"1px 8px",marginTop:4,display:"inline-block",textTransform:"capitalize"}}>{n.priority} priority</span>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                      <p style={{fontSize:12,fontWeight:isRead?500:700,color:isRead?B.textSub:B.text,flex:1}}>{n.message}</p>
+                      <p style={{fontSize:10,color:B.textSub,whiteSpace:"nowrap"}}>{n.created_at?new Date(n.created_at).toLocaleString():""}</p>
+                    </div>
+                    <p style={{fontSize:11,color:B.accentBorder,marginTop:2}}>{n.reference} {n.title?"· "+n.title:""}</p>
+                    {!isRead&&<span style={{fontSize:10,background:B.accent,color:"#fff",borderRadius:20,padding:"1px 8px",marginTop:4,display:"inline-block"}}>New</span>}
                   </div>
                 </div>
               </div>
@@ -786,6 +1027,7 @@ function Admin({ session, onBack }) {
 }
 
 // ── App Root ──────────────────────────────────────────────────────
+// FIX: unread count now driven from notifications DB, passed down to Notifs
 function App() {
   const [session, setSession]     = useState(null);
   const [screen, setScreen]       = useState("dashboard");
@@ -794,6 +1036,8 @@ function App() {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
   const [setupDone, setSetupDone] = useState(false);
+  // FIX: unread driven from DB notification count, not from permits array
+  const [unread, setUnread]       = useState(0);
 
   const fetchPermits = useCallback(async () => {
     if (!session) return;
@@ -806,10 +1050,20 @@ function App() {
     setLoading(false);
   },[session]);
 
-  useEffect(()=>{ fetchPermits(); },[fetchPermits]);
+  // FIX: load unread count from notifications table on mount and after actions
+  const fetchUnread = useCallback(async () => {
+    if (!session) return;
+    try {
+      const data = await sb.select(
+        session.token, "notifications",
+        `user_id=eq.${session.userId}&is_read=eq.false&select=id`
+      );
+      if (Array.isArray(data)) setUnread(data.length);
+    } catch(e) {}
+  },[session]);
 
-  const stageMap = { area_authority:2, safety_officer:3, issuer:4 };
-  const unread = session ? permits.filter(p=>(p.status==="pending"&&stageMap[session.profile.role]===p.stage)||p.status==="extension_pending").length : 0;
+  useEffect(()=>{ fetchPermits(); },[fetchPermits]);
+  useEffect(()=>{ fetchUnread(); },[fetchUnread]);
 
   if (!session) return <Login onLogin={s=>setSession(s)}/>;
   if (session.firstTime&&!setupDone) return <AccountSetup session={session} onComplete={s=>{setSession(s); setSetupDone(true);}}/>;
@@ -824,9 +1078,9 @@ function App() {
   return (
     <div>
       {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={selectPermit} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
-      {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits(); setScreen("dashboard");}} onRefresh={fetchPermits}/>}
-      {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits(); setScreen("dashboard");}}/>}
-      {screen==="notifs"&&<Notifs session={session} permits={permits} onBack={()=>setScreen("dashboard")} onSelectPermit={selectPermit}/>}
+      {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits(); fetchUnread(); setScreen("dashboard");}} onRefresh={async()=>{await fetchPermits(); await fetchUnread();}}/>}
+      {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits(); fetchUnread(); setScreen("dashboard");}}/>}
+      {screen==="notifs"&&<Notifs session={session} onBack={()=>{fetchUnread(); setScreen("dashboard");}} onSelectPermit={p=>{setSelected(p); setScreen("detail");}} onUnreadChange={setUnread}/>}
       {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")}/>}
       {screen==="changepass"&&<ChangePassword session={session} onBack={()=>setScreen("dashboard")}/>}
       {screen==="workflow"&&(
