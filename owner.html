@@ -53,6 +53,11 @@ const sb = {
   signOut: async function(t){ await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:sb.h(t)}); },
   select: async function(t,table,q){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+(q||""),{headers:sb.h(t)}); return r.json(); },
   insert: async function(t,table,data){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table,{method:"POST",headers:sb.h(t),body:JSON.stringify(data)}); return r.json(); },
+  insertSilent: async function(t,table,data){ 
+    var h={"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+(t||SUPABASE_ANON_KEY)};
+    var r=await fetch(SUPABASE_URL+"/rest/v1/"+table,{method:"POST",headers:h,body:JSON.stringify(data)}); 
+    return r.ok;
+  },
   update: async function(t,table,match,data){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+match,{method:"PATCH",headers:sb.h(t),body:JSON.stringify(data)}); return r.json(); },
   del: async function(t,table,match){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+match,{method:"DELETE",headers:sb.h(t)}); return r.ok; },
   createUser: async function(email,pass){ var r=await fetch(SUPABASE_URL+"/auth/v1/admin/users",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_SECRET,"Authorization":"Bearer "+SUPABASE_SECRET},body:JSON.stringify({email,password:pass,email_confirm:true})}); return r.json(); },
@@ -139,8 +144,8 @@ function OnboardModal({token,onClose,onSuccess}){
         setBusy(false); return;
       }
 
-      // Step 2: Insert org — ignore response body, fetch back by slug
-      await sb.insert(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
+      // Step 2: Insert org — use silent insert (no return=representation) then fetch back by slug
+      await sb.insertSilent(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
 
       // Step 3: Always fetch the org back by slug (works regardless of RLS response)
       var fetched = await sb.select(token,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
@@ -159,7 +164,7 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 5: Create profile
-      await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+      await sb.insertSilent(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
 
       // Step 6: Done
       setResult({org,orgName,adminName,adminEmail,tempPass,hasKey:!!encodedKey});
