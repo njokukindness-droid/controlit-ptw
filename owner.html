@@ -132,32 +132,40 @@ function OnboardModal({token,onClose,onSuccess}){
       var encodedKey = encodeApiKey(kp1,kp2,kp3);
       var slug = slugify(orgName);
 
-      // Duplicate slug check before inserting
+      // Step 1: Check for duplicate slug
       var existing = await sb.select(token,"organisations","slug=eq."+slug+"&select=id,name");
       if(Array.isArray(existing)&&existing.length>0){
         setErr("An organisation with this name already exists: "+existing[0].name);
         setBusy(false); return;
       }
 
-      var orgs = await sb.insert(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
+      // Step 2: Insert org — ignore response body, fetch back by slug
+      await sb.insert(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
 
-      // Handle both cases: insert returned row, or empty array (RLS hid result but insert succeeded)
-      var org = (orgs&&orgs[0]) ? orgs[0] : null;
+      // Step 3: Always fetch the org back by slug (works regardless of RLS response)
+      var fetched = await sb.select(token,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
+      var org = (Array.isArray(fetched)&&fetched[0]) ? fetched[0] : null;
 
-      // If empty, fetch the org we just created by slug
       if(!org){
-        var fetched = await sb.select(token,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
-        if(Array.isArray(fetched)&&fetched[0]) org=fetched[0];
+        setErr("Organisation was not created. Please check Supabase and try again.");
+        setBusy(false); return;
       }
 
-      if(!org){setErr("Failed to create organisation. Please try again.");setBusy(false);return;}
+      // Step 4: Create auth user
+      var authUser = await sb.createUser(adminEmail,tempPass);
+      if(!authUser||!authUser.id){
+        setErr("Organisation created but failed to create admin user: "+(authUser&&authUser.message?authUser.message:"Unknown error")+". Please add the admin manually from the Users tab.");
+        setBusy(false); return;
+      }
 
-      var authUser=await sb.createUser(adminEmail,tempPass);
-      if(!authUser||!authUser.id){setErr("Failed to create auth user: "+(authUser&&authUser.message?authUser.message:"Unknown error"));setBusy(false);return;}
+      // Step 5: Create profile
       await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+
+      // Step 6: Done
       setResult({org,orgName,adminName,adminEmail,tempPass,hasKey:!!encodedKey});
       setStep(2); onSuccess();
-    } catch(e){setErr("Error: "+e.message);}
+
+    } catch(e){setErr("Unexpected error: "+e.message);}
     setBusy(false);
   }
 
@@ -258,6 +266,21 @@ function OnboardModal({token,onClose,onSuccess}){
 function OwnerDashboard({token,onLogout}){
   var [orgs,setOrgs]=useState([]); var [users,setUsers]=useState([]); var [permits,setPermits]=useState([]);
   var [loading,setLoading]=useState(true); var [tab,setTab]=useState("orgs"); var [showOnboard,setShowOnboard]=useState(false);
+  var [fixOrg,setFixOrg]=useState(null); var [fixName,setFixName]=useState(""); var [fixEmail,setFixEmail]=useState(""); var [fixPass,setFixPass]=useState("Controlit@2024!"); var [fixBusy,setFixBusy]=useState(false); var [fixErr,setFixErr]=useState(""); var [fixDone,setFixDone]=useState(null);
+
+  async function addAdminToOrg(org){
+    if(!fixName||!fixEmail){setFixErr("Name and email required.");return;}
+    setFixBusy(true); setFixErr("");
+    try {
+      var authUser=await sb.createUser(fixEmail,fixPass);
+      if(!authUser||!authUser.id){setFixErr("Failed to create user: "+(authUser&&authUser.message?authUser.message:"Unknown"));setFixBusy(false);return;}
+      await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:fixName,email:fixEmail,role:"admin",active:true});
+      setFixDone({name:fixName,email:fixEmail,pass:fixPass});
+      setFixName(""); setFixEmail(""); setFixPass("Controlit@2024!");
+      load();
+    } catch(e){setFixErr("Error: "+e.message);}
+    setFixBusy(false);
+  }
 
   async function load(){
     setLoading(true);
@@ -294,6 +317,36 @@ function OwnerDashboard({token,onLogout}){
   return (
     <div style={{minHeight:"100vh",padding:"1.5rem"}}>
       {showOnboard&&<OnboardModal token={token} onClose={function(){setShowOnboard(false);}} onSuccess={load}/>}
+      {fixOrg&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
+          <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:460,padding:"1.5rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem"}}>
+              <div><p style={{fontSize:14,fontWeight:700,color:B.text}}>Add admin to {fixOrg.name}</p><p style={{fontSize:11,color:B.textSub}}>Create an admin account for this organisation</p></div>
+              <button onClick={function(){setFixOrg(null);setFixDone(null);setFixErr("");}} style={{background:"none",border:"none",color:B.textSub,cursor:"pointer",fontSize:20}}>×</button>
+            </div>
+            {fixErr&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:B.danger}}>{fixErr}</div>}
+            {fixDone?(
+              <div style={{background:B.accentLight,border:"0.5px solid "+B.accent,borderRadius:10,padding:"1rem"}}>
+                <p style={{fontSize:13,fontWeight:700,color:B.accentBorder,marginBottom:8}}>✓ Admin account created</p>
+                <div style={{background:"#fff",borderRadius:8,padding:"10px 12px",fontSize:12,fontFamily:"monospace",lineHeight:2}}>
+                  <div>URL: https://getcontrolit.com/app.html</div>
+                  <div>Email: {fixDone.email}</div>
+                  <div>Password: {fixDone.pass}</div>
+                  <div>Role: Admin</div>
+                </div>
+                <button onClick={function(){setFixOrg(null);setFixDone(null);}} style={{marginTop:12,width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Done</button>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Full name *</label><input value={fixName} onChange={function(e){setFixName(e.target.value);}} placeholder="Admin full name" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8}}/></div>
+                <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Email *</label><input value={fixEmail} onChange={function(e){setFixEmail(e.target.value);}} placeholder="admin@company.com" type="email" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8}}/></div>
+                <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Temp password</label><input value={fixPass} onChange={function(e){setFixPass(e.target.value);}} style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8}}/></div>
+                <button onClick={function(){addAdminToOrg(fixOrg);}} disabled={fixBusy} style={{marginTop:4,width:"100%",background:fixBusy?"#555":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:fixBusy?"not-allowed":"pointer"}}>{fixBusy?"Creating…":"Create admin account"}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.5rem"}}>
         <Logo/>
         <div style={{display:"flex",gap:8}}>
@@ -337,6 +390,7 @@ function OwnerDashboard({token,onLogout}){
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   <p style={{fontSize:10,color:"#2A3F55",flex:1}}>ID: {o.id}</p>
                   <button onClick={function(){toggleSuspend(o);}} style={{background:o.active?B.warnLight:B.accentLight,color:o.active?B.warn:B.accent,border:"0.5px solid "+(o.active?B.warn:B.accent),borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.active?"Suspend":"Reactivate"}</button>
+                  {!admin&&<button onClick={function(){setFixOrg(o);setFixDone(null);setFixErr("");}} style={{background:"rgba(127,119,221,0.15)",color:"#7F77DD",border:"0.5px solid #7F77DD",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Add admin</button>}
                   <button onClick={function(){deleteOrg(o);}} style={{background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Delete</button>
                 </div>
               </div>
