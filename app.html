@@ -328,8 +328,8 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
   const checklistItems=[...(fd.selected_controls||[]).filter(c=>c!=="RA Required"),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
   const allChecked=checklistItems.length>0&&checklistItems.every(c=>checklistDone[c]);
-  const isOSH=(session.profile.role==="safety_officer"||session.profile.role==="admin")&&permit.stage===3&&permit.status==="pending";
-  const isIssuer=(session.profile.role==="issuer"||session.profile.role==="admin")&&permit.stage===4&&permit.status==="pending";
+  const isOSH=(session.profile.role==="safety_officer"||session.profile.role==="admin")&&permit.stage===2&&permit.status==="pending";
+  const isIssuer=(session.profile.role==="issuer"||session.profile.role==="admin")&&permit.stage===3&&permit.status==="pending";
 
   async function getAI(){
     if(!session.apiKey){setErrMsg("AI not configured.");return;}setAiSuggesting(true);setErrMsg("");
@@ -345,7 +345,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     if(act==="reject"&&!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
     setBusy(true);
     let ns=permit.status,st=permit.stage,ex=permit.extensions||0;const extra={};
-    if(act==="approve"){if(role==="safety_officer"||permit.stage===3)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st>=4?"active":"pending";}
+    if(act==="approve"){if(role==="safety_officer"||permit.stage===2)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st===4?"pending":"pending";}
     else if(act==="issue"){st=4;ns="active";extra.issued_by=session.userId;extra.issued_at=nowStr();extra.form_data={...fd,issuer_checklist:checklistDone,issued_by_name:session.profile.full_name};}
     else if(act==="reject"){ns="rejected";extra.form_data={...fd,rejection_reason:rejectReason,rejected_by:session.profile.full_name,rejected_at:nowStr()};}
     else if(act==="suspend")ns="revoked";
@@ -354,7 +354,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     else if(act==="ext_approve"){ns="active";ex=(permit.extensions||0)+1;}
     else if(act==="ext_reject")ns="active";
     const labels={approve:"Approved & forwarded",issue:"Permit issued",reject:"Rejected",suspend:"Permit suspended",close:"Permit closed",ext_request:"Extension requested",ext_approve:"Extension approved",ext_reject:"Extension rejected"};
-    const nevt={approve:permit.stage===3?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
+    const nevt={approve:permit.stage===2?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
     await sb.update(session.token,"permits",`id=eq.${permit.id}`,{status:ns,stage:st,extensions:ex,...extra});
     await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(role),action:labels[act]||act,note:rejectReason||""});
     await sb.notify(session.token,session.profile.org_id,permit.id,permit.permit_number,permit.title,nevt[act]||act,session.profile.full_name);
@@ -390,15 +390,15 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
           {fd.ra_mode==="upload"&&fd.ra_file_name&&(<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>📄</span><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{fd.ra_file_name}</p><p style={{fontSize:11,color:B.textSub}}>Uploaded risk assessment</p></div>{fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{marginLeft:"auto",background:B.accent,color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:600,textDecoration:"none"}}>Download</a>}</div>)}
           {fd.ra_mode==="generate"&&fd.ra_generated&&(<div><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>AI-Generated 5×5 Risk Assessment</p><div style={{fontSize:11,lineHeight:1.6,maxHeight:280,overflowY:"auto"}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/></div>)}
         </Card>)}
-        {(permit.stage>=3||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
+        {(permit.stage>=2||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
           {isOSH?(<><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>Add additional controls. Use AI for suggestions specific to this permit.</p><textarea value={oshControls} onChange={e=>setOshControls(e.target.value)} placeholder={"Additional controls (one per line)…"} rows={5} style={{resize:"vertical",marginBottom:8}}/>{session.apiKey?<button onClick={getAI} disabled={aiSuggesting} style={{width:"100%",background:aiSuggesting?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:aiSuggesting?"not-allowed":"pointer",marginBottom:4}}>{aiSuggesting?"🤖 Getting recommendations…":"🤖 Get AI-recommended additional controls"}</button>:<p style={{fontSize:11,color:B.warn}}>⚠ AI not configured.</p>}</>):(fd.osh_additional_controls?<p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.osh_additional_controls}</p>:<p style={{fontSize:12,color:B.textSub}}>No additional controls added yet.</p>)}
         </Card>)}
 
-        {(isIssuer||permit.status==="active"||permit.status==="closed")&&checklistItems.length>0&&(<Card title="Site Verification Checklist" accent={isIssuer?B.accentBorder:undefined}>
+        {(isIssuer||permit.stage>=3||permit.status==="active"||permit.status==="closed")&&checklistItems.length>0&&(<Card title="Site Verification Checklist" accent={isIssuer?B.accentBorder:undefined}>
           {isIssuer&&<p style={{fontSize:11,color:B.warn,marginBottom:8}}>Verify every control is in place on site. All items must be confirmed before issuing.</p>}
           <button onClick={()=>setShowChecklist(!showChecklist)} style={{width:"100%",background:showChecklist?B.neutral:B.primary,color:showChecklist?B.text:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:showChecklist?10:0}}>{showChecklist?"▲ Hide checklist":"▼ Tap to reveal site verification checklist"}</button>
           {showChecklist&&(<div>
-            {checklistItems.map((c,i)=>(<label key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:`0.5px solid ${B.neutralBorder}`,cursor:isIssuer?"pointer":"default"}}><input type="checkbox" checked={!!checklistDone[c]} onChange={e=>isIssuer&&setChecklistDone(prev=>({...prev,[c]:e.target.checked}))} disabled={!isIssuer} style={{width:"auto",marginTop:2,accentColor:B.accent}}/><span style={{fontSize:13,color:checklistDone[c]?B.accentBorder:B.text,lineHeight:1.5}}>{c}</span></label>))}
+            {checklistItems.map((c,i)=>(<label key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:`0.5px solid ${B.neutralBorder}`,cursor:isIssuer?"pointer":"default"}}><input type="checkbox" checked={!!checklistDone[c]} onChange={e=>{if(isIssuer)setChecklistDone(prev=>({...prev,[c]:e.target.checked}));}} disabled={!isIssuer} style={{width:"auto",marginTop:2,accentColor:B.accent}}/><span style={{fontSize:13,color:checklistDone[c]?B.accentBorder:B.text,lineHeight:1.5}}>{c}</span></label>))}
             {fd.selected_controls?.includes("RA Required")&&fd.ra_mode&&(<div style={{background:B.accentLight,borderRadius:8,padding:"10px",marginTop:8}}><p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:6}}>Risk Assessment — on-site verification</p>{fd.ra_mode==="upload"&&fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{display:"inline-block",background:B.accent,color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,textDecoration:"none"}}>View / Download RA</a>}{fd.ra_mode==="generate"&&fd.ra_generated&&<div style={{fontSize:11,maxHeight:200,overflowY:"auto",marginTop:6}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/>}</div>)}
             {isIssuer&&<div style={{marginTop:8,padding:"7px 10px",background:allChecked?B.accentLight:B.warnLight,borderRadius:6}}><p style={{fontSize:11,color:allChecked?B.accentBorder:B.warn,fontWeight:600}}>{allChecked?"✓ All controls verified on site — ready to issue":"⚠ "+checklistItems.filter(c=>!checklistDone[c]).length+" item(s) remaining"}</p></div>}
           </div>)}
