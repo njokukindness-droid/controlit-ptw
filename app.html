@@ -79,7 +79,7 @@ const PERMIT_CONTROLS={
 const STAGES=["Requesting Party","Area Authority","OSH Manager","Issuer"];
 const ROLES=["requester","area_authority","safety_officer","issuer","admin"];
 const MAX_EXT=2;
-const ROLE_STAGE={area_authority:2,safety_officer:3,issuer:4};
+const ROLE_STAGE={area_authority:1,safety_officer:2,issuer:3};
 
 function roleLabel(r){if(r==="safety_officer")return"OSH Manager";return(r||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());}
 const {useState,useEffect,useCallback,useRef}=React;
@@ -339,7 +339,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
   async function action(act){
     setErrMsg("");const role=session.profile.role;
-    if(act==="approve"&&role!=="admin"){const exp=ROLE_STAGE[role];if(exp===undefined){setErrMsg("Your role is not in the approval chain.");return;}if(permit.stage!==exp){setErrMsg(`This permit is at stage ${permit.stage}. Your role approves at stage ${exp}.`);return;}}
+    if(act==="approve"&&role!=="admin"){const exp=ROLE_STAGE[role];if(exp===undefined){setErrMsg("Your role is not in the approval chain.");return;}if(permit.stage!==exp){setErrMsg(`This permit is at stage ${permit.stage} and is not yet ready for your approval.`);return;}}
     if(act==="issue"&&role!=="issuer"&&role!=="admin"){setErrMsg("Only the Issuer can issue a permit.");return;}
     if(act==="issue"&&!allChecked){setErrMsg("Complete all checklist items before issuing.");return;}
     if(act==="reject"&&!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
