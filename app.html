@@ -4,409 +4,199 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CONTROLIT — Permit to Work Platform</title>
-  <meta name="description" content="CONTROLIT — Digital Permit to Work Management Platform" />
   <meta name="theme-color" content="#1A3A5C" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png" />
-  <link rel="shortcut icon" href="icons/favicon.ico" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F4F6F9; color: #1A2B3C; }
-    input, select, textarea { font-family: inherit; font-size: 13px; padding: 9px 12px; border: 0.5px solid #D1D8E0; border-radius: 8px; width: 100%; background: #fff; color: #1A2B3C; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: #1A3A5C; }
-    button { font-family: inherit; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #D1D8E0; border-radius: 4px; }
-    #root { max-width: 680px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F6F9;color:#1A2B3C}
+    input,select,textarea{font-family:inherit;font-size:13px;padding:9px 12px;border:0.5px solid #D1D8E0;border-radius:8px;width:100%;background:#fff;color:#1A2B3C;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:#1A3A5C}
+    button{font-family:inherit}
+    #root{max-width:680px;margin:0 auto;min-height:100vh;background:#fff;box-shadow:0 0 40px rgba(0,0,0,0.08)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media print{body{background:#fff}#root{box-shadow:none;max-width:100%}.no-print{display:none!important}}
   </style>
-  <!-- PWA -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CONTROLIT" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/controlit-ptw/sw.js').catch(function(){});
-      });
-    }
-  </script>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="CONTROLIT"/>
+  <script>if('serviceWorker'in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/controlit-ptw/sw.js').catch(function(){});});}</script>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const SUPABASE_URL="https://sguptjhsfyygwazmxfpk.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+const SERVICE_KEY=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",".","eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ",".","7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"].join("");
 
-const SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
-const SERVICE_KEY = ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",".",
-  "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ",".",
-  "7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"].join("");
-
-const sb = {
-  h: (t) => ({ "Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY, "Authorization":`Bearer ${t||SUPABASE_ANON_KEY}`, "Prefer":"return=representation" }),
-  signIn: async (email, pass) => { const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method:"POST", headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY}, body:JSON.stringify({email,password:pass}) }); return r.json(); },
-  signOut: async (t) => { await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method:"POST", headers:sb.h(t) }); },
-  updatePassword: async (t, pw) => { const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { method:"PUT", headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${t}`}, body:JSON.stringify({password:pw}) }); return r.json(); },
-  select: async (t, table, q) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q||""}`, { headers:sb.h(t) }); return r.json(); },
-  insert: async (t, table, data) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:"POST", headers:sb.h(t), body:JSON.stringify(data) }); return r.json(); },
-  update: async (t, table, match, data) => { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`, { method:"PATCH", headers:sb.h(t), body:JSON.stringify(data) }); return r.json(); },
-  createUser: async (email, password) => { const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, { method:"POST", headers:{"Content-Type":"application/json","apikey":SERVICE_KEY,"Authorization":`Bearer ${SERVICE_KEY}`}, body:JSON.stringify({email,password,email_confirm:true}) }); return r.json(); },
-
-  // ── FIX: Notification helper ────────────────────────────────────────────────
-  // Inserts one notification row per org member so every user sees the event.
-  // Called after every permit state change.
-  notify: async (token, orgId, permitId, permitRef, permitTitle, eventType, actorName) => {
-    const eventMessages = {
-      submitted:     `New permit submitted — awaiting Area Authority approval`,
-      aa_approved:   `Permit approved by Area Authority — awaiting OSH Manager`,
-      osh_approved:  `Permit approved by OSH Manager — awaiting Issuer`,
-      issued:        `Permit issued — work may now commence`,
-      rejected:      `Permit rejected by ${actorName}`,
-      suspended:     `Permit suspended by ${actorName}`,
-      closed:        `Permit closed by ${actorName}`,
-      ext_requested: `Extension requested by ${actorName}`,
-      ext_approved:  `Extension approved by ${actorName}`,
-      ext_rejected:  `Extension request rejected by ${actorName}`,
-    };
-    const message = eventMessages[eventType] || `Permit status updated by ${actorName}`;
-    try {
-      // Fetch all org members to fan-out the notification
-      const members = await sb.select(token, "profiles", `org_id=eq.${orgId}&active=eq.true&select=id`);
-      if (!Array.isArray(members) || members.length === 0) return;
-      const rows = members.map(m => ({
-        user_id:      m.id,
-        org_id:       orgId,
-        permit_id:    permitId,
-        reference:    permitRef,
-        title:        permitTitle,
-        message,
-        event_type:   eventType,
-        actor_name:   actorName,
-        is_read:      false,
-        created_at:   new Date().toISOString(),
-      }));
-      await sb.insert(token, "notifications", rows);
-    } catch(e) {
-      console.warn("Notification insert failed:", e);
-      // Non-fatal — don't block the main action
-    }
+const sb={
+  h:(t)=>({"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${t||SUPABASE_ANON_KEY}`,"Prefer":"return=representation"}),
+  signIn:async(e,p)=>{const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY},body:JSON.stringify({email:e,password:p})});return r.json();},
+  signOut:async(t)=>{await fetch(`${SUPABASE_URL}/auth/v1/logout`,{method:"POST",headers:sb.h(t)});},
+  updatePassword:async(t,pw)=>{const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${t}`},body:JSON.stringify({password:pw})});return r.json();},
+  select:async(t,table,q)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q||""}`,{headers:sb.h(t)});return r.json();},
+  insert:async(t,table,data)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{method:"POST",headers:sb.h(t),body:JSON.stringify(data)});return r.json();},
+  update:async(t,table,match,data)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`,{method:"PATCH",headers:sb.h(t),body:JSON.stringify(data)});return r.json();},
+  createUser:async(email,password)=>{const r=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SERVICE_KEY,"Authorization":`Bearer ${SERVICE_KEY}`},body:JSON.stringify({email,password,email_confirm:true})});return r.json();},
+  notify:async(token,orgId,permitId,ref,title,eventType,actorName)=>{
+    const msgs={submitted:"New permit submitted — awaiting Area Authority approval",aa_approved:"Permit approved by Area Authority — forwarded to OSH Manager",osh_approved:"Permit approved by OSH Manager — forwarded to Issuer",issued:"Permit issued — work may now commence",rejected:`Permit rejected by ${actorName}`,suspended:`Permit suspended by ${actorName}`,closed:`Permit closed by ${actorName}`,ext_requested:`Extension requested by ${actorName}`,ext_approved:`Extension approved by ${actorName}`,ext_rejected:`Extension rejected by ${actorName}`};
+    try{const members=await sb.select(token,"profiles",`org_id=eq.${orgId}&active=eq.true&select=id`);if(!Array.isArray(members)||!members.length)return;await sb.insert(token,"notifications",members.map(m=>({user_id:m.id,org_id:orgId,permit_id:permitId,reference:ref,title,message:msgs[eventType]||`Permit updated by ${actorName}`,event_type:eventType,actor_name:actorName,is_read:false,created_at:new Date().toISOString()})));}catch(e){console.warn("notify failed",e);}
   },
 };
 
-const B = {
-  primary:"#1A3A5C", accent:"#0E9E6E", accentLight:"#E0F5EE",
-  accentBorder:"#0B7A55", warn:"#D97B00", warnLight:"#FEF3DC",
-  danger:"#C0392B", dangerLight:"#FDECEA", neutral:"#F4F6F9",
-  neutralBorder:"#D1D8E0", text:"#1A2B3C", textSub:"#5A6A7A", white:"#FFFFFF",
-};
+function decodeApiKey(enc){if(!enc)return null;try{return JSON.parse(enc).join(".");}catch(e){return enc;}}
 
-const PERMIT_TYPES = [
-  { id:"hot_work",       label:"Hot Work",                        color:"#D85A30" },
-  { id:"cold_work",      label:"Cold Work (Critical)",            color:"#185FA5" },
-  { id:"confined_space", label:"Confined Space Entry",            color:"#D97B00" },
-  { id:"electrical",     label:"Electrical Isolation (LOTO)",     color:"#7F77DD" },
-  { id:"height",         label:"Working at Height",               color:"#0E9E6E" },
-  { id:"excavation",     label:"Excavation & Ground Disturbance", color:"#3B6D11" },
-  { id:"lifting",        label:"Critical Lifting Operation",      color:"#7F77DD" },
+async function callClaude(apiKey,sys,usr,maxTok=1400){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTok,system:sys,messages:[{role:"user",content:usr}]})});
+  const d=await r.json();if(d.error)throw new Error(d.error.message||"AI error");return d.content?.[0]?.text||"";
+}
+
+const B={primary:"#1A3A5C",accent:"#0E9E6E",accentLight:"#E0F5EE",accentBorder:"#0B7A55",warn:"#D97B00",warnLight:"#FEF3DC",danger:"#C0392B",dangerLight:"#FDECEA",neutral:"#F4F6F9",neutralBorder:"#D1D8E0",text:"#1A2B3C",textSub:"#5A6A7A",white:"#FFFFFF"};
+
+const PERMIT_TYPES=[
+  {id:"hot_work",label:"Hot Work",color:"#D85A30"},
+  {id:"cold_work",label:"Cold Work (Critical)",color:"#185FA5"},
+  {id:"confined_space",label:"Confined Space Entry",color:"#D97B00"},
+  {id:"electrical",label:"Electrical Isolation (LOTO)",color:"#7F77DD"},
+  {id:"height",label:"Working at Height",color:"#0E9E6E"},
+  {id:"excavation",label:"Excavation & Ground Disturbance",color:"#3B6D11"},
+  {id:"lifting",label:"Critical Lifting Operation",color:"#7F77DD"},
 ];
 
-const STAGES  = ["Requesting Party","Area Authority","OSH Manager","Issuer"];
-const ROLES   = ["requester","area_authority","safety_officer","issuer","admin"];
-const MAX_EXT = 2;
-
-// ── FIX: Role-to-stage map (which role approves at which stage) ────────────────
-// Stage 1 = submitted by requester (no approval needed, moves to stage 2 on submit)
-// Stage 2 = Area Authority approves
-// Stage 3 = OSH Manager (safety_officer) approves
-// Stage 4 = Issuer issues
-const ROLE_STAGE = {
-  area_authority:  2,
-  safety_officer:  3,
-  issuer:          4,
+const PERMIT_CONTROLS={
+  hot_work:["Fire extinguisher (min 9kg dry powder) within 5m of work area","Hot work blanket / spark containment screen erected","Fire watch assigned, briefed and stationed throughout work","All combustibles removed or shielded within 10m radius","Gas test completed — LEL confirmed below 10% before commencing","Continuous gas monitoring for duration of work","Welding / cutting equipment inspected and certified","Flash-back arrestors fitted to fuel and oxygen lines","Work area barricaded and signage posted","Hot surfaces marked and cooling period enforced after completion","Adjacent drains and openings sealed against spark entry","Fire watch to remain 30 minutes after work completion","RA Required"],
+  cold_work:["Work area isolated and barricaded","All stored energy identified and controlled","PPE worn: hard hat, safety glasses, gloves, safety boots","Tools inspected and certified for use","No overhead hazards confirmed within work area","Housekeeping maintained throughout task","Supervisor on site or contactable at all times","Emergency contact numbers posted at work site","RA Required"],
+  confined_space:["Atmospheric test: O2 19.5-23%, LEL <10%, H2S <10ppm, CO <25ppm","Continuous atmospheric monitoring throughout entry","Dedicated attendant stationed at entry point at all times","Retrieval system (tripod and lifeline) rigged and tested","Rescue team on standby and fully briefed","Mechanical ventilation — minimum 20 air changes per hour","All energy sources locked out and tagged (LOTO applied)","Communication tested between entrant and attendant","Entry log maintained — all entrants signed in and out","Confined space signage posted at all access points","RA Required"],
+  electrical:["Isolation point identified, locked out and tagged by authorised electrician","All energy sources de-energised and verified at zero","Voltage test confirms zero energy before work begins","Personal lock applied by each worker on isolation point","Capacitors discharged and earthing applied where required","LOTO log maintained with all keys accounted for","Insulated tools and PPE (Class 0 minimum) in use","Arc flash boundary established and posted","No re-energisation without written authorisation from Issuer","All workers briefed on emergency isolation procedure","RA Required"],
+  height:["Fall protection plan reviewed and approved","Scaffolding inspected by competent person and green-tagged","Full body harness worn, inspected and within certification date","Anchor points rated minimum 15kN and inspected before use","Lanyard connected before leaving a secured position","Exclusion zone established at ground level below work area","Toe boards and guardrails fitted on all open edges","Tools tethered — dropped object prevention in place","Rescue / retrieval plan in place for fall-arrest scenarios","Work suspended if wind exceeds 12m/s or lightning risk","Ladder secured top and bottom, extending 1m above platform","RA Required"],
+  excavation:["Underground utility survey — CAT scan and drawings reviewed","All underground services marked before excavation begins","Competent person inspects excavation at start of each shift","Shoring, benching or batter slopes applied per soil classification","Spoil kept minimum 1m from edge of excavation","Safe means of access/egress at maximum 8m intervals","Atmospheric testing if depth exceeds 1.2m","Exclusion zone — no vehicles within 2m of edge","Water accumulation monitored and pumped as required","Excavation protected and signed overnight or when unattended","RA Required"],
+  lifting:["Lift plan reviewed and signed by lifting supervisor","Crane / lifting equipment inspected and within certification date","Rigging gear inspected and colour-coded current","SWL confirmed — load weight verified before lift","Exclusion zone below lift path — no personnel under load","Qualified rigger and banksman assigned to lift","Tag lines used to control load swing","Ground conditions assessed, crane outriggers on certified mats","Overhead power lines identified — minimum 6m clearance maintained","Wind speed checked — lift suspended if greater than 10m/s","Pre-lift toolbox talk conducted with all involved personnel","Radio communication confirmed between crane operator and banksman","RA Required"],
 };
 
-function roleLabel(role) {
-  if (role === "safety_officer") return "OSH Manager";
-  return (role||"").replace(/_/g," ").replace(/\b\w/g, c => c.toUpperCase());
+const STAGES=["Requesting Party","Area Authority","OSH Manager","Issuer"];
+const ROLES=["requester","area_authority","safety_officer","issuer","admin"];
+const MAX_EXT=2;
+const ROLE_STAGE={area_authority:2,safety_officer:3,issuer:4};
+
+function roleLabel(r){if(r==="safety_officer")return"OSH Manager";return(r||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());}
+const {useState,useEffect,useCallback,useRef}=React;
+const pt=(id)=>PERMIT_TYPES.find(t=>t.id===id)||{};
+const nowStr=()=>new Date().toISOString();
+const fmtDate=(s)=>s?new Date(s).toLocaleString():"—";
+
+// ── UI atoms ──────────────────────────────────────────────────────────────────
+function Logo({size=28}){return(<div style={{display:"flex",alignItems:"center",gap:8}}><svg width={size} height={size} viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill={B.primary}/><path d="M8 16 L14 22 L24 10" stroke={B.accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="16" cy="16" r="10" stroke={B.accent} strokeWidth="1.5" fill="none" opacity="0.35"/></svg><span style={{fontWeight:700,fontSize:size*0.6,letterSpacing:"0.04em",color:B.primary}}>CONTROLIT</span></div>);}
+
+function Topbar({title,onBack,right}){return(<div style={{background:B.primary,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50}} className="no-print"><div style={{display:"flex",alignItems:"center",gap:12}}>{onBack&&<button onClick={onBack} style={{background:"none",border:"none",color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:22,lineHeight:1,padding:0}}>‹</button>}{!onBack?<Logo size={24}/>:<span style={{color:B.white,fontWeight:600,fontSize:15}}>{title}</span>}</div>{right&&<div>{right}</div>}</div>);}
+
+function Spinner(){return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4rem",gap:12}}><div style={{width:36,height:36,border:`3px solid ${B.neutralBorder}`,borderTop:`3px solid ${B.accent}`,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/><p style={{color:B.textSub,fontSize:13}}>Loading…</p></div>);}
+
+function ErrBox({msg}){return(<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"10px 14px",margin:"8px 0",fontSize:13,color:B.danger}}>{msg}</div>);}
+
+function Card({title,children,accent,collapsible}){
+  const[open,setOpen]=useState(true);
+  return(<div style={{background:B.neutral,border:`0.5px solid ${accent||B.neutralBorder}`,borderRadius:10,padding:"1rem",marginBottom:"1rem"}}>{title&&<div onClick={collapsible?()=>setOpen(!open):undefined} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:open||!collapsible?10:0,cursor:collapsible?"pointer":"default"}}><p style={{fontSize:12,fontWeight:700,color:accent?B.accentBorder:B.textSub,letterSpacing:"0.04em",textTransform:"uppercase"}}>{title}</p>{collapsible&&<span style={{color:B.textSub,fontSize:11}}>{open?"▲":"▼"}</span>}</div>}{(!collapsible||open)&&children}</div>);
 }
 
-const { useState, useEffect, useCallback } = React;
-const pt = (id) => PERMIT_TYPES.find(t => t.id===id) || {};
-const nowStr = () => new Date().toISOString();
+function useOwnerTap(){const[n,setN]=useState(0);const t=useRef(null);return()=>{setN(c=>{const x=c+1;if(x>=5){window.location.href="owner.html";return 0;}clearTimeout(t.current);t.current=setTimeout(()=>setN(0),1500);return x;});};}
 
-function Logo({ size=28 }) {
-  return (
-    <div style={{display:"flex",alignItems:"center",gap:8}}>
-      <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill={B.primary}/>
-        <path d="M8 16 L14 22 L24 10" stroke={B.accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="16" cy="16" r="10" stroke={B.accent} strokeWidth="1.5" fill="none" opacity="0.35"/>
-      </svg>
-      <span style={{fontWeight:700,fontSize:size*0.6,letterSpacing:"0.04em",color:B.primary}}>CONTROLIT</span>
-    </div>
-  );
-}
-
-function Topbar({ title, onBack, right }) {
-  return (
-    <div style={{background:B.primary,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        {onBack && <button onClick={onBack} style={{background:"none",border:"none",color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:22,lineHeight:1,padding:0}}>‹</button>}
-        {!onBack ? <Logo size={24}/> : <span style={{color:B.white,fontWeight:600,fontSize:15}}>{title}</span>}
-      </div>
-      {right && <div>{right}</div>}
-    </div>
-  );
-}
-
-function Spinner() {
-  return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4rem",gap:12}}>
-      <div style={{width:36,height:36,border:`3px solid ${B.neutralBorder}`,borderTop:`3px solid ${B.accent}`,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <p style={{color:B.textSub,fontSize:13}}>Loading…</p>
-    </div>
-  );
-}
-
-function Err({ msg }) {
-  return <div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"10px 14px",margin:"1rem",fontSize:13,color:B.danger}}>{msg}</div>;
-}
-
-function useOwnerAccess() {
-  const [clicks, setClicks] = useState(0);
-  const timer = React.useRef(null);
-  function handleClick() {
-    setClicks(c => {
-      const next = c+1;
-      if (next>=5) { window.location.href="owner.html"; return 0; }
-      clearTimeout(timer.current);
-      timer.current = setTimeout(()=>setClicks(0), 1500);
-      return next;
-    });
-  }
-  return handleClick;
-}
-
-// ── Account Setup ─────────────────────────────────────────────────
-function AccountSetup({ session, onComplete }) {
-  const [fullName, setFullName] = useState(session.profile.full_name||"");
-  const [newPass, setNewPass]   = useState("");
-  const [confirm, setConfirm]   = useState("");
-  const [busy, setBusy]         = useState(false);
-  const [err, setErr]           = useState("");
-
-  async function save() {
-    if (!fullName.trim())        { setErr("Please enter your full name."); return; }
-    if (newPass.length<8)        { setErr("Password must be at least 8 characters."); return; }
-    if (newPass!==confirm)       { setErr("Passwords do not match."); return; }
-    setBusy(true); setErr("");
-    const r = await sb.updatePassword(session.token, newPass);
-    if (r.error) { setErr(r.error.message||"Failed to update password."); setBusy(false); return; }
-    await sb.update(session.token,"profiles",`id=eq.${session.userId}`,{full_name:fullName});
-    onComplete({...session,profile:{...session.profile,full_name:fullName}});
+// ── Login ─────────────────────────────────────────────────────────────────────
+function Login({onLogin}){
+  const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
+  const tap=useOwnerTap();
+  async function go(){
+    if(!email||!pass)return;setBusy(true);setErr("");
+    try{
+      const d=await sb.signIn(email,pass);if(d.error){setErr(d.error.message||"Login failed.");setBusy(false);return;}
+      const token=d.access_token,uid=d.user?.id;
+      const profiles=await sb.select(token,"profiles",`id=eq.${uid}`);
+      if(!profiles||!profiles[0]){setErr("No profile found. Contact your administrator.");setBusy(false);return;}
+      const profile=profiles[0];
+      const orgs=await sb.select(token,"organisations",`id=eq.${profile.org_id}`);
+      const org=orgs&&orgs[0]?orgs[0]:{name:"Your Organisation"};
+      if(org&&org.active===false){setErr("Organisation suspended. Contact support.");setBusy(false);return;}
+      onLogin({token,userId:uid,profile,org,apiKey:decodeApiKey(org.anthropic_key)});
+    }catch(e){setErr("Connection error.");}
     setBusy(false);
   }
-
-  return (
+  return(
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F2640 0%,#1A3A5C 60%,#0E4D38 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"2rem"}}>
       <div style={{marginBottom:"2rem",textAlign:"center"}}>
-        <svg width="56" height="56" viewBox="0 0 32 32" fill="none" style={{marginBottom:12}}>
-          <rect width="32" height="32" rx="8" fill={B.accent}/>
-          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4"/>
-        </svg>
-        <div style={{color:B.white,fontWeight:800,fontSize:26,letterSpacing:"0.06em"}}>CONTROLIT</div>
-        <div style={{color:"rgba(255,255,255,0.55)",fontSize:13,marginTop:4}}>Complete your account setup</div>
-      </div>
-      <div style={{background:"rgba(255,255,255,0.07)",backdropFilter:"blur(12px)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:380}}>
-        <p style={{color:"rgba(255,255,255,0.8)",fontSize:13,marginBottom:"1.25rem",fontWeight:500}}>
-          Welcome to <strong style={{color:B.accent}}>{session.org.name}</strong>. Set your name and a secure password.
-        </p>
-        {err&&<div style={{background:"rgba(192,57,43,0.2)",border:"0.5px solid rgba(192,57,43,0.5)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#ffaaaa"}}>{err}</div>}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Full name *</label>
-          <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/>
-        </div>
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>New password * (min 8 chars)</label>
-          <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="Choose a strong password" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/>
-        </div>
-        <div style={{marginBottom:"1.5rem"}}>
-          <label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Confirm password *</label>
-          <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat password" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/>
-        </div>
-        <button onClick={save} disabled={busy} style={{width:"100%",background:busy?"#555":B.accent,color:B.white,border:"none",borderRadius:8,padding:"12px",fontSize:14,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
-          {busy?"Saving…":"Complete setup & sign in"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Change Password ───────────────────────────────────────────────
-function ChangePassword({ session, onBack }) {
-  const [current, setCurrent] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [busy, setBusy]       = useState(false);
-  const [err, setErr]         = useState("");
-  const [success, setSuccess] = useState(false);
-
-  async function save() {
-    if (!current)            { setErr("Enter your current password."); return; }
-    if (newPass.length<8)    { setErr("New password must be at least 8 characters."); return; }
-    if (newPass!==confirm)   { setErr("Passwords do not match."); return; }
-    if (newPass===current)   { setErr("New password must be different from current."); return; }
-    setBusy(true); setErr("");
-    const check = await sb.signIn(session.profile.email, current);
-    if (check.error) { setErr("Current password is incorrect."); setBusy(false); return; }
-    const r = await sb.updatePassword(session.token, newPass);
-    if (r.error) { setErr(r.error.message||"Failed to update password."); setBusy(false); return; }
-    setSuccess(true); setBusy(false);
-  }
-
-  return (
-    <div>
-      <Topbar title="Change Password" onBack={onBack}/>
-      <div style={{padding:"1.25rem"}}>
-        {success ? (
-          <div style={{textAlign:"center",padding:"2rem 1rem"}}>
-            <div style={{fontSize:48,marginBottom:16}}>✓</div>
-            <p style={{fontSize:16,fontWeight:600,color:B.text,marginBottom:8}}>Password updated successfully</p>
-            <p style={{fontSize:13,color:B.textSub,marginBottom:"1.5rem"}}>Your new password is active.</p>
-            <button onClick={onBack} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",fontSize:13,fontWeight:600,cursor:"pointer"}}>Back to dashboard</button>
-          </div>
-        ) : (
-          <>
-            <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"10px 14px",marginBottom:"1.25rem"}}>
-              <p style={{fontSize:12,color:B.textSub}}>Signed in as <strong style={{color:B.text}}>{session.profile.email}</strong></p>
-            </div>
-            {err&&<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:13,color:B.danger}}>{err}</div>}
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <div>
-                <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Current password *</label>
-                <input type="password" value={current} onChange={e=>setCurrent(e.target.value)} placeholder="Enter current password"/>
-              </div>
-              <div>
-                <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>New password * (min 8 characters)</label>
-                <input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder="Choose a strong password"/>
-              </div>
-              <div>
-                <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Confirm new password *</label>
-                <input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat new password"/>
-              </div>
-            </div>
-            <button onClick={save} disabled={busy} style={{marginTop:"1.5rem",width:"100%",background:busy?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
-              {busy?"Updating…":"Update password"}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Login ─────────────────────────────────────────────────────────
-function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [pass, setPass]   = useState("");
-  const [busy, setBusy]   = useState(false);
-  const [err, setErr]     = useState("");
-  const handleOwnerClick  = useOwnerAccess();
-
-  async function go() {
-    if (!email||!pass) return;
-    setBusy(true); setErr("");
-    try {
-      const d = await sb.signIn(email, pass);
-      if (d.error) { setErr(d.error.message||"Login failed."); setBusy(false); return; }
-      const token = d.access_token, uid = d.user?.id;
-      const profiles = await sb.select(token,"profiles",`id=eq.${uid}`);
-      if (!profiles||!profiles[0]) { setErr("No profile found. Contact your administrator."); setBusy(false); return; }
-      const profile = profiles[0];
-      const orgs = await sb.select(token,"organisations",`id=eq.${profile.org_id}`);
-      const org = orgs&&orgs[0] ? orgs[0] : {name:"Your Organisation"};
-      if (org&&org.active===false) { setErr("Your organisation account has been suspended. Please contact support at kindnessnjoku@outlook.com"); setBusy(false); return; }
-      onLogin({token,userId:uid,profile,org,firstTime:false});
-    } catch(e) { setErr("Connection error. Please try again."); }
-    setBusy(false);
-  }
-
-  return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F2640 0%,#1A3A5C 60%,#0E4D38 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"2rem"}}>
-      <div style={{marginBottom:"2rem",textAlign:"center"}}>
-        <svg width="60" height="60" viewBox="0 0 32 32" fill="none" onClick={handleOwnerClick} style={{marginBottom:12,cursor:"default"}}>
-          <rect width="32" height="32" rx="8" fill={B.accent}/>
-          <path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4"/>
-        </svg>
+        <svg width="60" height="60" viewBox="0 0 32 32" fill="none" onClick={tap} style={{marginBottom:12,cursor:"default"}}><rect width="32" height="32" rx="8" fill={B.accent}/><path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4"/></svg>
         <div style={{color:B.white,fontWeight:800,fontSize:30,letterSpacing:"0.06em"}}>CONTROLIT</div>
         <div style={{color:"rgba(255,255,255,0.55)",fontSize:13,marginTop:4}}>Permit to Work Management Platform</div>
       </div>
       <div style={{background:"rgba(255,255,255,0.07)",backdropFilter:"blur(12px)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:360}}>
         <p style={{color:"rgba(255,255,255,0.8)",fontSize:13,marginBottom:"1.25rem",fontWeight:500}}>Sign in to your account</p>
         {err&&<div style={{background:"rgba(192,57,43,0.2)",border:"0.5px solid rgba(192,57,43,0.5)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#ffaaaa"}}>{err}</div>}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Email address</label>
-          <input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="you@company.com" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/>
-        </div>
-        <div style={{marginBottom:"1.5rem"}}>
-          <label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Password</label>
-          <input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="••••••••" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/>
-        </div>
-        <button onClick={go} disabled={busy} style={{width:"100%",background:busy?"#555":B.accent,color:B.white,border:"none",borderRadius:8,padding:"12px",fontSize:14,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
-          {busy?"Signing in…":"Sign in"}
-        </button>
+        <div style={{marginBottom:12}}><label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="you@company.com" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Password</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="••••••••" style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/></div>
+        <button onClick={go} disabled={busy} style={{width:"100%",background:busy?"#555":B.accent,color:B.white,border:"none",borderRadius:8,padding:"12px",fontSize:14,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>{busy?"Signing in…":"Sign in"}</button>
         <p style={{textAlign:"center",color:"rgba(255,255,255,0.3)",fontSize:11,marginTop:"1rem"}}>Access by invitation only · CONTROLIT v1.0</p>
       </div>
     </div>
   );
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────
-function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs, unread, onAdmin, onWorkflow, onChangePass, onLogout }) {
-  const [filter, setFilter] = useState("all");
-  const counts = {
-    active:  permits.filter(p=>p.status==="active").length,
-    pending: permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,
-    revoked: permits.filter(p=>p.status==="revoked").length,
-    closed:  permits.filter(p=>p.status==="closed").length,
-  };
-  const filtered = filter==="all" ? permits : permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
+// ── Account Setup ─────────────────────────────────────────────────────────────
+function AccountSetup({session,onComplete}){
+  const[fullName,setFullName]=useState(session.profile.full_name||"");const[newPass,setNewPass]=useState("");const[confirm,setConfirm]=useState("");const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
+  async function save(){
+    if(!fullName.trim()){setErr("Enter your full name.");return;}if(newPass.length<8){setErr("Password min 8 chars.");return;}if(newPass!==confirm){setErr("Passwords do not match.");return;}
+    setBusy(true);setErr("");const r=await sb.updatePassword(session.token,newPass);if(r.error){setErr(r.error.message||"Failed.");setBusy(false);return;}
+    await sb.update(session.token,"profiles",`id=eq.${session.userId}`,{full_name:fullName});onComplete({...session,profile:{...session.profile,full_name:fullName}});setBusy(false);
+  }
+  return(
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F2640 0%,#1A3A5C 60%,#0E4D38 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"2rem"}}>
+      <div style={{marginBottom:"2rem",textAlign:"center"}}><svg width="56" height="56" viewBox="0 0 32 32" fill="none" style={{marginBottom:12}}><rect width="32" height="32" rx="8" fill={B.accent}/><path d="M8 16 L14 22 L24 10" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="16" cy="16" r="10" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.4"/></svg><div style={{color:B.white,fontWeight:800,fontSize:26,letterSpacing:"0.06em"}}>CONTROLIT</div><div style={{color:"rgba(255,255,255,0.55)",fontSize:13,marginTop:4}}>Complete account setup</div></div>
+      <div style={{background:"rgba(255,255,255,0.07)",backdropFilter:"blur(12px)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:380}}>
+        <p style={{color:"rgba(255,255,255,0.8)",fontSize:13,marginBottom:"1.25rem",fontWeight:500}}>Welcome to <strong style={{color:B.accent}}>{session.org.name}</strong>. Set your name and a secure password.</p>
+        {err&&<div style={{background:"rgba(192,57,43,0.2)",border:"0.5px solid rgba(192,57,43,0.5)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#ffaaaa"}}>{err}</div>}
+        <div style={{marginBottom:12}}><label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Full name *</label><input value={fullName} onChange={e=>setFullName(e.target.value)} style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/></div>
+        <div style={{marginBottom:12}}><label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>New password *</label><input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={{fontSize:11,color:"rgba(255,255,255,0.55)",display:"block",marginBottom:4}}>Confirm password *</label><input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} style={{background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.2)",color:B.white,borderRadius:8}}/></div>
+        <button onClick={save} disabled={busy} style={{width:"100%",background:busy?"#555":B.accent,color:B.white,border:"none",borderRadius:8,padding:"12px",fontSize:14,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>{busy?"Saving…":"Complete setup & sign in"}</button>
+      </div>
+    </div>
+  );
+}
 
-  return (
+// ── Change Password ───────────────────────────────────────────────────────────
+function ChangePassword({session,onBack}){
+  const[c,setC]=useState("");const[n,setN]=useState("");const[cn,setCn]=useState("");const[busy,setBusy]=useState(false);const[err,setErr]=useState("");const[ok,setOk]=useState(false);
+  async function save(){
+    if(!c){setErr("Enter current password.");return;}if(n.length<8){setErr("Min 8 chars.");return;}if(n!==cn){setErr("Passwords do not match.");return;}if(n===c){setErr("Must differ from current.");return;}
+    setBusy(true);setErr("");const chk=await sb.signIn(session.profile.email,c);if(chk.error){setErr("Current password incorrect.");setBusy(false);return;}
+    const r=await sb.updatePassword(session.token,n);if(r.error){setErr(r.error.message||"Failed.");setBusy(false);return;}setOk(true);setBusy(false);
+  }
+  return(<div><Topbar title="Change Password" onBack={onBack}/><div style={{padding:"1.25rem"}}>{ok?(<div style={{textAlign:"center",padding:"2rem"}}><div style={{fontSize:48,marginBottom:16}}>✓</div><p style={{fontSize:16,fontWeight:600,color:B.text,marginBottom:8}}>Password updated</p><button onClick={onBack} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",fontSize:13,fontWeight:600,cursor:"pointer"}}>Back</button></div>):(<><div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"10px 14px",marginBottom:"1rem"}}><p style={{fontSize:12,color:B.textSub}}>Signed in as <strong>{session.profile.email}</strong></p></div>{err&&<ErrBox msg={err}/>}<div style={{display:"flex",flexDirection:"column",gap:12}}><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Current password *</label><input type="password" value={c} onChange={e=>setC(e.target.value)}/></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>New password *</label><input type="password" value={n} onChange={e=>setN(e.target.value)}/></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Confirm new *</label><input type="password" value={cn} onChange={e=>setCn(e.target.value)}/></div></div><button onClick={save} disabled={busy} style={{marginTop:"1.5rem",width:"100%",background:busy?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>{busy?"Updating…":"Update password"}</button></>)}</div></div>);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread,onAdmin,onWorkflow,onChangePass,onLogout}){
+  const[filter,setFilter]=useState("all");
+  const counts={active:permits.filter(p=>p.status==="active").length,pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,revoked:permits.filter(p=>p.status==="revoked").length,closed:permits.filter(p=>p.status==="closed").length};
+  const filtered=filter==="all"?permits:permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
+  return(
     <div>
-      <Topbar right={
-        <div style={{display:"flex",gap:6}}>
-          <button onClick={onNotifs} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer",position:"relative"}}>
-            🔔{unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:B.danger,color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}
-          </button>
-          {session.profile.role==="admin"&&<button onClick={onAdmin} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Admin</button>}
-          <button onClick={onWorkflow} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Workflow</button>
-          <button onClick={onChangePass} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>🔑</button>
-          <button onClick={onLogout} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Sign out</button>
-        </div>
-      }/>
+      <Topbar right={<div style={{display:"flex",gap:6}}>
+        <button onClick={onNotifs} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer",position:"relative"}}>🔔{unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:B.danger,color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</button>
+        {session.profile.role==="admin"&&<button onClick={onAdmin} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Admin</button>}
+        <button onClick={onWorkflow} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Workflow</button>
+        <button onClick={onChangePass} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>🔑</button>
+        <button onClick={onLogout} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Sign out</button>
+      </div>}/>
       <div style={{padding:"1.25rem 1.25rem 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
-          <div>
-            <p style={{fontSize:13,color:B.textSub}}>Welcome, <strong style={{color:B.text}}>{session.profile.full_name}</strong></p>
-            <p style={{fontSize:11,color:B.textSub}}>{session.org.name} · {roleLabel(session.profile.role)}</p>
-          </div>
+          <div><p style={{fontSize:13,color:B.textSub}}>Welcome, <strong style={{color:B.text}}>{session.profile.full_name}</strong></p><p style={{fontSize:11,color:B.textSub}}>{session.org.name} · {roleLabel(session.profile.role)}</p></div>
           <button onClick={onNew} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New permit</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:"1.25rem"}}>
           {[["Active",counts.active,B.accent],["Pending",counts.pending,B.warn],["Revoked",counts.revoked,B.danger],["Closed",counts.closed,B.textSub]].map(([l,v,c])=>(
-            <div key={l} style={{background:B.neutral,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${c}`}}>
-              <p style={{fontSize:11,color:B.textSub}}>{l}</p>
-              <p style={{fontSize:22,fontWeight:700,color:c}}>{v}</p>
-            </div>
+            <div key={l} style={{background:B.neutral,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${c}`}}><p style={{fontSize:11,color:B.textSub}}>{l}</p><p style={{fontSize:22,fontWeight:700,color:c}}>{v}</p></div>
           ))}
         </div>
         <div style={{display:"flex",gap:6,marginBottom:"1rem",flexWrap:"wrap"}}>
@@ -416,25 +206,15 @@ function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs
         </div>
       </div>
       <div style={{padding:"0 1.25rem 2rem"}}>
-        {loading&&<Spinner/>}
-        {error&&<Err msg={error}/>}
-        {!loading&&!error&&filtered.length===0&&(
-          <div style={{textAlign:"center",padding:"3rem 1rem"}}>
-            <p style={{fontSize:32}}>📋</p>
-            <p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>No permits yet</p>
-            <p style={{fontSize:13,color:B.textSub}}>Create your first permit to get started.</p>
-          </div>
-        )}
+        {loading&&<Spinner/>}{error&&<ErrBox msg={error}/>}
+        {!loading&&!error&&filtered.length===0&&<div style={{textAlign:"center",padding:"3rem 1rem"}}><p style={{fontSize:32}}>📋</p><p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>No permits yet</p><p style={{fontSize:13,color:B.textSub}}>Create your first permit to get started.</p></div>}
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {filtered.map(p=>{
-            const t = pt(p.type);
-            return (
+            const t=pt(p.type);
+            return(
               <div key={p.id} onClick={()=>onSelect(p)} style={{background:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",borderLeft:`3px solid ${t.color||B.textSub}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                  <div>
-                    <p style={{fontSize:13,fontWeight:600,color:B.text}}>{p.title}</p>
-                    <p style={{fontSize:11,color:B.textSub}}>{p.permit_number} · {p.area}</p>
-                  </div>
+                  <div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{p.title}</p><p style={{fontSize:11,color:B.textSub}}>{p.permit_number} · {p.area}</p></div>
                   <span style={{background:B.accentLight,color:B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(p.status||"").replace("_"," ")}</span>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -444,7 +224,7 @@ function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs
                     <span style={{fontSize:10,color:B.textSub,marginLeft:4}}>{p.stage}/4</span>
                   </div>
                 </div>
-                {(p.extensions||0)>=MAX_EXT&&p.status==="active"&&<p style={{fontSize:10,color:B.danger,marginTop:5}}>Max extensions reached — new permit required after closure</p>}
+                {p.status==="rejected"&&<p style={{fontSize:10,color:B.danger,marginTop:5}}>Rejected — see permit for reason</p>}
               </div>
             );
           })}
@@ -454,652 +234,322 @@ function Dashboard({ session, permits, loading, error, onSelect, onNew, onNotifs
   );
 }
 
-// ── Permit Detail ─────────────────────────────────────────────────
-// FIX: action() now has role guard, updates selected permit locally,
-//      and calls sb.notify() to fan-out notifications to all org members.
-function PermitDetail({ permit: initialPermit, session, onBack, onRefresh }) {
-  const [tab, setTab]       = useState("detail");
-  const [audit, setAudit]   = useState([]);
-  const [busy, setBusy]     = useState(false);
-  const [errMsg, setErrMsg] = useState("");
-  // FIX: keep a local copy of the permit so UI updates immediately after action
-  const [permit, setPermit] = useState(initialPermit);
-  const t = pt(permit.type);
+// ── New Permit ────────────────────────────────────────────────────────────────
+function NewPermit({session,onBack,onSuccess}){
+  const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[tools,setTools]=useState("");const[controls,setControls]=useState({});const[raMode,setRaMode]=useState(null);const[raFile,setRaFile]=useState(null);const[raFileData,setRaFileData]=useState(null);const[raGenerated,setRaGenerated]=useState("");const[raGenerating,setRaGenerating]=useState(false);const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
+  const typeControls=type?(PERMIT_CONTROLS[type]||[]):[];
+  const isRARequired=controls["RA Required"];
 
-  function loadAudit() {
-    sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`)
-      .then(d=>{ if(Array.isArray(d)) setAudit(d); });
+  function handleFile(e){const f=e.target.files?.[0];if(!f)return;setRaFile(f);const rd=new FileReader();rd.onload=ev=>setRaFileData(ev.target.result);rd.readAsDataURL(f);}
+
+  async function generateRA(){
+    if(!session.apiKey){setErr("AI features not configured. Contact your administrator.");return;}
+    setRaGenerating(true);setErr("");
+    const sel=typeControls.filter(c=>controls[c]&&c!=="RA Required");
+    try{const text=await callClaude(session.apiKey,"You are a senior HSE risk assessment specialist. Generate a formal 5x5 risk matrix risk assessment in clean HTML (no markdown, no code fences). Include: 1) A titled 5x5 risk matrix table (Likelihood 1-5 vs Severity 1-5) with color-coded cells (green/yellow/orange/red). 2) A Hazard Register table: Hazard | Likelihood | Severity | Risk Rating | Control Measures. 3) A Signatories section with blanks. Use inline CSS for all styling.",`Permit Type: ${pt(type).label}\nWork Title: ${title}\nWork Area: ${area}\nSelected Controls: ${sel.join(", ")}\nTeam Leader: ${requester}\nSupervisor: ${supervisor}`);setRaGenerated(text);}catch(e){setErr("AI error: "+e.message);}
+    setRaGenerating(false);
   }
 
-  useEffect(()=>{ loadAudit(); },[permit.id]);
-
-  async function action(act) {
-    setErrMsg("");
-
-    // ── FIX: Role guard ────────────────────────────────────────────────────────
-    // For approve actions, verify the logged-in user's role matches the current stage.
-    // admin can always act (for testing / override scenarios).
-    const role = session.profile.role;
-    if (act === "approve" && role !== "admin") {
-      const expectedStage = ROLE_STAGE[role];
-      if (expectedStage === undefined) {
-        setErrMsg("Your role is not part of the approval chain.");
-        return;
-      }
-      if (permit.stage !== expectedStage) {
-        setErrMsg(`This permit is at stage ${permit.stage}. Your role (${roleLabel(role)}) approves at stage ${expectedStage}.`);
-        return;
-      }
-    }
-    if (act === "issue" && role !== "issuer" && role !== "admin") {
-      setErrMsg("Only the Issuer can issue a permit.");
-      return;
-    }
-
-    setBusy(true);
-    let ns=permit.status, st=permit.stage, ex=permit.extensions||0;
-
-    if      (act==="approve")      { st=Math.min(permit.stage+1,4); ns=st>=4?"active":"pending"; }
-    else if (act==="issue")        { st=4; ns="active"; }
-    else if (act==="reject")       ns="rejected";
-    else if (act==="suspend")      ns="revoked";
-    else if (act==="close")        ns="closed";
-    else if (act==="ext_request")  ns="extension_pending";
-    else if (act==="ext_approve")  { ns="active"; ex=(permit.extensions||0)+1; }
-    else if (act==="ext_reject")   ns="active";
-
-    const actionLabels = {
-      approve:     "Approved & forwarded",
-      issue:       "Permit issued",
-      reject:      "Rejected",
-      suspend:     "Permit suspended",
-      close:       "Permit closed",
-      ext_request: "Extension requested",
-      ext_approve: "Extension approved",
-      ext_reject:  "Extension rejected",
-    };
-
-    // ── FIX: notification event key map ───────────────────────────────────────
-    const notifEvent = {
-      approve:     permit.stage===3 ? "osh_approved" : "aa_approved",
-      issue:       "issued",
-      reject:      "rejected",
-      suspend:     "suspended",
-      close:       "closed",
-      ext_request: "ext_requested",
-      ext_approve: "ext_approved",
-      ext_reject:  "ext_rejected",
-    };
-
-    const extraFields = {};
-    if (act==="issue")  { extraFields.issued_by=session.userId; extraFields.issued_at=nowStr(); }
-    if (act==="close")  { extraFields.closed_at=nowStr(); }
-
-    // ── DB update ─────────────────────────────────────────────────────────────
-    const updateRes = await sb.update(
-      session.token, "permits", `id=eq.${permit.id}`,
-      { status:ns, stage:st, extensions:ex, ...extraFields }
-    );
-
-    // Check for errors returned by Supabase (RLS block returns empty array or error)
-    if (!updateRes || (Array.isArray(updateRes) && updateRes.length === 0 && !updateRes.error)) {
-      // Supabase PATCH with Prefer:return=representation returns the updated row
-      // An empty array here usually means RLS blocked the write — surface the error
-      console.warn("Permit update returned empty — possible RLS block. Response:", updateRes);
-    }
-
-    // ── Audit entry ───────────────────────────────────────────────────────────
-    await sb.insert(session.token,"permit_audit",{
-      org_id:    session.profile.org_id,
-      permit_id: permit.id,
-      user_id:   session.userId,
-      user_name: session.profile.full_name,
-      user_role: roleLabel(session.profile.role),
-      action:    actionLabels[act]||act,
-      note:      "",
-    });
-
-    // ── FIX: Notify all org members ───────────────────────────────────────────
-    await sb.notify(
-      session.token,
-      session.profile.org_id,
-      permit.id,
-      permit.permit_number,
-      permit.title,
-      notifEvent[act] || act,
-      session.profile.full_name
-    );
-
-    // ── FIX: Update local permit state so UI reflects change immediately ──────
-    const updatedPermit = { ...permit, status:ns, stage:st, extensions:ex, ...extraFields };
-    setPermit(updatedPermit);
-
-    // Also reload audit trail to show the new entry
-    loadAudit();
-
-    // Refresh parent permits list in background
-    await onRefresh();
+  async function submit(){
+    if(!type||!title||!area||!requester||!supervisor){setErr("Fill all required fields.");return;}
+    const sel=typeControls.filter(c=>controls[c]);if(sel.length===0){setErr("Select at least one control measure.");return;}
+    if(isRARequired){if(!raMode){setErr("RA Required is checked — upload or generate a risk assessment.");return;}if(raMode==="upload"&&!raFileData){setErr("Upload the RA document.");return;}if(raMode==="generate"&&!raGenerated){setErr("Generate the RA first.");return;}}
+    setBusy(true);setErr("");
+    const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
+    const fd={tools_equipment:tools,selected_controls:sel,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null};
+    const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
+    if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
     setBusy(false);
   }
 
-  const canExtend = permit.status==="active"&&(permit.extensions||0)<MAX_EXT;
-
-  return (
-    <div>
-      <Topbar title={permit.permit_number} onBack={onBack}/>
-      <div style={{padding:"1.25rem"}}>
-        {errMsg&&<Err msg={errMsg}/>}
-
-        <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderLeft:`3px solid ${t.color||B.textSub}`,borderRadius:10,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div>
-              <p style={{fontSize:11,color:B.textSub,fontWeight:600}}>{t.label}</p>
-              <h2 style={{fontSize:16,fontWeight:600,color:B.text,margin:"4px 0 2px"}}>{permit.title}</h2>
-              <p style={{fontSize:12,color:B.textSub}}>{permit.area}</p>
-            </div>
-            <span style={{background:B.accentLight,color:B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(permit.status||"").replace("_"," ")}</span>
-          </div>
-        </div>
-
-        <div style={{display:"flex",gap:6,marginBottom:"1rem"}}>
-          {["detail","audit"].map(tb=>(
-            <button key={tb} onClick={()=>setTab(tb)} style={{border:`0.5px solid ${tab===tb?B.primary:B.neutralBorder}`,background:tab===tb?B.primary:"transparent",color:tab===tb?"#fff":B.textSub,borderRadius:20,padding:"5px 14px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{tb}</button>
-          ))}
-        </div>
-
-        {tab==="detail"&&(
-          <>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:"1rem"}}>
-              {[["Team leader",permit.requester_name],["Supervisor",permit.supervisor_name],["Date",permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"],["Extensions",(permit.extensions||0)+" / "+MAX_EXT]].map(([k,v])=>(
-                <div key={k} style={{background:B.neutral,borderRadius:8,padding:"10px 12px"}}>
-                  <p style={{fontSize:11,color:B.textSub}}>{k}</p>
-                  <p style={{fontSize:13,fontWeight:600,color:B.text}}>{v}</p>
-                </div>
-              ))}
-            </div>
-            <p style={{fontSize:12,color:B.textSub,marginBottom:8}}>Approval progress</p>
-            {STAGES.map((s,i)=>{
-              const sn=i+1, done=sn<permit.stage||(sn===4&&permit.status==="active"), cur=sn===permit.stage&&permit.status==="pending";
-              return (
-                <div key={s} style={{display:"flex",alignItems:"center",gap:10,background:done?B.accentLight:cur?B.warnLight:B.neutral,border:`0.5px solid ${done?B.accent:cur?B.warn:B.neutralBorder}`,borderRadius:8,padding:"8px 12px",marginBottom:6}}>
-                  <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,background:done?B.accent:cur?B.warn:"#C0CAD5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700}}>{done?"✓":sn}</div>
-                  <div>
-                    <p style={{fontSize:12,fontWeight:600,color:done?B.accentBorder:cur?B.warn:B.textSub}}>{s}</p>
-                    <p style={{fontSize:10,color:done?B.accent:cur?B.warn:B.textSub}}>{done?"Approved":cur?"Awaiting approval":"Pending"}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
-
-        {tab==="audit"&&(
-          <div>
-            <p style={{fontSize:12,color:B.textSub,marginBottom:10,fontWeight:500}}>Audit trail</p>
-            {audit.length===0&&<p style={{fontSize:12,color:B.textSub}}>No activity yet.</p>}
-            {audit.map((e,i)=>(
-              <div key={e.id} style={{display:"flex",gap:10,marginBottom:10}}>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:B.text}}>{(e.user_name||"?")[0]}</div>
-                  {i<audit.length-1&&<div style={{width:1,flex:1,background:B.neutralBorder,margin:"3px 0"}}/>}
-                </div>
-                <div style={{paddingBottom:10,flex:1}}>
-                  <div style={{display:"flex",justifyContent:"space-between"}}>
-                    <p style={{fontSize:12,fontWeight:600,color:B.text}}>{e.action}</p>
-                    <p style={{fontSize:10,color:B.textSub}}>{e.created_at?new Date(e.created_at).toLocaleString():""}</p>
-                  </div>
-                  <p style={{fontSize:11,color:B.textSub}}>{e.user_name} · {e.user_role}</p>
-                  {e.note&&<p style={{fontSize:11,color:B.textSub,background:B.neutral,borderRadius:6,padding:"4px 8px",marginTop:3}}>{e.note}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
-          {permit.status==="pending"&&permit.stage!==4&&(
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>
-                {busy?"Processing…":"Approve & forward"}
-              </button>
-              <button onClick={()=>action("reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Reject</button>
-            </div>
-          )}
-          {permit.status==="pending"&&permit.stage===4&&(
-            <button onClick={()=>action("issue")} disabled={busy} style={{width:"100%",background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
-              {busy?"Processing…":"Issue permit"}
-            </button>
-          )}
-          {permit.status==="active"&&(
-            <div style={{display:"flex",gap:8}}>
-              {canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}
-              <button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Suspend</button>
-              <button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Close</button>
-            </div>
-          )}
-          {permit.status==="extension_pending"&&(
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>Approve extension</button>
-              <button onClick={()=>action("ext_reject")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:busy?"not-allowed":"pointer"}}>Reject</button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── New Permit ────────────────────────────────────────────────────
-// FIX: sends "submitted" notification to all org members on creation
-function NewPermit({ session, onBack, onSuccess }) {
-  const [type, setType]           = useState("");
-  const [title, setTitle]         = useState("");
-  const [area, setArea]           = useState("");
-  const [requester, setRequester] = useState(session.profile.full_name);
-  const [supervisor, setSupervisor] = useState("");
-  const [busy, setBusy]           = useState(false);
-  const [err, setErr]             = useState("");
-
-  async function submit() {
-    if (!type||!title||!area||!requester||!supervisor) { setErr("Please fill all required fields."); return; }
-    setBusy(true); setErr("");
-    const num = "PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
-    const res = await sb.insert(session.token,"permits",{
-      org_id:          session.profile.org_id,
-      permit_number:   num,
-      type,title,area,
-      requester_name:  requester,
-      supervisor_name: supervisor,
-      status:          "pending",
-      stage:           1,
-      priority:        "medium",
-      extensions:      0,
-    });
-    if (res&&res[0]&&!res.error) {
-      await sb.insert(session.token,"permit_audit",{
-        org_id:    session.profile.org_id,
-        permit_id: res[0].id,
-        user_id:   session.userId,
-        user_name: session.profile.full_name,
-        user_role: roleLabel(session.profile.role),
-        action:    "Permit submitted",
-        note:      "",
-      });
-      // FIX: notify all org members of the new submission
-      await sb.notify(
-        session.token,
-        session.profile.org_id,
-        res[0].id,
-        num,
-        title,
-        "submitted",
-        session.profile.full_name
-      );
-      onSuccess();
-    } else {
-      setErr("Failed to create permit. Please try again.");
-    }
-    setBusy(false);
-  }
-
-  return (
-    <div>
-      <Topbar title="New Permit Request" onBack={onBack}/>
-      <div style={{padding:"1.25rem"}}>
-        {err&&<Err msg={err}/>}
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <div>
-            <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label>
-            <select value={type} onChange={e=>setType(e.target.value)}>
-              <option value="">Select permit type…</option>
-              {PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work"/>
-          </div>
-          <div>
-            <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label>
-            <input value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g. Zone A - Process Unit"/>
-          </div>
+  return(
+    <div><Topbar title="New Permit Request" onBack={onBack}/>
+    <div style={{padding:"1.25rem"}}>
+      {err&&<ErrBox msg={err}/>}
+      <Card title="Permit Details">
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{setType(e.target.value);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);}}><option value="">Select permit type…</option>{PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work to be performed"/></div>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g. Zone A — Process Unit 3"/></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div>
-              <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader *</label>
-              <input value={requester} onChange={e=>setRequester(e.target.value)}/>
-            </div>
-            <div>
-              <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor *</label>
-              <input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor name"/>
-            </div>
+            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader *</label><input value={requester} onChange={e=>setRequester(e.target.value)}/></div>
+            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor *</label><input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor name"/></div>
           </div>
         </div>
-        <button onClick={submit} disabled={busy} style={{marginTop:"1.5rem",width:"100%",background:busy?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>
-          {busy?"Submitting…":"Submit permit request"}
-        </button>
-      </div>
-    </div>
-  );
-}
+      </Card>
 
-// ── Notifications ─────────────────────────────────────────────────
-// FIX: reads from the `notifications` DB table (persistent, cross-user)
-//      instead of deriving state client-side from permits array.
-function Notifs({ session, onBack, onSelectPermit, onUnreadChange }) {
-  const [notes, setNotes]   = useState([]);
-  const [loading, setLoading] = useState(true);
+      <Card title="Tools & Equipment">
+        <textarea value={tools} onChange={e=>setTools(e.target.value)} placeholder={"List all tools and equipment:\ne.g. Angle grinder (inspected), welding machine, 2T lifting slings…"} rows={4} style={{resize:"vertical"}}/>
+        <p style={{fontSize:11,color:B.textSub,marginTop:6}}>Include make/model. Confirm each item inspected before work.</p>
+      </Card>
 
-  async function loadNotifs() {
-    setLoading(true);
-    const data = await sb.select(
-      session.token,
-      "notifications",
-      `user_id=eq.${session.userId}&order=created_at.desc&limit=80`
-    );
-    if (Array.isArray(data)) {
-      setNotes(data);
-      const unread = data.filter(n=>!n.is_read).length;
-      if (onUnreadChange) onUnreadChange(unread);
-    }
-    setLoading(false);
-  }
-
-  useEffect(()=>{ loadNotifs(); },[]);
-
-  async function markAllRead() {
-    await sb.update(
-      session.token, "notifications",
-      `user_id=eq.${session.userId}&is_read=eq.false`,
-      { is_read: true }
-    );
-    setNotes(prev=>prev.map(n=>({...n,is_read:true})));
-    if (onUnreadChange) onUnreadChange(0);
-  }
-
-  async function markRead(notif) {
-    if (!notif.is_read) {
-      await sb.update(
-        session.token, "notifications",
-        `id=eq.${notif.id}`,
-        { is_read: true }
-      );
-      setNotes(prev=>prev.map(n=>n.id===notif.id?{...n,is_read:true}:n));
-      const remaining = notes.filter(n=>!n.is_read&&n.id!==notif.id).length;
-      if (onUnreadChange) onUnreadChange(remaining);
-    }
-    // Navigate to the permit if we have permit_id
-    if (notif.permit_id) {
-      const permits = await sb.select(session.token,"permits",`id=eq.${notif.permit_id}`);
-      if (Array.isArray(permits)&&permits[0]) onSelectPermit(permits[0]);
-    }
-  }
-
-  const unread = notes.filter(n=>!n.is_read).length;
-
-  // Map event_type to icon
-  const icons = { submitted:"📋", aa_approved:"✓", osh_approved:"✓", issued:"🟢", rejected:"✗", suspended:"⚠", closed:"🔒", ext_requested:"⟳", ext_approved:"✓", ext_rejected:"✗" };
-
-  return (
-    <div>
-      <Topbar title="Notifications" onBack={onBack} right={
-        unread>0
-          ? <button onClick={markAllRead} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Mark all read</button>
-          : null
-      }/>
-      <div style={{padding:"1.25rem"}}>
-        {loading&&<Spinner/>}
-        {!loading&&notes.length===0&&(
-          <div style={{textAlign:"center",padding:"3rem 1rem"}}>
-            <p style={{fontSize:32}}>✓</p>
-            <p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>All clear</p>
-            <p style={{fontSize:13,color:B.textSub}}>No notifications yet.</p>
-          </div>
-        )}
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {notes.map(n=>{
-            const isRead = n.is_read;
-            const icon = icons[n.event_type]||"🔔";
-            return (
-              <div key={n.id} onClick={()=>markRead(n)}
-                style={{background:isRead?"#fff":B.accentLight,border:`0.5px solid ${isRead?B.neutralBorder:B.accent}`,borderLeft:`3px solid ${isRead?B.neutralBorder:B.accent}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",opacity:isRead?0.7:1}}>
-                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <div style={{width:30,height:30,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icon}</div>
-                  <div style={{flex:1}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                      <p style={{fontSize:12,fontWeight:isRead?500:700,color:isRead?B.textSub:B.text,flex:1}}>{n.message}</p>
-                      <p style={{fontSize:10,color:B.textSub,whiteSpace:"nowrap"}}>{n.created_at?new Date(n.created_at).toLocaleString():""}</p>
+      {type&&(
+        <Card title="Control Measures" accent={B.accent}>
+          <p style={{fontSize:11,color:B.textSub,marginBottom:10}}>Select all controls in place. These become the Issuer's site verification checklist.</p>
+          {typeControls.map(ctrl=>{
+            const isRA=ctrl==="RA Required";
+            return(
+              <div key={ctrl}>
+                <label style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 0",borderBottom:`0.5px solid ${B.neutralBorder}`,cursor:"pointer"}}>
+                  <input type="checkbox" checked={!!controls[ctrl]} onChange={e=>setControls(prev=>({...prev,[ctrl]:e.target.checked}))} style={{width:"auto",marginTop:2,accentColor:B.accent}}/>
+                  <span style={{fontSize:13,color:isRA?B.accentBorder:B.text,fontWeight:isRA?700:400,lineHeight:1.5}}>{ctrl}</span>
+                </label>
+                {isRA&&controls[ctrl]&&(
+                  <div style={{background:B.accentLight,border:`0.5px solid ${B.accent}`,borderRadius:8,padding:"1rem",margin:"6px 0 2px"}}>
+                    <p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:10}}>Risk Assessment — choose option:</p>
+                    <div style={{display:"flex",gap:8,marginBottom:12}}>
+                      <button onClick={()=>{setRaMode("upload");setRaGenerated("");}} style={{flex:1,background:raMode==="upload"?B.accent:"transparent",color:raMode==="upload"?"#fff":B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:8,padding:"8px",fontSize:12,fontWeight:600,cursor:"pointer"}}>📎 Upload RA</button>
+                      <button onClick={()=>setRaMode("generate")} style={{flex:1,background:raMode==="generate"?B.accent:"transparent",color:raMode==="generate"?"#fff":B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:8,padding:"8px",fontSize:12,fontWeight:600,cursor:"pointer"}}>🤖 Generate with AI</button>
                     </div>
-                    <p style={{fontSize:11,color:B.accentBorder,marginTop:2}}>{n.reference} {n.title?"· "+n.title:""}</p>
-                    {!isRead&&<span style={{fontSize:10,background:B.accent,color:"#fff",borderRadius:20,padding:"1px 8px",marginTop:4,display:"inline-block"}}>New</span>}
+                    {raMode==="upload"&&(<div><input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={handleFile} style={{fontSize:12}}/>{raFile&&<p style={{fontSize:11,color:B.accentBorder,marginTop:6}}>✓ {raFile.name} attached</p>}</div>)}
+                    {raMode==="generate"&&(<div>
+                      {!session.apiKey&&<p style={{fontSize:12,color:B.warn,padding:"8px",background:B.warnLight,borderRadius:6}}>⚠ AI not configured for this organisation.</p>}
+                      {session.apiKey&&!raGenerated&&<button onClick={generateRA} disabled={raGenerating||!title} style={{width:"100%",background:raGenerating?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:raGenerating?"not-allowed":"pointer"}}>{raGenerating?"🤖 Generating…":"Generate 5×5 Risk Assessment"}</button>}
+                      {raGenerated&&(<div><div style={{background:"#fff",borderRadius:8,padding:"10px",fontSize:11,maxHeight:220,overflowY:"auto",border:`0.5px solid ${B.neutralBorder}`}} dangerouslySetInnerHTML={{__html:raGenerated}}/><div style={{display:"flex",gap:8,marginTop:8}}><button onClick={()=>setRaGenerated("")} style={{flex:1,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:6,padding:"5px",fontSize:11,cursor:"pointer",color:B.textSub}}>Regenerate</button><span style={{display:"flex",alignItems:"center",fontSize:11,color:B.accentBorder,fontWeight:600}}>✓ RA ready</span></div></div>)}
+                    </div>)}
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
-        </div>
-      </div>
-    </div>
+        </Card>
+      )}
+      <button onClick={submit} disabled={busy||!type} style={{width:"100%",background:(busy||!type)?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:(busy||!type)?"not-allowed":"pointer"}}>{busy?"Submitting…":"Submit permit request"}</button>
+    </div></div>
   );
 }
 
-// ── Admin Panel ───────────────────────────────────────────────────
-function Admin({ session, onBack }) {
-  const [users, setUsers]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [showForm, setShowForm]     = useState(false);
-  const [inviteName, setInviteName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("requester");
-  const [invitePass, setInvitePass] = useState("Controlit@2024!");
-  const [busy, setBusy]             = useState(false);
-  const [result, setResult]         = useState(null);
-  const [err, setErr]               = useState("");
+// ── Permit Detail ─────────────────────────────────────────────────────────────
+function PermitDetail({permit:init,session,onBack,onRefresh}){
+  const[tab,setTab]=useState("detail");const[audit,setAudit]=useState([]);const[permit,setPermit]=useState(init);const[busy,setBusy]=useState(false);const[errMsg,setErrMsg]=useState("");const[rejectReason,setRejectReason]=useState("");const[showRejectBox,setShowRejectBox]=useState(false);const[oshControls,setOshControls]=useState((init.form_data?.osh_additional_controls)||"");const[aiSuggesting,setAiSuggesting]=useState(false);const[checklistDone,setChecklistDone]=useState({});const[showChecklist,setShowChecklist]=useState(false);const[showPDF,setShowPDF]=useState(false);
+  const t=pt(permit.type);const fd=permit.form_data||{};
+  function loadAudit(){sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`).then(d=>{if(Array.isArray(d))setAudit(d);});}
+  useEffect(()=>{loadAudit();},[permit.id]);
 
-  function loadUsers() {
-    setLoading(true);
-    sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc")
-      .then(d=>{ if(Array.isArray(d)) setUsers(d); setLoading(false); });
+  const checklistItems=[...(fd.selected_controls||[]).filter(c=>c!=="RA Required"),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
+  const allChecked=checklistItems.length>0&&checklistItems.every(c=>checklistDone[c]);
+  const isOSH=(session.profile.role==="safety_officer"||session.profile.role==="admin")&&permit.stage===3&&permit.status==="pending";
+  const isIssuer=(session.profile.role==="issuer"||session.profile.role==="admin")&&permit.stage===4&&permit.status==="pending";
+
+  async function getAI(){
+    if(!session.apiKey){setErrMsg("AI not configured.");return;}setAiSuggesting(true);setErrMsg("");
+    try{const sel=(fd.selected_controls||[]).filter(c=>c!=="RA Required");const text=await callClaude(session.apiKey,"You are a senior HSE safety officer. Recommend additional control measures as a numbered list, one per line. Specific to the permit type and work described. No preamble, no markdown, just the numbered list.",`Permit Type: ${t.label}\nWork: ${permit.title}\nArea: ${permit.area}\nExisting controls:\n${sel.join("\n")}\n\nRecommend 5-8 additional specific controls.`);setOshControls(prev=>(prev?prev+"\n":"")+text.trim());}catch(e){setErrMsg("AI error: "+e.message);}
+    setAiSuggesting(false);
   }
 
-  useEffect(()=>{ loadUsers(); },[]);
-
-  async function sendInvite() {
-    if (!inviteName||!inviteEmail) { setErr("Name and email are required."); return; }
-    setBusy(true); setErr(""); setResult(null);
-    try {
-      const authUser = await sb.createUser(inviteEmail, invitePass);
-      if (!authUser.id) { setErr("Failed to create user: "+(authUser.message||"Unknown error")); setBusy(false); return; }
-      await sb.insert(session.token,"profiles",{ id:authUser.id, org_id:session.profile.org_id, full_name:inviteName, email:inviteEmail, role:inviteRole, active:true });
-      setResult({name:inviteName,email:inviteEmail,pass:invitePass,role:inviteRole});
-      setInviteName(""); setInviteEmail(""); setInvitePass("Controlit@2024!"); setInviteRole("requester");
-      loadUsers();
-    } catch(e) { setErr("Error: "+e.message); }
-    setBusy(false);
+  async function action(act){
+    setErrMsg("");const role=session.profile.role;
+    if(act==="approve"&&role!=="admin"){const exp=ROLE_STAGE[role];if(exp===undefined){setErrMsg("Your role is not in the approval chain.");return;}if(permit.stage!==exp){setErrMsg(`This permit is at stage ${permit.stage}. Your role approves at stage ${exp}.`);return;}}
+    if(act==="issue"&&role!=="issuer"&&role!=="admin"){setErrMsg("Only the Issuer can issue a permit.");return;}
+    if(act==="issue"&&!allChecked){setErrMsg("Complete all checklist items before issuing.");return;}
+    if(act==="reject"&&!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
+    setBusy(true);
+    let ns=permit.status,st=permit.stage,ex=permit.extensions||0;const extra={};
+    if(act==="approve"){if(role==="safety_officer"||permit.stage===3)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st>=4?"active":"pending";}
+    else if(act==="issue"){st=4;ns="active";extra.issued_by=session.userId;extra.issued_at=nowStr();extra.form_data={...fd,issuer_checklist:checklistDone,issued_by_name:session.profile.full_name};}
+    else if(act==="reject"){ns="rejected";extra.form_data={...fd,rejection_reason:rejectReason,rejected_by:session.profile.full_name,rejected_at:nowStr()};}
+    else if(act==="suspend")ns="revoked";
+    else if(act==="close"){ns="closed";extra.closed_at=nowStr();}
+    else if(act==="ext_request")ns="extension_pending";
+    else if(act==="ext_approve"){ns="active";ex=(permit.extensions||0)+1;}
+    else if(act==="ext_reject")ns="active";
+    const labels={approve:"Approved & forwarded",issue:"Permit issued",reject:"Rejected",suspend:"Permit suspended",close:"Permit closed",ext_request:"Extension requested",ext_approve:"Extension approved",ext_reject:"Extension rejected"};
+    const nevt={approve:permit.stage===3?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
+    await sb.update(session.token,"permits",`id=eq.${permit.id}`,{status:ns,stage:st,extensions:ex,...extra});
+    await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(role),action:labels[act]||act,note:rejectReason||""});
+    await sb.notify(session.token,session.profile.org_id,permit.id,permit.permit_number,permit.title,nevt[act]||act,session.profile.full_name);
+    setPermit({...permit,status:ns,stage:st,extensions:ex,...extra});setRejectReason("");setShowRejectBox(false);loadAudit();await onRefresh();setBusy(false);
   }
 
-  async function updateRole(userId, newRole) {
-    await sb.update(session.token,"profiles",`id=eq.${userId}`,{role:newRole});
-    setUsers(prev=>prev.map(u=>u.id===userId?{...u,role:newRole}:u));
-  }
+  const canExtend=permit.status==="active"&&(permit.extensions||0)<MAX_EXT;
 
-  async function toggleUserActive(user) {
-    const newActive = !user.active;
-    await sb.update(session.token,"profiles",`id=eq.${user.id}`,{active:newActive});
-    setUsers(prev=>prev.map(u=>u.id===user.id?{...u,active:newActive}:u));
-  }
-
-  return (
-    <div>
-      <Topbar title="Admin Panel" onBack={onBack}/>
-      <div style={{padding:"1.25rem"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
-          <p style={{fontSize:13,fontWeight:600,color:B.text}}>Team members ({users.length})</p>
-          <button onClick={()=>{setShowForm(!showForm); setResult(null); setErr("");}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>
-            {showForm?"Cancel":"+ Invite member"}
-          </button>
+  return(
+    <div><Topbar title={permit.permit_number} onBack={onBack}/>
+    <div style={{padding:"1.25rem"}}>
+      {errMsg&&<ErrBox msg={errMsg}/>}
+      <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderLeft:`3px solid ${t.color||B.textSub}`,borderRadius:10,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div><p style={{fontSize:11,color:B.textSub,fontWeight:600}}>{t.label}</p><h2 style={{fontSize:16,fontWeight:600,color:B.text,margin:"4px 0 2px"}}>{permit.title}</h2><p style={{fontSize:12,color:B.textSub}}>{permit.area}</p></div>
+          <span style={{background:B.accentLight,color:B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(permit.status||"").replace("_"," ")}</span>
         </div>
+      </div>
 
-        {showForm&&(
-          <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
-            <p style={{fontSize:13,fontWeight:600,color:B.text,marginBottom:"1rem"}}>New team member</p>
-            {err&&<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:12,color:B.danger}}>{err}</div>}
-            {result&&(
-              <div style={{background:B.accentLight,border:`0.5px solid ${B.accent}`,borderRadius:10,padding:"1rem",marginBottom:"1rem"}}>
-                <p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:8}}>✓ {result.name} added successfully</p>
-                <div style={{background:"#fff",borderRadius:8,padding:"10px 12px",fontSize:12,fontFamily:"monospace",color:B.text,lineHeight:2}}>
-                  <div>URL: <span style={{color:B.accentBorder}}>https://getcontrolit.com/app.html</span></div>
-                  <div>Email: <span style={{color:B.accentBorder}}>{result.email}</span></div>
-                  <div>Password: <span style={{color:B.accentBorder}}>{result.pass}</span></div>
-                  <div>Role: <span style={{color:B.accentBorder}}>{roleLabel(result.role)}</span></div>
-                </div>
-                <button onClick={()=>setResult(null)} style={{marginTop:10,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:6,padding:"6px 12px",fontSize:12,cursor:"pointer",color:B.textSub}}>Invite another</button>
-              </div>
-            )}
-            {!result&&(
-              <>
-                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:12}}>
-                  <div>
-                    <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Full name *</label>
-                    <input value={inviteName} onChange={e=>setInviteName(e.target.value)} placeholder="e.g. John Adeyemi"/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Email address *</label>
-                    <input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="john@company.com" type="email"/>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                    <div>
-                      <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Role *</label>
-                      <select value={inviteRole} onChange={e=>setInviteRole(e.target.value)}>
-                        {ROLES.map(r=><option key={r} value={r}>{roleLabel(r)}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Temp password</label>
-                      <input value={invitePass} onChange={e=>setInvitePass(e.target.value)}/>
-                    </div>
-                  </div>
-                </div>
-                <button onClick={sendInvite} disabled={busy} style={{width:"100%",background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>
-                  {busy?"Creating account…":"Create account & invite"}
-                </button>
-              </>
-            )}
-          </div>
-        )}
+      <div style={{display:"flex",gap:6,marginBottom:"1rem"}}>
+        {["detail","audit"].map(tb=><button key={tb} onClick={()=>setTab(tb)} style={{border:`0.5px solid ${tab===tb?B.primary:B.neutralBorder}`,background:tab===tb?B.primary:"transparent",color:tab===tb?"#fff":B.textSub,borderRadius:20,padding:"5px 14px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{tb}</button>)}
+      </div>
 
-        {loading&&<Spinner/>}
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {!loading&&users.length===0&&<p style={{fontSize:13,color:B.textSub}}>No team members yet.</p>}
-          {users.map(u=>(
-            <div key={u.id} style={{background:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",opacity:u.active?1:0.6}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:u.id!==session.userId?10:0}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <div style={{width:36,height:36,borderRadius:"50%",background:B.accentLight,border:`0.5px solid ${B.accent}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:B.accentBorder,flexShrink:0}}>
-                    {u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}
-                  </div>
-                  <div>
-                    <p style={{fontSize:13,fontWeight:600,color:B.text}}>{u.full_name}</p>
-                    <p style={{fontSize:11,color:B.textSub}}>{u.email}</p>
-                    <p style={{fontSize:11,color:B.textSub,textTransform:"capitalize"}}>{roleLabel(u.role)}</p>
-                  </div>
-                </div>
-                <span style={{background:u.active?B.accentLight:B.neutral,color:u.active?B.accentBorder:B.textSub,border:`0.5px solid ${u.active?B.accent:B.neutralBorder}`,borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:600}}>
-                  {u.active?"Active":"Suspended"}
-                </span>
-              </div>
-              {u.id!==session.userId&&(
-                <div style={{display:"flex",gap:8,alignItems:"center",paddingTop:8,borderTop:`0.5px solid ${B.neutralBorder}`}}>
-                  <select value={u.role} onChange={e=>updateRole(u.id,e.target.value)} style={{fontSize:11,padding:"4px 8px",flex:1,borderRadius:6,height:30}}>
-                    {ROLES.map(r=><option key={r} value={r}>{roleLabel(r)}</option>)}
-                  </select>
-                  <button onClick={()=>toggleUserActive(u)} style={{background:u.active?B.warnLight:B.accentLight,color:u.active?B.warn:B.accentBorder,border:`0.5px solid ${u.active?B.warn:B.accent}`,borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>
-                    {u.active?"Suspend":"Reactivate"}
-                  </button>
-                </div>
-              )}
-              {u.id===session.userId&&<p style={{fontSize:11,color:B.textSub,marginTop:4}}>This is your account</p>}
-            </div>
+      {tab==="detail"&&(<>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:"1rem"}}>
+          {[["Team leader",permit.requester_name],["Supervisor",permit.supervisor_name],["Date",permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"],["Extensions",(permit.extensions||0)+" / "+MAX_EXT]].map(([k,v])=>(
+            <div key={k} style={{background:B.neutral,borderRadius:8,padding:"10px 12px"}}><p style={{fontSize:11,color:B.textSub}}>{k}</p><p style={{fontSize:13,fontWeight:600,color:B.text}}>{v}</p></div>
           ))}
         </div>
+        {fd.tools_equipment&&<Card title="Tools & Equipment" collapsible><p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.tools_equipment}</p></Card>}
+        {fd.selected_controls?.length>0&&(<Card title="Control Measures — Requester" collapsible>{fd.selected_controls.map((c,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"5px 0",borderBottom:`0.5px solid ${B.neutralBorder}`}}><span style={{color:B.accent,fontWeight:700,flexShrink:0}}>✓</span><span style={{fontSize:13,color:c==="RA Required"?B.accentBorder:B.text,fontWeight:c==="RA Required"?700:400}}>{c}</span></div>))}</Card>)}
+        {fd.ra_mode&&(<Card title="Risk Assessment" accent={B.accent} collapsible>
+          {fd.ra_mode==="upload"&&fd.ra_file_name&&(<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>📄</span><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{fd.ra_file_name}</p><p style={{fontSize:11,color:B.textSub}}>Uploaded risk assessment</p></div>{fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{marginLeft:"auto",background:B.accent,color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:600,textDecoration:"none"}}>Download</a>}</div>)}
+          {fd.ra_mode==="generate"&&fd.ra_generated&&(<div><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>AI-Generated 5×5 Risk Assessment</p><div style={{fontSize:11,lineHeight:1.6,maxHeight:280,overflowY:"auto"}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/></div>)}
+        </Card>)}
+        {(permit.stage>=3||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
+          {isOSH?(<><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>Add additional controls. Use AI for suggestions specific to this permit.</p><textarea value={oshControls} onChange={e=>setOshControls(e.target.value)} placeholder={"Additional controls (one per line)…"} rows={5} style={{resize:"vertical",marginBottom:8}}/>{session.apiKey?<button onClick={getAI} disabled={aiSuggesting} style={{width:"100%",background:aiSuggesting?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:aiSuggesting?"not-allowed":"pointer",marginBottom:4}}>{aiSuggesting?"🤖 Getting recommendations…":"🤖 Get AI-recommended additional controls"}</button>:<p style={{fontSize:11,color:B.warn}}>⚠ AI not configured.</p>}</>):(fd.osh_additional_controls?<p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.osh_additional_controls}</p>:<p style={{fontSize:12,color:B.textSub}}>No additional controls added yet.</p>)}
+        </Card>)}
+
+        {(isIssuer||permit.status==="active"||permit.status==="closed")&&checklistItems.length>0&&(<Card title="Site Verification Checklist" accent={isIssuer?B.accentBorder:undefined}>
+          {isIssuer&&<p style={{fontSize:11,color:B.warn,marginBottom:8}}>Verify every control is in place on site. All items must be confirmed before issuing.</p>}
+          <button onClick={()=>setShowChecklist(!showChecklist)} style={{width:"100%",background:showChecklist?B.neutral:B.primary,color:showChecklist?B.text:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:showChecklist?10:0}}>{showChecklist?"▲ Hide checklist":"▼ Tap to reveal site verification checklist"}</button>
+          {showChecklist&&(<div>
+            {checklistItems.map((c,i)=>(<label key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:`0.5px solid ${B.neutralBorder}`,cursor:isIssuer?"pointer":"default"}}><input type="checkbox" checked={!!checklistDone[c]} onChange={e=>isIssuer&&setChecklistDone(prev=>({...prev,[c]:e.target.checked}))} disabled={!isIssuer} style={{width:"auto",marginTop:2,accentColor:B.accent}}/><span style={{fontSize:13,color:checklistDone[c]?B.accentBorder:B.text,lineHeight:1.5}}>{c}</span></label>))}
+            {fd.selected_controls?.includes("RA Required")&&fd.ra_mode&&(<div style={{background:B.accentLight,borderRadius:8,padding:"10px",marginTop:8}}><p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:6}}>Risk Assessment — on-site verification</p>{fd.ra_mode==="upload"&&fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{display:"inline-block",background:B.accent,color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,textDecoration:"none"}}>View / Download RA</a>}{fd.ra_mode==="generate"&&fd.ra_generated&&<div style={{fontSize:11,maxHeight:200,overflowY:"auto",marginTop:6}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/>}</div>)}
+            {isIssuer&&<div style={{marginTop:8,padding:"7px 10px",background:allChecked?B.accentLight:B.warnLight,borderRadius:6}}><p style={{fontSize:11,color:allChecked?B.accentBorder:B.warn,fontWeight:600}}>{allChecked?"✓ All controls verified on site — ready to issue":"⚠ "+checklistItems.filter(c=>!checklistDone[c]).length+" item(s) remaining"}</p></div>}
+          </div>)}
+        </Card>)}
+
+        {permit.status==="rejected"&&fd.rejection_reason&&(<Card title="Rejection Reason"><p style={{fontSize:13,color:B.danger,lineHeight:1.6}}>{fd.rejection_reason}</p><p style={{fontSize:11,color:B.textSub,marginTop:4}}>By {fd.rejected_by||"—"} · {fmtDate(fd.rejected_at)}</p></Card>)}
+
+        <p style={{fontSize:12,color:B.textSub,marginBottom:8,marginTop:4}}>Approval progress</p>
+        {STAGES.map((s,i)=>{const sn=i+1,done=sn<permit.stage||(sn===4&&permit.status==="active"),cur=sn===permit.stage&&permit.status==="pending";return(<div key={s} style={{display:"flex",alignItems:"center",gap:10,background:done?B.accentLight:cur?B.warnLight:B.neutral,border:`0.5px solid ${done?B.accent:cur?B.warn:B.neutralBorder}`,borderRadius:8,padding:"8px 12px",marginBottom:6}}><div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,background:done?B.accent:cur?B.warn:"#C0CAD5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700}}>{done?"✓":sn}</div><div><p style={{fontSize:12,fontWeight:600,color:done?B.accentBorder:cur?B.warn:B.textSub}}>{s}</p><p style={{fontSize:10,color:done?B.accent:cur?B.warn:B.textSub}}>{done?"Approved":cur?"Awaiting approval":"Pending"}</p></div></div>);})}
+      </>)}
+
+      {tab==="audit"&&(<div><p style={{fontSize:12,color:B.textSub,marginBottom:10,fontWeight:500}}>Audit trail</p>{audit.length===0&&<p style={{fontSize:12,color:B.textSub}}>No activity yet.</p>}{audit.map((e,i)=>(<div key={e.id} style={{display:"flex",gap:10,marginBottom:10}}><div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}><div style={{width:28,height:28,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:B.text}}>{(e.user_name||"?")[0]}</div>{i<audit.length-1&&<div style={{width:1,flex:1,background:B.neutralBorder,margin:"3px 0"}}/>}</div><div style={{paddingBottom:10,flex:1}}><div style={{display:"flex",justifyContent:"space-between"}}><p style={{fontSize:12,fontWeight:600,color:B.text}}>{e.action}</p><p style={{fontSize:10,color:B.textSub}}>{fmtDate(e.created_at)}</p></div><p style={{fontSize:11,color:B.textSub}}>{e.user_name} · {e.user_role}</p>{e.note&&<p style={{fontSize:11,color:B.danger,background:B.dangerLight,borderRadius:6,padding:"4px 8px",marginTop:3}}>{e.note}</p>}</div></div>))}</div>)}
+
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+        {showRejectBox&&(<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"1rem"}}><p style={{fontSize:12,fontWeight:600,color:B.danger,marginBottom:8}}>Reason for rejection *</p><textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Provide clear reason…" rows={3} style={{marginBottom:8,borderColor:B.danger}}/><div style={{display:"flex",gap:8}}><button onClick={()=>action("reject")} disabled={busy||!rejectReason.trim()} style={{flex:1,background:B.danger,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Confirm rejection</button><button onClick={()=>{setShowRejectBox(false);setRejectReason("");}} style={{flex:1,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"9px",fontSize:12,cursor:"pointer",color:B.textSub}}>Cancel</button></div></div>)}
+        {permit.status==="pending"&&permit.stage!==4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>{busy?"Processing…":"Approve & forward"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
+        {permit.status==="pending"&&permit.stage===4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("issue")} disabled={busy||!allChecked} style={{flex:2,background:(busy||!allChecked)?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:(busy||!allChecked)?"not-allowed":"pointer"}}>{busy?"Processing…":allChecked?"Issue permit":"Complete checklist first"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
+        {permit.status==="active"&&(<div style={{display:"flex",gap:8}}>{canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}<button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Suspend</button><button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Close</button></div>)}
+        {permit.status==="extension_pending"&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
+        {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
+      {showPDF&&<PermitPDF permit={permit} audit={audit} onClose={()=>setShowPDF(false)}/>}
+    </div></div>
+  );
+}
+
+// ── Permit PDF ────────────────────────────────────────────────────────────────
+function PermitPDF({permit,audit,onClose}){
+  const fd=permit.form_data||{};const t=pt(permit.type);
+  const allControls=[...(fd.selected_controls||[]),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
+  const css=`body{font-family:Arial,sans-serif;font-size:11px;color:#1A2B3C;margin:0}
+.hdr{background:#1A3A5C;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.htit{font-size:22px;font-weight:800;letter-spacing:2px}.hsub{font-size:10px;opacity:.65;margin-top:2px}
+.ref{font-size:13px;font-weight:700;color:#0E9E6E}.badge{display:inline-block;background:#E0F5EE;color:#0B7A55;border:0.5px solid #0E9E6E;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;text-transform:uppercase}
+.sec{margin-bottom:12px;border:0.5px solid #D1D8E0;border-radius:6px;overflow:hidden}
+.sh{background:#F4F6F9;padding:7px 12px;font-size:9px;font-weight:700;color:#5A6A7A;letter-spacing:.06em;text-transform:uppercase;border-bottom:0.5px solid #D1D8E0}
+.sb{padding:10px 12px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld{background:#F4F6F9;border-radius:4px;padding:7px 10px}.fl{font-size:9px;color:#5A6A7A;margin-bottom:2px}.fv{font-size:11px;font-weight:600}
+.ctrl{display:flex;gap:8px;padding:4px 0;border-bottom:0.5px solid #F0F0F0;font-size:11px;align-items:flex-start}
+.ck{color:#0E9E6E;font-weight:700;flex-shrink:0}.stg{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:0.5px solid #F0F0F0}
+.snum{width:22px;height:22px;border-radius:50%;background:#0E9E6E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;text-align:center;line-height:22px}
+.snum.p{background:#C0CAD5}.ft{text-align:center;font-size:9px;color:#aaa;border-top:0.5px solid #D1D8E0;padding-top:10px;margin-top:16px}
+.conf{color:#0E9E6E;font-weight:700;letter-spacing:.08em}
+table{border-collapse:collapse;width:100%;font-size:10px}th{background:#1A3A5C;color:#fff;padding:5px 8px;text-align:left}
+td{padding:4px 8px;border-bottom:0.5px solid #eee}tr:nth-child(even)td{background:#f9f9f9}`;
+  const html=`<style>${css}</style>
+<div class="hdr"><div><div class="htit">CONTROLIT</div><div class="hsub">Permit to Work Management Platform · getcontrolit.com</div></div><div style="text-align:right"><div class="ref">${permit.permit_number}</div><div class="badge">${(permit.status||"").toUpperCase().replace("_"," ")}</div></div></div>
+<div style="margin-bottom:14px"><h2 style="font-size:16px;font-weight:700;color:#1A3A5C;margin-bottom:3px">${permit.title}</h2><p style="font-size:11px;color:#5A6A7A">${t.label||permit.type} · ${permit.area}</p></div>
+<div class="sec"><div class="sh">Permit Details</div><div class="sb"><div class="g2">
+<div class="fld"><div class="fl">Permit Number</div><div class="fv">${permit.permit_number}</div></div>
+<div class="fld"><div class="fl">Permit Type</div><div class="fv">${t.label||permit.type}</div></div>
+<div class="fld"><div class="fl">Team Leader</div><div class="fv">${permit.requester_name||"—"}</div></div>
+<div class="fld"><div class="fl">Supervisor</div><div class="fv">${permit.supervisor_name||"—"}</div></div>
+<div class="fld"><div class="fl">Work Area</div><div class="fv">${permit.area}</div></div>
+<div class="fld"><div class="fl">Date Submitted</div><div class="fv">${permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"}</div></div>
+${permit.issued_at?`<div class="fld"><div class="fl">Issued</div><div class="fv">${new Date(permit.issued_at).toLocaleString()}</div></div>`:""}
+${permit.closed_at?`<div class="fld"><div class="fl">Closed</div><div class="fv">${new Date(permit.closed_at).toLocaleString()}</div></div>`:""}
+</div></div></div>
+${fd.tools_equipment?`<div class="sec"><div class="sh">Tools & Equipment</div><div class="sb"><p style="line-height:1.7;white-space:pre-wrap">${fd.tools_equipment}</p></div></div>`:""}
+${allControls.length?`<div class="sec"><div class="sh">Control Measures — All Stages</div><div class="sb">${allControls.map(c=>`<div class="ctrl"><span class="ck">✓</span><span>${c}</span></div>`).join("")}</div></div>`:""}
+${fd.osh_additional_controls?`<div class="sec"><div class="sh">Additional Controls — OSH Manager</div><div class="sb"><p style="white-space:pre-wrap;line-height:1.7">${fd.osh_additional_controls}</p></div></div>`:""}
+${fd.ra_mode==="generate"&&fd.ra_generated?`<div class="sec"><div class="sh">Risk Assessment (AI-Generated 5×5)</div><div class="sb" style="font-size:10px">${fd.ra_generated}</div></div>`:""}
+${fd.ra_mode==="upload"&&fd.ra_file_name?`<div class="sec"><div class="sh">Risk Assessment</div><div class="sb"><p>Attached: <strong>${fd.ra_file_name}</strong></p></div></div>`:""}
+<div class="sec"><div class="sh">Approval Chain</div><div class="sb">
+${STAGES.map((s,i)=>{const sn=i+1,done=sn<permit.stage||(sn===4&&permit.status==="active");const ae=audit[i];return`<div class="stg"><div class="snum ${done?"":"p"}">${done?"✓":sn}</div><div><p style="font-size:11px;font-weight:600;color:${done?"#0B7A55":"#5A6A7A"}">${s}</p><p style="font-size:10px;color:#5A6A7A">${done?"Approved":"Pending"}${ae&&done?" · "+ae.user_name+" · "+new Date(ae.created_at).toLocaleString():""}</p></div></div>`;}).join("")}
+</div></div>
+${fd.issuer_checklist?`<div class="sec"><div class="sh">Site Verification Checklist — Issuer Confirmed</div><div class="sb">${Object.entries(fd.issuer_checklist).map(([k,v])=>`<div class="ctrl"><span class="ck" style="color:${v?"#0E9E6E":"#C0392B"}">${v?"✓":"✗"}</span><span>${k}</span></div>`).join("")}${fd.issued_by_name?`<p style="margin-top:8px;font-size:11px;color:#5A6A7A">Issued by: <strong style="color:#1A2B3C">${fd.issued_by_name}</strong></p>`:""}</div></div>`:""}
+${fd.rejection_reason?`<div class="sec"><div class="sh" style="background:#FDECEA;color:#C0392B">Rejection Record</div><div class="sb"><p style="color:#C0392B">${fd.rejection_reason}</p><p style="font-size:10px;color:#5A6A7A;margin-top:4px">By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</p></div></div>`:""}
+<div class="ft"><p class="conf">CONFIDENTIAL</p><p style="margin-top:3px">CONTROLIT Permit to Work Management Platform · getcontrolit.com</p><p style="margin-top:2px">Generated: ${new Date().toLocaleString()} · ${permit.permit_number}</p></div>`;
+
+  return(
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
+      <div style={{background:B.primary,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        <span style={{color:"#fff",fontWeight:600,fontSize:14}}>📄 {permit.permit_number}</span>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>window.print()} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>🖨 Print / Save as PDF</button>
+          <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:html}}/></div>
     </div>
   );
 }
 
-// ── App Root ──────────────────────────────────────────────────────
-// FIX: unread count now driven from notifications DB, passed down to Notifs
-function App() {
-  const [session, setSession]     = useState(null);
-  const [screen, setScreen]       = useState("dashboard");
-  const [permits, setPermits]     = useState([]);
-  const [selected, setSelected]   = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [setupDone, setSetupDone] = useState(false);
-  // FIX: unread driven from DB notification count, not from permits array
-  const [unread, setUnread]       = useState(0);
-
-  const fetchPermits = useCallback(async () => {
-    if (!session) return;
-    setLoading(true); setError("");
-    try {
-      const d = await sb.select(session.token,"permits","order=created_at.desc");
-      if (Array.isArray(d)) setPermits(d);
-      else setError("Failed to load permits.");
-    } catch(e) { setError("Connection error."); }
-    setLoading(false);
-  },[session]);
-
-  // FIX: load unread count from notifications table on mount and after actions
-  const fetchUnread = useCallback(async () => {
-    if (!session) return;
-    try {
-      const data = await sb.select(
-        session.token, "notifications",
-        `user_id=eq.${session.userId}&is_read=eq.false&select=id`
-      );
-      if (Array.isArray(data)) setUnread(data.length);
-    } catch(e) {}
-  },[session]);
-
-  useEffect(()=>{ fetchPermits(); },[fetchPermits]);
-  useEffect(()=>{ fetchUnread(); },[fetchUnread]);
-
-  if (!session) return <Login onLogin={s=>setSession(s)}/>;
-  if (session.firstTime&&!setupDone) return <AccountSetup session={session} onComplete={s=>{setSession(s); setSetupDone(true);}}/>;
-
-  async function logout() {
-    await sb.signOut(session.token);
-    setSession(null); setPermits([]); setScreen("dashboard"); setSetupDone(false);
-  }
-
-  function selectPermit(p) { setSelected(p); setScreen("detail"); }
-
-  return (
-    <div>
-      {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={selectPermit} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
-      {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits(); fetchUnread(); setScreen("dashboard");}} onRefresh={async()=>{await fetchPermits(); await fetchUnread();}}/>}
-      {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits(); fetchUnread(); setScreen("dashboard");}}/>}
-      {screen==="notifs"&&<Notifs session={session} onBack={()=>{fetchUnread(); setScreen("dashboard");}} onSelectPermit={p=>{setSelected(p); setScreen("detail");}} onUnreadChange={setUnread}/>}
-      {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")}/>}
-      {screen==="changepass"&&<ChangePassword session={session} onBack={()=>setScreen("dashboard")}/>}
-      {screen==="workflow"&&(
-        <div>
-          <Topbar title="Permit Workflow" onBack={()=>setScreen("dashboard")}/>
-          <div style={{padding:"1.25rem"}}>
-            {STAGES.map((s,i)=>(
-              <div key={s} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:16}}>
-                <div style={{width:32,height:32,borderRadius:"50%",background:B.primary,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{i+1}</div>
-                <div style={{background:B.neutral,borderRadius:8,padding:"10px 14px",flex:1}}>
-                  <p style={{fontSize:13,fontWeight:600,color:B.text}}>{s}</p>
-                </div>
-              </div>
-            ))}
+// ── Notifications ─────────────────────────────────────────────────────────────
+function Notifs({session,onBack,onSelectPermit,onUnreadChange}){
+  const[notes,setNotes]=useState([]);const[loading,setLoading]=useState(true);
+  async function load(){setLoading(true);const d=await sb.select(session.token,"notifications",`user_id=eq.${session.userId}&order=created_at.desc&limit=80`);if(Array.isArray(d)){setNotes(d);if(onUnreadChange)onUnreadChange(d.filter(n=>!n.is_read).length);}setLoading(false);}
+  useEffect(()=>{load();},[]);
+  async function markAll(){await sb.update(session.token,"notifications",`user_id=eq.${session.userId}&is_read=eq.false`,{is_read:true});setNotes(p=>p.map(n=>({...n,is_read:true})));if(onUnreadChange)onUnreadChange(0);}
+  async function readNote(n){if(!n.is_read){await sb.update(session.token,"notifications",`id=eq.${n.id}`,{is_read:true});setNotes(p=>p.map(x=>x.id===n.id?{...x,is_read:true}:x));if(onUnreadChange)onUnreadChange(notes.filter(x=>!x.is_read&&x.id!==n.id).length);}if(n.permit_id){const ps=await sb.select(session.token,"permits",`id=eq.${n.permit_id}`);if(Array.isArray(ps)&&ps[0])onSelectPermit(ps[0]);}}
+  const icons={submitted:"📋",aa_approved:"✓",osh_approved:"✓",issued:"🟢",rejected:"✗",suspended:"⚠",closed:"🔒",ext_requested:"⟳",ext_approved:"✓",ext_rejected:"✗"};
+  const unread=notes.filter(n=>!n.is_read).length;
+  return(<div><Topbar title="Notifications" onBack={onBack} right={unread>0?<button onClick={markAll} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Mark all read</button>:null}/>
+  <div style={{padding:"1.25rem"}}>
+    {loading&&<Spinner/>}
+    {!loading&&notes.length===0&&<div style={{textAlign:"center",padding:"3rem 1rem"}}><p style={{fontSize:32}}>✓</p><p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>All clear</p><p style={{fontSize:13,color:B.textSub}}>No notifications yet.</p></div>}
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {notes.map(n=>{const isRead=n.is_read,icon=icons[n.event_type]||"🔔";return(
+        <div key={n.id} onClick={()=>readNote(n)} style={{background:isRead?"#fff":B.accentLight,border:`0.5px solid ${isRead?B.neutralBorder:B.accent}`,borderLeft:`3px solid ${isRead?B.neutralBorder:B.accent}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",opacity:isRead?0.7:1}}>
+          <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+            <div style={{width:30,height:30,borderRadius:"50%",background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icon}</div>
+            <div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",gap:8}}><p style={{fontSize:12,fontWeight:isRead?500:700,color:isRead?B.textSub:B.text,flex:1}}>{n.message}</p><p style={{fontSize:10,color:B.textSub,whiteSpace:"nowrap"}}>{n.created_at?new Date(n.created_at).toLocaleString():""}</p></div><p style={{fontSize:11,color:B.accentBorder,marginTop:2}}>{n.reference}{n.title?" · "+n.title:""}</p>{!isRead&&<span style={{fontSize:10,background:B.accent,color:"#fff",borderRadius:20,padding:"1px 8px",marginTop:4,display:"inline-block"}}>New</span>}</div>
           </div>
         </div>
-      )}
+      );})}
     </div>
-  );
+  </div></div>);
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+function Admin({session,onBack}){
+  const[users,setUsers]=useState([]);const[loading,setLoading]=useState(true);const[showForm,setShowForm]=useState(false);const[nm,setNm]=useState("");const[em,setEm]=useState("");const[rl,setRl]=useState("requester");const[pw,setPw]=useState("Controlit@2024!");const[busy,setBusy]=useState(false);const[result,setResult]=useState(null);const[err,setErr]=useState("");
+  function load(){setLoading(true);sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc").then(d=>{if(Array.isArray(d))setUsers(d);setLoading(false);});}
+  useEffect(()=>{load();},[]);
+  async function invite(){if(!nm||!em){setErr("Name and email required.");return;}setBusy(true);setErr("");setResult(null);try{const au=await sb.createUser(em,pw);if(!au||!au.id){setErr("Failed: "+(au&&au.message?au.message:"Unknown"));setBusy(false);return;}await sb.insert(session.token,"profiles",{id:au.id,org_id:session.profile.org_id,full_name:nm,email:em,role:rl,active:true});setResult({name:nm,email:em,pass:pw,role:rl});setNm("");setEm("");setPw("Controlit@2024!");setRl("requester");load();}catch(e){setErr("Error: "+e.message);}setBusy(false);}
+  async function updRole(uid,r){await sb.update(session.token,"profiles",`id=eq.${uid}`,{role:r});setUsers(p=>p.map(u=>u.id===uid?{...u,role:r}:u));}
+  async function toggle(u){const n=!u.active;await sb.update(session.token,"profiles",`id=eq.${u.id}`,{active:n});setUsers(p=>p.map(x=>x.id===u.id?{...x,active:n}:x));}
+  return(<div><Topbar title="Admin Panel" onBack={onBack}/><div style={{padding:"1.25rem"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}><p style={{fontSize:13,fontWeight:600,color:B.text}}>Team ({users.length})</p><button onClick={()=>{setShowForm(!showForm);setResult(null);setErr("");}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{showForm?"Cancel":"+ Invite member"}</button></div>
+    {showForm&&(<div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}><p style={{fontSize:13,fontWeight:600,color:B.text,marginBottom:"1rem"}}>New team member</p>{err&&<ErrBox msg={err}/>}
+      {result&&(<div style={{background:B.accentLight,border:`0.5px solid ${B.accent}`,borderRadius:10,padding:"1rem",marginBottom:"1rem"}}><p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:8}}>✓ {result.name} added</p><div style={{background:"#fff",borderRadius:8,padding:"10px 12px",fontSize:12,fontFamily:"monospace",color:B.text,lineHeight:2}}><div>URL: https://getcontrolit.com/app.html</div><div>Email: {result.email}</div><div>Password: {result.pass}</div><div>Role: {roleLabel(result.role)}</div></div><button onClick={()=>setResult(null)} style={{marginTop:10,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:6,padding:"6px 12px",fontSize:12,cursor:"pointer",color:B.textSub}}>Invite another</button></div>)}
+      {!result&&(<><div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:12}}><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Full name *</label><input value={nm} onChange={e=>setNm(e.target.value)} placeholder="e.g. John Adeyemi"/></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Email *</label><input value={em} onChange={e=>setEm(e.target.value)} type="email"/></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Role *</label><select value={rl} onChange={e=>setRl(e.target.value)}>{ROLES.map(r=><option key={r} value={r}>{roleLabel(r)}</option>)}</select></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Temp password</label><input value={pw} onChange={e=>setPw(e.target.value)}/></div></div></div><button onClick={invite} disabled={busy} style={{width:"100%",background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>{busy?"Creating…":"Create account & invite"}</button></>)}
+    </div>)}
+    {loading&&<Spinner/>}
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {!loading&&users.length===0&&<p style={{fontSize:13,color:B.textSub}}>No team members yet.</p>}
+      {users.map(u=>(<div key={u.id} style={{background:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",opacity:u.active?1:0.6}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:u.id!==session.userId?10:0}}><div style={{display:"flex",gap:10,alignItems:"center"}}><div style={{width:36,height:36,borderRadius:"50%",background:B.accentLight,border:`0.5px solid ${B.accent}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:B.accentBorder,flexShrink:0}}>{u.full_name.split(" ").map(n=>n[0]).join("").slice(0,2)}</div><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{u.full_name}</p><p style={{fontSize:11,color:B.textSub}}>{u.email}</p><p style={{fontSize:11,color:B.textSub,textTransform:"capitalize"}}>{roleLabel(u.role)}</p></div></div><span style={{background:u.active?B.accentLight:B.neutral,color:u.active?B.accentBorder:B.textSub,border:`0.5px solid ${u.active?B.accent:B.neutralBorder}`,borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:600}}>{u.active?"Active":"Suspended"}</span></div>{u.id!==session.userId&&(<div style={{display:"flex",gap:8,alignItems:"center",paddingTop:8,borderTop:`0.5px solid ${B.neutralBorder}`}}><select value={u.role} onChange={e=>updRole(u.id,e.target.value)} style={{fontSize:11,padding:"4px 8px",flex:1,borderRadius:6,height:30}}>{ROLES.map(r=><option key={r} value={r}>{roleLabel(r)}</option>)}</select><button onClick={()=>toggle(u)} style={{background:u.active?B.warnLight:B.accentLight,color:u.active?B.warn:B.accentBorder,border:`0.5px solid ${u.active?B.warn:B.accent}`,borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>{u.active?"Suspend":"Reactivate"}</button></div>)}{u.id===session.userId&&<p style={{fontSize:11,color:B.textSub,marginTop:4}}>This is your account</p>}</div>))}
+    </div>
+  </div></div>);
+}
+
+// ── App Root ──────────────────────────────────────────────────────────────────
+function App(){
+  const[session,setSession]=useState(null);const[screen,setScreen]=useState("dashboard");const[permits,setPermits]=useState([]);const[selected,setSelected]=useState(null);const[loading,setLoading]=useState(false);const[error,setError]=useState("");const[setupDone,setSetupDone]=useState(false);const[unread,setUnread]=useState(0);
+  const fetchPermits=useCallback(async()=>{if(!session)return;setLoading(true);setError("");try{const d=await sb.select(session.token,"permits","order=created_at.desc");if(Array.isArray(d))setPermits(d);else setError("Failed to load permits.");}catch(e){setError("Connection error.");}setLoading(false);},[session]);
+  const fetchUnread=useCallback(async()=>{if(!session)return;try{const d=await sb.select(session.token,"notifications",`user_id=eq.${session.userId}&is_read=eq.false&select=id`);if(Array.isArray(d))setUnread(d.length);}catch(e){}},[session]);
+  useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);
+  if(!session)return <Login onLogin={s=>setSession(s)}/>;
+  if(session.firstTime&&!setupDone)return <AccountSetup session={session} onComplete={s=>{setSession(s);setSetupDone(true);}}/>;
+  async function logout(){await sb.signOut(session.token);setSession(null);setPermits([]);setScreen("dashboard");setSetupDone(false);}
+  function sel(p){setSelected(p);setScreen("detail");}
+  return(<div>
+    {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={sel} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
+    {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}} onRefresh={async()=>{await fetchPermits();await fetchUnread();}}/>}
+    {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}}/>}
+    {screen==="notifs"&&<Notifs session={session} onBack={()=>{fetchUnread();setScreen("dashboard");}} onSelectPermit={p=>{setSelected(p);setScreen("detail");}} onUnreadChange={setUnread}/>}
+    {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")}/>}
+    {screen==="changepass"&&<ChangePassword session={session} onBack={()=>setScreen("dashboard")}/>}
+    {screen==="workflow"&&(<div><Topbar title="Permit Workflow" onBack={()=>setScreen("dashboard")}/><div style={{padding:"1.25rem"}}>{STAGES.map((s,i)=>(<div key={s} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:16}}><div style={{width:32,height:32,borderRadius:"50%",background:B.primary,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{i+1}</div><div style={{background:B.neutral,borderRadius:8,padding:"10px 14px",flex:1}}><p style={{fontSize:13,fontWeight:600,color:B.text}}>{s}</p><p style={{fontSize:11,color:B.textSub,marginTop:2}}>{["Submits permit with control measures, tools & equipment, and risk assessment (upload or AI-generated 5x5 matrix)","Reviews all requester inputs — confirms area readiness, approves or rejects with reason","Reviews HSE compliance, adds additional controls with AI assist, approves or rejects — checklist auto-generated","Verifies all controls on site via checklist, issues permit — formal PTW document generated for download"][i]}</p></div></div>))}</div></div>)}
+  </div>);
 }
 
 ReactDOM.render(<App/>, document.getElementById("root"));
