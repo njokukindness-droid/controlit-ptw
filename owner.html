@@ -130,9 +130,28 @@ function OnboardModal({token,onClose,onSuccess}){
     setBusy(true); setErr("");
     try {
       var encodedKey = encodeApiKey(kp1,kp2,kp3);
-      var orgs = await sb.insert(token,"organisations",{name:orgName,slug:slugify(orgName),industry,country,active:true,anthropic_key:encodedKey});
-      if(!orgs||!orgs[0]){setErr("Failed to create organisation.");setBusy(false);return;}
-      var org=orgs[0];
+      var slug = slugify(orgName);
+
+      // Duplicate slug check before inserting
+      var existing = await sb.select(token,"organisations","slug=eq."+slug+"&select=id,name");
+      if(Array.isArray(existing)&&existing.length>0){
+        setErr("An organisation with this name already exists: "+existing[0].name);
+        setBusy(false); return;
+      }
+
+      var orgs = await sb.insert(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
+
+      // Handle both cases: insert returned row, or empty array (RLS hid result but insert succeeded)
+      var org = (orgs&&orgs[0]) ? orgs[0] : null;
+
+      // If empty, fetch the org we just created by slug
+      if(!org){
+        var fetched = await sb.select(token,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
+        if(Array.isArray(fetched)&&fetched[0]) org=fetched[0];
+      }
+
+      if(!org){setErr("Failed to create organisation. Please try again.");setBusy(false);return;}
+
       var authUser=await sb.createUser(adminEmail,tempPass);
       if(!authUser||!authUser.id){setErr("Failed to create auth user: "+(authUser&&authUser.message?authUser.message:"Unknown error"));setBusy(false);return;}
       await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
