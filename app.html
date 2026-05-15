@@ -420,18 +420,18 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         {permit.status==="extension_pending"&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
-      {showPDF&&<PermitPDF permit={permit} audit={audit} onClose={()=>setShowPDF(false)}/>}
+      {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} onClose={()=>setShowPDF(false)}/>}
     </div></div>
   );
 }
 
 // ── Permit PDF ────────────────────────────────────────────────────────────────
-function PermitPDF({permit,audit,onClose}){
+function PermitPDF({permit,audit,orgName,onClose}){
   const fd=permit.form_data||{};const t=pt(permit.type);
   const allControls=[...(fd.selected_controls||[]),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
   const css=`body{font-family:Arial,sans-serif;font-size:11px;color:#1A2B3C;margin:0}
 .hdr{background:#1A3A5C;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.htit{font-size:22px;font-weight:800;letter-spacing:2px}.hsub{font-size:10px;opacity:.65;margin-top:2px}
+.htit{font-size:22px;font-weight:700;letter-spacing:0.5px}.hdoc{font-size:10px;opacity:.65;margin-top:3px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600}.pwby{font-size:8px;opacity:.45;margin-top:6px;text-align:right;letter-spacing:0.04em}
 .ref{font-size:13px;font-weight:700;color:#0E9E6E}.badge{display:inline-block;background:#E0F5EE;color:#0B7A55;border:0.5px solid #0E9E6E;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;text-transform:uppercase}
 .sec{margin-bottom:12px;border:0.5px solid #D1D8E0;border-radius:6px;overflow:hidden}
 .sh{background:#F4F6F9;padding:7px 12px;font-size:9px;font-weight:700;color:#5A6A7A;letter-spacing:.06em;text-transform:uppercase;border-bottom:0.5px solid #D1D8E0}
@@ -445,7 +445,7 @@ function PermitPDF({permit,audit,onClose}){
 table{border-collapse:collapse;width:100%;font-size:10px}th{background:#1A3A5C;color:#fff;padding:5px 8px;text-align:left}
 td{padding:4px 8px;border-bottom:0.5px solid #eee}tr:nth-child(even)td{background:#f9f9f9}`;
   const html=`<style>${css}</style>
-<div class="hdr"><div><div class="htit">CONTROLIT</div><div class="hsub">Permit to Work Management Platform · getcontrolit.com</div></div><div style="text-align:right"><div class="ref">${permit.permit_number}</div><div class="badge">${(permit.status||"").toUpperCase().replace("_"," ")}</div></div></div>
+<div class="hdr"><div><div class="htit">${orgName||"Organisation"}</div><div class="hdoc">PERMIT TO WORK</div></div><div style="text-align:right"><div class="ref">${permit.permit_number}</div><div class="badge">${(permit.status||"").toUpperCase().replace("_"," ")}</div><div class="pwby">Powered by CONTROLIT</div></div></div>
 <div style="margin-bottom:14px"><h2 style="font-size:16px;font-weight:700;color:#1A3A5C;margin-bottom:3px">${permit.title}</h2><p style="font-size:11px;color:#5A6A7A">${t.label||permit.type} · ${permit.area}</p></div>
 <div class="sec"><div class="sh">Permit Details</div><div class="sb"><div class="g2">
 <div class="fld"><div class="fl">Permit Number</div><div class="fv">${permit.permit_number}</div></div>
@@ -467,7 +467,7 @@ ${STAGES.map((s,i)=>{const sn=i+1,done=sn<permit.stage||(sn===4&&permit.status==
 </div></div>
 ${fd.issuer_checklist?`<div class="sec"><div class="sh">Site Verification Checklist — Issuer Confirmed</div><div class="sb">${Object.entries(fd.issuer_checklist).map(([k,v])=>`<div class="ctrl"><span class="ck" style="color:${v?"#0E9E6E":"#C0392B"}">${v?"✓":"✗"}</span><span>${k}</span></div>`).join("")}${fd.issued_by_name?`<p style="margin-top:8px;font-size:11px;color:#5A6A7A">Issued by: <strong style="color:#1A2B3C">${fd.issued_by_name}</strong></p>`:""}</div></div>`:""}
 ${fd.rejection_reason?`<div class="sec"><div class="sh" style="background:#FDECEA;color:#C0392B">Rejection Record</div><div class="sb"><p style="color:#C0392B">${fd.rejection_reason}</p><p style="font-size:10px;color:#5A6A7A;margin-top:4px">By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</p></div></div>`:""}
-<div class="ft"><p class="conf">CONFIDENTIAL</p><p style="margin-top:3px">CONTROLIT Permit to Work Management Platform · getcontrolit.com</p><p style="margin-top:2px">Generated: ${new Date().toLocaleString()} · ${permit.permit_number}</p></div>`;
+<div class="ft"><p class="conf">CONFIDENTIAL — ${orgName||"Organisation"}</p><p style="margin-top:3px">Permit to Work · ${permit.permit_number} · Generated: ${new Date().toLocaleString()}</p><p style="margin-top:3px;font-size:8px;color:#ccc">Managed digitally by CONTROLIT · getcontrolit.com</p></div>`;
 
   return(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
