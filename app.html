@@ -477,163 +477,200 @@ function PermitPDF({permit,audit,orgName,onClose}){
 
   // Audit entries by stage
   function auditFor(action){const e=audit.find(a=>a.action===action);return e?`${e.user_name} · ${new Date(e.created_at).toLocaleString()}`:"Pending";}
+  function auditForRole(role){const e=audit.find(a=>a.action==="Approved & forwarded"&&a.user_role&&a.user_role.toLowerCase().includes(role.toLowerCase()));return e||null;}
+  function auditIssued(){return audit.find(a=>a.action==="Permit issued")||null;}
+
+  const typeColor = t.color||"#1A3A5C";
+  const aaEntry = auditForRole("area authority")||auditForRole("admin");
+  const oshEntry = auditForRole("osh")||auditForRole("safety");
+  const issuerEntry = auditIssued();
+  const completionEntry = audit.find(a=>a.action==="Work completion signed off");
+  const closureEntry = audit.find(a=>a.action==="Permit closed");
+
+  function ctrlRows(items){
+    const rows=[];
+    for(let i=0;i<items.length;i+=2){
+      rows.push(`<tr>
+        <td style="padding:5px 8px;border:0.5px solid #ccc;font-size:10px;width:50%"><span style="color:#0E9E6E;font-weight:700;margin-right:5px">✓</span>${items[i]}</td>
+        <td style="padding:5px 8px;border:0.5px solid #ccc;font-size:10px;width:50%">${items[i+1]?`<span style="color:#0E9E6E;font-weight:700;margin-right:5px">✓</span>${items[i+1]}`:"&nbsp;"}</td>
+      </tr>`);
+    }
+    return rows.join("");
+  }
 
   const css=`
-    @page{size:A4;margin:18mm}
-    body{font-family:Arial,sans-serif;font-size:11px;color:#1A2B3C;margin:0;padding:0}
+    @page{size:A4;margin:15mm}
+    body{font-family:Arial,sans-serif;font-size:10px;color:#1A2B3C;margin:0;padding:0}
     table{border-collapse:collapse;width:100%}
-    th,td{border:0.5px solid #aaa;padding:5px 8px;font-size:10px;vertical-align:top}
-    th{background:#1A3A5C;color:#fff;font-weight:700;text-align:left}
-    .sec-head{background:#1A3A5C;color:#fff;font-weight:700;font-size:11px;padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em}
-    .sec-sub{background:#E8EDF2;font-weight:600;font-size:10px;padding:5px 10px;font-style:italic}
-    .sig-row td{height:36px;font-size:10px}
-    .label{color:#5A6A7A;font-size:9px;display:block;margin-bottom:2px}
-    .val{font-size:11px;font-weight:600}
-    .tick{color:#0E9E6E;font-weight:700;margin-right:5px}
-    h1{font-size:20px;font-weight:700;margin:0;color:#1A2B3C}
-    h2{font-size:13px;font-weight:600;margin:0;color:#5A6A7A;text-transform:uppercase;letter-spacing:0.06em}
-    .ref{font-size:13px;font-weight:700;color:#0E9E6E}
-    .badge{display:inline-block;background:#E0F5EE;color:#0B7A55;border:0.5px solid #0E9E6E;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;text-transform:uppercase}
-    .ft{font-size:9px;color:#888;text-align:center;border-top:0.5px solid #ccc;padding-top:8px;margin-top:16px}
-    .decl{font-size:10px;line-height:1.7;color:#333;padding:8px 0}
-    .dotline{border-bottom:0.5px dotted #999;display:inline-block;min-width:180px;margin:0 4px}
+    td,th{border:0.5px solid #999;padding:5px 8px;font-size:10px;vertical-align:top}
+    .hdr-stripe{background:${typeColor};color:#fff;padding:6px 10px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.08em}
+    .sec-head{background:#1A3A5C;color:#fff;font-weight:700;font-size:10px;padding:5px 10px;text-transform:uppercase;letter-spacing:0.06em;margin-top:8px}
+    .sec-sub{background:#E8EDF2;font-size:9px;padding:4px 10px;font-style:italic;border:0.5px solid #ccc}
+    .label{color:#5A6A7A;font-size:8px;display:block;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.04em}
+    .val{font-size:10px;font-weight:600}
+    .decl{font-size:10px;line-height:1.8;color:#1A2B3C;margin:6px 0}
+    .dotline{border-bottom:0.5px solid #666;display:inline-block;min-width:160px;margin:0 3px;vertical-align:bottom}
+    .sig-cell{height:28px;vertical-align:bottom;font-size:10px}
+    .green{color:#0B7A55;font-weight:700}
+    .amber{color:#D97B00;font-weight:700}
+    .ft{font-size:8px;color:#888;text-align:center;border-top:0.5px solid #ccc;padding-top:6px;margin-top:12px}
   `;
 
   const html=`<style>${css}</style>
 
-  <!-- HEADER -->
-  <table style="margin-bottom:14px;border:none">
-    <tr>
-      <td style="border:none;padding:0;width:70%">
-        <h1>${orgName||"Organisation"}</h1>
-        <h2>Permit to Work — ${t.label||permit.type}</h2>
-      </td>
-      <td style="border:none;padding:0;text-align:right;vertical-align:top">
-        <div class="ref">${permit.permit_number}</div>
-        <div class="badge">${(permit.status||"").toUpperCase().replace("_"," ")}</div>
-        <div style="font-size:8px;color:#aaa;margin-top:6px">Powered by CONTROLIT</div>
-      </td>
-    </tr>
-  </table>
-  <p style="font-size:9px;color:#666;margin-bottom:12px;line-height:1.5">This permit-to-work (PTW) is to be retained by the Work In-charge / Work Performer while work is in progress and must be displayed in the working area. A copy of this PTW must be retained by the Issuing Authority. After completion/cancellation of the work, this PTW must be returned to the Issuing Authority for record keeping.</p>
+<!-- HEADER -->
+<table style="margin-bottom:0;border:0.5px solid #999">
+  <tr>
+    <td style="border:none;padding:10px 12px;width:65%">
+      <div style="font-size:16px;font-weight:700;color:#1A2B3C">${orgName||"Organisation"}</div>
+      <div style="font-size:9px;color:#5A6A7A;margin-top:2px;letter-spacing:0.06em;text-transform:uppercase">Occupational Safety and Health</div>
+    </td>
+    <td style="border:none;padding:10px 12px;text-align:right;vertical-align:top">
+      <div style="font-size:11px;font-weight:700;color:#1A3A5C">${permit.permit_number}</div>
+      <div style="font-size:8px;color:#888;margin-top:3px">Powered by CONTROLIT</div>
+    </td>
+  </tr>
+</table>
+<div class="hdr-stripe">${t.label||permit.type} Permit to Work</div>
+<table style="margin-bottom:0">
+  <tr>
+    <td colspan="3" style="font-size:9px;color:#555;padding:5px 8px;background:#f9f9f9">
+      This permit-to-work (PTW) is to be retained by the Work In-charge / Work Performer while work is in progress and must be displayed in the working area. A copy must be retained by the Issuing Authority. After completion/cancellation, this PTW must be returned to the Issuing Authority / OSH Department for record keeping.
+    </td>
+  </tr>
+</table>
 
-  <!-- SECTION 1: WORK DESCRIPTION -->
-  <div class="sec-head">Section 1 — Work Description</div>
-  <table style="margin-bottom:0">
-    <tr>
-      <td style="width:50%"><span class="label">Work Title</span><span class="val">${permit.title}</span></td>
-      <td style="width:50%"><span class="label">Permit Type</span><span class="val">${t.label||permit.type}</span></td>
-    </tr>
-    <tr>
-      <td colspan="2"><span class="label">Exact Location / Work Area</span><span class="val">${permit.area}</span></td>
-    </tr>
-    <tr>
-      <td><span class="label">Date From</span><span class="val">${fd.work_date_from||fmtD(permit.created_at)}</span></td>
-      <td><span class="label">Date To</span><span class="val">${fd.work_date_to||"—"}</span></td>
-    </tr>
-    <tr>
-      <td><span class="label">Time From</span><span class="val">${fmtT(fd.work_time_from)}</span></td>
-      <td><span class="label">Time To</span><span class="val">${fmtT(fd.work_time_to)}</span></td>
-    </tr>
-    <tr>
-      <td><span class="label">Team Leader / Work In-charge</span><span class="val">${permit.requester_name||"—"}</span></td>
-      <td><span class="label">Supervisor / Manager</span><span class="val">${permit.supervisor_name||"—"}</span></td>
-    </tr>
-    <tr>
-      <td><span class="label">No. of Persons Involved</span><span class="val">${fd.num_persons||"—"}</span></td>
-      <td><span class="label">Permit Number</span><span class="val">${permit.permit_number}</span></td>
-    </tr>
-    ${fd.tools_equipment?`<tr><td colspan="2"><span class="label">Tools & Equipment</span><span class="val" style="white-space:pre-wrap">${fd.tools_equipment}</span></td></tr>`:""}
-  </table>
+<!-- SECTION 1 -->
+<div class="sec-head">Section 1 — Work Description</div>
+<table>
+  <tr>
+    <td style="width:50%"><span class="label">Work Title / Description</span><span class="val">${permit.title}</span></td>
+    <td style="width:50%"><span class="label">Work Area / Exact Location</span><span class="val">${permit.area}</span></td>
+  </tr>
+  <tr>
+    <td><span class="label">Date From</span><span class="val">${fd.work_date_from||new Date(permit.created_at).toLocaleDateString()}</span></td>
+    <td><span class="label">Date To</span><span class="val">${fd.work_date_to||"—"}</span></td>
+  </tr>
+  <tr>
+    <td><span class="label">Time From</span><span class="val">${fd.work_time_from||"—"}</span></td>
+    <td><span class="label">Time To</span><span class="val">${fd.work_time_to||"—"}</span></td>
+  </tr>
+  <tr>
+    <td><span class="label">Work In-charge / Team Leader</span><span class="val">${permit.requester_name||"—"}</span></td>
+    <td><span class="label">Manager / Supervisor</span><span class="val">${permit.supervisor_name||"—"}</span></td>
+  </tr>
+  <tr>
+    <td><span class="label">No. of Persons Involved</span><span class="val">${fd.num_persons||"—"}</span></td>
+    <td><span class="label">Permit Number</span><span class="val">${permit.permit_number}</span></td>
+  </tr>
+  ${fd.tools_equipment?`<tr><td colspan="2"><span class="label">Tools &amp; Equipment</span><span class="val">${fd.tools_equipment}</span></td></tr>`:""}
+</table>
 
-  <!-- SECTION 2: PRECAUTIONS / CONTROL MEASURES -->
-  <div class="sec-head" style="margin-top:10px">Section 2 — Precautions Required</div>
-  <div class="sec-sub">To be filled by Permit Requestor — tick the required precautions implemented</div>
-  ${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0?`
-  <table style="margin-bottom:0">
-    ${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}
-  </table>`:"<p style='font-size:10px;padding:6px 8px;border:0.5px solid #ccc'>No controls selected.</p>"}
-  ${fd.ra_mode?`<table style="margin-top:0"><tr><td style="background:#E0F5EE;border:0.5px solid #0E9E6E"><span style="color:#0B7A55;font-weight:700">Risk Assessment:</span> ${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated 5×5 Risk Matrix (see digital record)"}</td></tr></table>`:""}
+<!-- SECTION 2 -->
+<div class="sec-head">Section 2 — Precautions Required</div>
+<div class="sec-sub">(To be filled by Permit Requestor) — Tick the required precautions implemented</div>
+${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0
+  ? `<table>${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}</table>`
+  : `<table><tr><td colspan="2" style="color:#888;font-style:italic">No controls recorded</td></tr></table>`}
+${fd.ra_mode?`<table><tr><td style="background:#E0F5EE;border:0.5px solid #0E9E6E;font-size:10px"><span style="color:#0B7A55;font-weight:700">Risk Assessment: </span>${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated 5×5 Risk Matrix (see digital record)"}</td></tr></table>`:""}
 
-  <!-- SECTION 3: PTW REQUEST -->
-  <div class="sec-head" style="margin-top:10px">Section 3 — PTW Request (Work In-charge)</div>
-  <p class="decl">I, <span class="dotline">${permit.requester_name||""}</span>, the Work In-charge, have personally viewed the area, assessed the hazards, and shall ensure that all necessary precautions listed in Section 2 are implemented for this work. I nominate <span class="dotline">${permit.supervisor_name||""}</span> as Work Performer and have briefed the team on the requirements of this PTW and their adherence to it.</p>
-  <table class="sig-row">
-    <tr>
-      <td style="width:40%"><span class="label">Signature (Work In-charge)</span></td>
-      <td style="width:30%"><span class="label">Date</span><span class="val">${fd.work_date_from||fmtD(permit.created_at)}</span></td>
-      <td style="width:30%"><span class="label">Time</span><span class="val">${fmtT(fd.work_time_from)}</span></td>
-    </tr>
-  </table>
+<!-- SECTION 3 -->
+<div class="sec-head">Section 3 — PTW Request (Work In-charge)</div>
+<table>
+  <tr>
+    <td colspan="2">
+      <p class="decl">I, <span class="dotline">${permit.requester_name||""}</span>, the Work In-charge, have personally viewed the area, assessed the hazards, and shall ensure that all necessary precautions listed in Section 2 are implemented. I nominate <span class="dotline">${permit.supervisor_name||""}</span> as Work Performer and have briefed the team on the requirements of this PTW.</p>
+    </td>
+  </tr>
+  <tr>
+    <td class="sig-cell" style="width:40%"><span class="label">Signature (WI)</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Date</span><span class="val">${fd.work_date_from||new Date(permit.created_at).toLocaleDateString()}</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Time</span><span class="val">${fd.work_time_from||"—"}</span></td>
+  </tr>
+</table>
 
-  <!-- SECTION 4: AREA AUTHORITY AUTHORISATION -->
-  <div class="sec-head" style="margin-top:10px">Section 4 — Area Authority Authorisation</div>
-  <p class="decl">I, <span class="dotline">${permit.stage>1?auditFor("Approved & forwarded").split("·")[0].trim():""}</span>, the Area Authority / Authorised Person, declare that the above work has been discussed with the person(s) in charge of the work. The risk assessment / method statement has been reviewed and all safety precautions required are in place and have been inspected by myself in accordance with this PTW.</p>
-  <table class="sig-row">
-    <tr>
-      <td style="width:40%"><span class="label">Signature (Area Authority)</span><span class="val">${permit.stage>1?"Approved":""}</span></td>
-      <td style="width:30%"><span class="label">Date / Time</span><span class="val">${permit.stage>1?auditFor("Approved & forwarded").split("·")[1]||"":""}</span></td>
-      <td style="width:30%"><span class="label">Status</span><span class="val" style="color:${permit.stage>1?"#0E9E6E":"#D97B00"}">${permit.stage>1?"✓ Approved":"Pending"}</span></td>
-    </tr>
-  </table>
+<!-- SECTION 4 -->
+<div class="sec-head">Section 4 — Area Authority Authorisation</div>
+<table>
+  <tr>
+    <td colspan="3">
+      <p class="decl">I, <span class="dotline">${aaEntry?aaEntry.user_name:""}</span>, the Area Authority / Authorised Person, declare that the above work has been discussed with the person(s) in charge. The risk assessment / method statement has been reviewed and all safety precautions required are in place, inspected by myself in accordance with this PTW.</p>
+    </td>
+  </tr>
+  <tr>
+    <td class="sig-cell" style="width:40%"><span class="label">Signature (Area Authority)</span><span class="val">${aaEntry?"Approved":""}</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Date / Time</span><span class="val">${aaEntry?new Date(aaEntry.created_at).toLocaleString():"—"}</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Status</span><span class="val ${aaEntry?"green":"amber"}">${aaEntry?"✓ Approved":"Pending"}</span></td>
+  </tr>
+</table>
 
-  <!-- SECTION 5: OSH MANAGER COMPLIANCE VERIFICATION -->
-  <div class="sec-head" style="margin-top:10px">Section 5 — OSH Manager Compliance Verification</div>
-  <p class="decl">I, <span class="dotline">${permit.stage>2?auditFor("Approved & forwarded").split("·")[0].trim():""}</span>, the OSH Manager / HSE Professional, have personally viewed the area and verified the implementation of required precautions. I found no objection to execute the activity in accordance with this PTW.</p>
-  ${fd.osh_additional_controls?`<div style="background:#F4F6F9;border:0.5px solid #D1D8E0;border-radius:4px;padding:8px;margin:6px 0;font-size:10px"><strong>Additional Controls / Recommendations:</strong><br>${fd.osh_additional_controls}</div>`:""}
-  <table class="sig-row">
-    <tr>
-      <td style="width:40%"><span class="label">Signature (OSH Manager)</span><span class="val">${permit.stage>2?"Approved":""}</span></td>
-      <td style="width:30%"><span class="label">Date / Time</span><span class="val">${permit.stage>2?auditFor("Approved & forwarded").split("·")[1]||"":""}</span></td>
-      <td style="width:30%"><span class="label">Status</span><span class="val" style="color:${permit.stage>2?"#0E9E6E":"#D97B00"}">${permit.stage>2?"✓ Approved":"Pending"}</span></td>
-    </tr>
-  </table>
+<!-- SECTION 5 -->
+<div class="sec-head">Section 5 — OSH Manager Compliance Verification</div>
+<table>
+  <tr>
+    <td colspan="3">
+      <p class="decl">I, <span class="dotline">${oshEntry?oshEntry.user_name:""}</span>, the OSH Manager / HSE Professional, have personally viewed the area and verified the implementation of required precautions. I found no objection to execute the activity in accordance with this PTW.</p>
+    </td>
+  </tr>
+  ${fd.osh_additional_controls?`<tr><td colspan="3"><span class="label">Additional Controls / Recommendations</span><span class="val" style="white-space:pre-wrap">${fd.osh_additional_controls}</span></td></tr>`:""}
+  <tr>
+    <td class="sig-cell" style="width:40%"><span class="label">Signature (OSH Manager)</span><span class="val">${oshEntry?"Approved":""}</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Date / Time</span><span class="val">${oshEntry?new Date(oshEntry.created_at).toLocaleString():"—"}</span></td>
+    <td class="sig-cell" style="width:30%"><span class="label">Status</span><span class="val ${oshEntry?"green":"amber"}">${oshEntry?"✓ Approved":"Pending"}</span></td>
+  </tr>
+</table>
 
-  <!-- SECTION 6: ISSUER SITE VERIFICATION & ISSUANCE -->
-  <div class="sec-head" style="margin-top:10px">Section 6 — Issuer — Site Verification & Permit Issuance</div>
-  <div class="sec-sub">All items below must be physically verified on site before permit is issued</div>
-  ${fd.issuer_checklist?`
-  <table style="margin-bottom:6px">
-    ${ctrlRows(Object.keys(fd.issuer_checklist))}
-  </table>
-  <p class="decl">I, <span class="dotline">${fd.issued_by_name||""}</span>, the Issuing Authority, declare that the above work has been discussed with the person(s) in charge. The risk assessment / method statement has been reviewed. All safety precautions are in place and have been physically verified by myself at the work location. This permit is hereby issued.</p>
-  <table class="sig-row">
-    <tr>
-      <td style="width:40%"><span class="label">Signature (Issuing Authority)</span><span class="val">${fd.issued_by_name||""}</span></td>
-      <td style="width:30%"><span class="label">Date / Time</span><span class="val">${permit.issued_at?new Date(permit.issued_at).toLocaleString():"—"}</span></td>
-      <td style="width:30%"><span class="label">Status</span><span class="val" style="color:#0E9E6E">✓ Permit Issued</span></td>
-    </tr>
-  </table>`:`<p style="font-size:10px;padding:8px;color:#D97B00">⚠ Permit not yet issued — site verification pending.</p>`}
+<!-- SECTION 6 -->
+<div class="sec-head">Section 6 — Issuer: Site Verification &amp; Permit Issuance</div>
+<div class="sec-sub">(To be confirmed by Issuing Authority) — All items must be physically verified on site before permit is issued</div>
+${fd.issuer_checklist
+  ? `<table>${ctrlRows(Object.keys(fd.issuer_checklist).filter(k=>fd.issuer_checklist[k]))}</table>
+     <table>
+       <tr>
+         <td colspan="3">
+           <p class="decl">I, <span class="dotline">${fd.issued_by_name||""}</span>, the Issuing Authority, declare that the above work has been discussed with the person(s) in charge. The risk assessment / method statement has been reviewed. All safety precautions are in place and have been physically verified at the work location. This permit is hereby issued.</p>
+         </td>
+       </tr>
+       <tr>
+         <td class="sig-cell" style="width:40%"><span class="label">Signature (Issuing Authority)</span><span class="val">${fd.issued_by_name||""}</span></td>
+         <td class="sig-cell" style="width:30%"><span class="label">Date / Time</span><span class="val">${issuerEntry?new Date(issuerEntry.created_at).toLocaleString():"—"}</span></td>
+         <td class="sig-cell" style="width:30%"><span class="label">Status</span><span class="val green">✓ Permit Issued</span></td>
+       </tr>
+     </table>`
+  : `<table><tr><td colspan="3" style="color:#D97B00;font-weight:600">⚠ Permit not yet issued — site verification pending.</td></tr></table>`}
 
-  <!-- SECTION 7: COMPLETION / CANCELLATION -->
-  <div class="sec-head" style="margin-top:10px">Section 7 — Completion / Cancellation of PTW</div>
-  ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B;border-radius:4px;padding:8px;font-size:10px;margin:6px 0"><strong style="color:#C0392B">Rejected:</strong> ${fd.rejection_reason}<br><em>By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</em></div>`:""}
-  <table class="sig-row">
-    <tr><td colspan="3" class="sec-sub">Work In-charge — Completion Declaration</td></tr>
-    <tr>
-      <td colspan="3"><p class="decl">I, <span class="dotline"></span>, the Work In-charge, certify that the work specified in this PTW has been completed. All persons, materials and equipment have been withdrawn and the area has been left clean, tidy and safe.</p></td>
-    </tr>
-    <tr>
-      <td><span class="label">Signature (WI)</span></td>
-      <td><span class="label">Date</span></td>
-      <td><span class="label">Time</span></td>
-    </tr>
-    <tr><td colspan="3" class="sec-sub">Issuing Authority — Closure Confirmation</td></tr>
-    <tr>
-      <td colspan="3"><p class="decl" style="margin:4px 0">The work covered by this PTW is complete and the area has been left safe, clean and tidy.</p></td>
-    </tr>
-    <tr>
-      <td><span class="label">Name (IA)</span></td>
-      <td><span class="label">Signature</span></td>
-      <td><span class="label">Date / Time</span></td>
-    </tr>
-  </table>
+<!-- SECTION 7 -->
+<div class="sec-head">Section 7 — Completion / Cancellation of PTW</div>
+<table>
+  <tr><td colspan="3" style="background:#f4f6f9;font-weight:600;font-size:10px;font-style:italic">Work In-charge — Completion Declaration</td></tr>
+  <tr>
+    <td colspan="3">
+      <p class="decl">I, <span class="dotline">${completionEntry?completionEntry.user_name:""}</span>, the Work In-charge, certify that the work specified in this PTW has been completed. All persons, materials and equipment have been withdrawn and the area has been left clean, tidy and safe.</p>
+    </td>
+  </tr>
+  <tr>
+    <td class="sig-cell"><span class="label">Signature (WI)</span><span class="val">${completionEntry?"Signed off":""}</span></td>
+    <td class="sig-cell"><span class="label">Date / Time</span><span class="val">${completionEntry?new Date(completionEntry.created_at).toLocaleString():"—"}</span></td>
+    <td class="sig-cell"><span class="label">Status</span><span class="val ${completionEntry?"green":"amber"}">${completionEntry?"✓ Signed off":"Pending"}</span></td>
+  </tr>
+  <tr><td colspan="3" style="background:#f4f6f9;font-weight:600;font-size:10px;font-style:italic">Issuing Authority — Closure Confirmation</td></tr>
+  <tr>
+    <td colspan="3"><p class="decl" style="margin:4px 0">The work covered by this PTW is complete and the area has been left safe, clean and tidy.</p></td>
+  </tr>
+  <tr>
+    <td class="sig-cell"><span class="label">Name (IA)</span><span class="val">${closureEntry?closureEntry.user_name:""}</span></td>
+    <td class="sig-cell"><span class="label">Date / Time</span><span class="val">${closureEntry?new Date(closureEntry.created_at).toLocaleString():"—"}</span></td>
+    <td class="sig-cell"><span class="label">Status</span><span class="val ${closureEntry?"green":"amber"}">${closureEntry?"✓ Closed":"Pending"}</span></td>
+  </tr>
+</table>
 
-  <!-- FOOTER -->
-  <div class="ft">
-    <p>(Original Permit: At work location with Work Performer) &nbsp;|&nbsp; (Copy of Permit: With Issuing Authority / OSH Department)</p>
-    <p style="margin-top:3px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
-  </div>`;
+${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B;padding:8px;margin-top:8px;font-size:10px"><strong style="color:#C0392B">Rejection Record:</strong> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</div>`:""}
+
+<!-- FOOTER -->
+<div class="ft">
+  <p>(Original Permit: At work location with Work Performer) &nbsp;|&nbsp; (Copy: With Issuing Authority / OSH Department)</p>
+  <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
+</div>`;
 
   return(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
