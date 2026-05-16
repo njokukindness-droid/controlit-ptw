@@ -775,150 +775,199 @@ function Register({session,permits,onBack}){
   function fmtTime(s){return s?new Date(s).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"—";}
   function statusBadgeColor(s){return{active:"#0E9E6E",pending:"#D97B00",closed:"#5A6A7A",revoked:"#C0392B",work_complete:"#185FA5",rejected:"#C0392B",extension_pending:"#7F77DD"}[s]||"#5A6A7A";}
 
-  // Generate proper xlsx workbook using SheetJS
+  // Generate PDF — opens in new window preserving in-app look and feel
   async function downloadExcel(){
     setDownloading(true);
     try {
-      // Dynamically load SheetJS
-      await new Promise((resolve,reject)=>{
-        if(window.XLSX){resolve();return;}
-        const s=document.createElement("script");
-        s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-        s.onload=resolve; s.onerror=reject;
-        document.head.appendChild(s);
-      });
-      const XL=window.XLSX;
-      const wb=XL.utils.book_new();
-      const orgName=session.org.name;
-      const coordinator=session.profile.full_name;
-      const today=new Date().toLocaleDateString("en-GB");
+      const orgName = session.org.name;
+      const coordinator = session.profile.full_name;
+      const today = new Date().toLocaleDateString("en-GB");
+      const now = new Date().toLocaleString();
 
       const TYPES=[
-        {id:"hot_work",    code:"HW",label:"Hot Work",             icon:"HW",color:"D85A30"},
-        {id:"confined_space",code:"CS",label:"Confined Space Entry",icon:"CS",color:"D97B00"},
-        {id:"excavation",  code:"EX",label:"Excavation & Ground Disturbance",icon:"EX",color:"3B6D11"},
-        {id:"height",      code:"WH",label:"Working at Height",    icon:"WH",color:"0E9E6E"},
-        {id:"electrical",  code:"LO",label:"LOTO - Electrical Isolation",icon:"LO",color:"7F77DD"},
-        {id:"lifting",     code:"LF",label:"Lifting Operations",   icon:"LF",color:"7F77DD"},
-        {id:"cold_work",   code:"CW",label:"Cold Work - General",  icon:"CW",color:"185FA5"},
+        {id:"hot_work",    code:"HW", label:"Hot Work",                     color:"#D85A30"},
+        {id:"confined_space",code:"CS",label:"Confined Space Entry",        color:"#D97B00"},
+        {id:"excavation",  code:"EX", label:"Excavation & Ground Disturbance",color:"#3B6D11"},
+        {id:"height",      code:"WH", label:"Working at Height",            color:"#0E9E6E"},
+        {id:"electrical",  code:"LO", label:"LOTO - Electrical Isolation",  color:"#7F77DD"},
+        {id:"lifting",     code:"LF", label:"Lifting Operations",           color:"#7F77DD"},
+        {id:"cold_work",   code:"CW", label:"Cold Work - General",          color:"#185FA5"},
       ];
 
-      const HDR_STYLE={font:{bold:true,color:{rgb:"FFFFFF"},sz:10},fill:{fgColor:{rgb:"1A3A5C"}},alignment:{horizontal:"center",vertical:"center",wrapText:true},border:{bottom:{style:"thin",color:{rgb:"AAAAAA"}},right:{style:"thin",color:{rgb:"AAAAAA"}}}};
-      const TITLE_STYLE={font:{bold:true,color:{rgb:"FFFFFF"},sz:12},fill:{fgColor:{rgb:"1A3A5C"}},alignment:{horizontal:"left",vertical:"center"}};
-      const META_STYLE={font:{italic:true,sz:9},fill:{fgColor:{rgb:"E8EDF2"}},alignment:{wrapText:true}};
-      const EVEN_STYLE={fill:{fgColor:{rgb:"F4F6F9"}}};
+      function fmtD(s){return s?new Date(s).toLocaleDateString("en-GB"):"—";}
+      function fmtT(s){return s?new Date(s).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"—";}
+      function statusColor(s){return{active:"#0E9E6E",pending:"#D97B00",closed:"#5A6A7A",revoked:"#C0392B",work_complete:"#185FA5",rejected:"#C0392B"}[s]||"#5A6A7A";}
+      function statusLabel(s){return(s||"").replace(/_/g," ").replace(/\w/g,c=>c.toUpperCase());}
 
-      function cell(v,s){return {v,t:typeof v==="number"?"n":"s",s:s||{}};}
-      function hCell(v){return cell(v,HDR_STYLE);}
+      // Summary stats
+      const stats={
+        total:permits.length,
+        active:permits.filter(p=>p.status==="active").length,
+        pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,
+        closed:permits.filter(p=>p.status==="closed").length,
+        revoked:permits.filter(p=>p.status==="revoked").length,
+      };
 
-      const COLS=["S/N","PTW Ref. No.","Permit Authority","Permit Issuer","Work In-charge / Permit Holder","Activity / Work Description","Location / Zone","TRA Ref.","Date Issued","Start Time","Date Closed","Close-out Time","Extended? (Y/N)","Suspended? (Y/N)","Closure Status","Non-Compliance?","Remarks"];
-      const COL_WIDTHS=[6,16,20,20,24,40,20,14,14,12,14,14,14,14,14,14,20];
+      const css = `
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 10px; color: #1A2B3C; background: #fff; }
+        .cover { margin-bottom: 20px; }
+        .cover-header { background: #1A3A5C; color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-end; border-radius: 4px 4px 0 0; }
+        .cover-title { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+        .cover-sub { font-size: 10px; opacity: 0.7; margin-top: 4px; }
+        .cover-ref { font-size: 11px; opacity: 0.6; text-align: right; }
+        .stats-row { display: flex; gap: 10px; padding: 12px 0; }
+        .stat-box { flex: 1; border-radius: 6px; padding: 10px 14px; border-top: 3px solid; }
+        .stat-num { font-size: 24px; font-weight: 700; }
+        .stat-label { font-size: 9px; color: #5A6A7A; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .index-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .index-table th { background: #1A3A5C; color: #fff; padding: 7px 10px; font-size: 10px; text-align: left; }
+        .index-table td { padding: 6px 10px; border-bottom: 0.5px solid #E0E0E0; font-size: 10px; }
+        .index-table tr:nth-child(even) td { background: #F4F6F9; }
+        .type-section { margin-bottom: 24px; page-break-inside: avoid; }
+        .type-header { color: #fff; padding: 8px 12px; font-weight: 700; font-size: 11px; border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .type-meta { background: #F4F6F9; padding: 5px 12px; font-size: 9px; color: #5A6A7A; border: 0.5px solid #E0E0E0; border-top: none; }
+        .log-table { width: 100%; border-collapse: collapse; }
+        .log-table th { background: #1A3A5C; color: #fff; padding: 6px 8px; font-size: 9px; text-align: left; white-space: nowrap; }
+        .log-table td { padding: 5px 8px; border-bottom: 0.5px solid #E8EDF2; font-size: 9px; vertical-align: top; }
+        .log-table tr:nth-child(even) td { background: #F8F9FA; }
+        .badge { display: inline-block; border-radius: 10px; padding: 1px 7px; font-size: 8px; font-weight: 700; }
+        .code-badge { display: inline-block; border-radius: 3px; padding: 1px 6px; font-size: 8px; font-weight: 700; }
+        .no-data { padding: 12px; color: #888; font-style: italic; text-align: center; border: 0.5px solid #E0E0E0; border-top: none; }
+        .footer { text-align: center; font-size: 8px; color: #999; border-top: 0.5px solid #E0E0E0; padding-top: 8px; margin-top: 16px; }
+        .page-break { page-break-before: always; }
+      `;
 
-      // ── INDEX SHEET ──
-      const indexData=[
-        [{v:`PERMIT TO WORK LOG REGISTER`,t:"s",s:TITLE_STYLE},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"}],
-        [{v:orgName,t:"s",s:{font:{bold:true,sz:11}}},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"}],
-        [{v:`Permit Coordinator: ${coordinator}`,t:"s",s:{font:{italic:true,sz:9}}},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"}],
-        [{v:`Generated: ${today}`,t:"s",s:{font:{italic:true,sz:9}}},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"}],
-        [],
-        [hCell("#"),hCell("Code"),hCell("Permit Type"),hCell("ADOSH-SF Reference"),hCell("Sheet Name")],
-        ...TYPES.map((t,i)=>[
-          cell(i+1),cell(t.code,{font:{bold:true,color:{rgb:t.color}}}),cell(t.label),cell("CoP 21.0"),cell(t.label)
-        ]),
-        [],
-        [{v:"SUMMARY",t:"s",s:{font:{bold:true}}},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"},{v:"",t:"s"}],
-        [cell("Total Permits"),cell(permits.length)],
-        [cell("Active"),cell(permits.filter(p=>p.status==="active").length)],
-        [cell("Pending Approval"),cell(permits.filter(p=>p.status==="pending").length)],
-        [cell("Closed"),cell(permits.filter(p=>p.status==="closed").length)],
-        [cell("Revoked/Suspended"),cell(permits.filter(p=>p.status==="revoked").length)],
-        [],
-        [{v:"HSE-PTW-002  |  Rev 00  |  CONFIDENTIAL — For Internal Use",t:"s",s:{font:{italic:true,color:{rgb:"888888"},sz:8}}},{v:""},{v:""},{v:""},{v:""}],
-      ];
-      const indexWs=XL.utils.aoa_to_sheet(indexData.map(r=>r.map(c=>c&&c.v!==undefined?c.v:"")));
-      // Apply styles manually
-      const indexWsStyled=XL.utils.aoa_to_sheet(indexData);
-      indexWsStyled["!merges"]=[
-        {s:{r:0,c:0},e:{r:0,c:4}},
-        {s:{r:1,c:0},e:{r:1,c:4}},
-        {s:{r:2,c:0},e:{r:2,c:4}},
-        {s:{r:3,c:0},e:{r:3,c:4}},
-      ];
-      indexWsStyled["!cols"]=[{wch:6},{wch:10},{wch:36},{wch:24},{wch:24}];
-      XL.utils.book_append_sheet(wb,indexWsStyled,"INDEX");
-
-      // ── PER TYPE SHEETS ──
-      TYPES.forEach(t=>{
-        const typePermits=permits.filter(p=>p.type===t.id);
-        const sheetData=[
-          // Title row
-          [{v:`${t.label.toUpperCase()} PERMIT LOG`,t:"s",s:{font:{bold:true,color:{rgb:"FFFFFF"},sz:12},fill:{fgColor:{rgb:t.color}}}},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""}],
-          // Meta row
-          [{v:`Project: ${orgName} | Permit Code: ${t.code} | Coordinator: ${coordinator}`,t:"s",s:META_STYLE},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""}],
-          // Column headers
-          COLS.map(h=>hCell(h)),
-        ];
-
-        // Data rows
-        if(typePermits.length===0){
-          sheetData.push([{v:"No permits recorded for this type",t:"s",s:{font:{italic:true,color:{rgb:"888888"}}}},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""},{v:""}]);
-        } else {
-          typePermits.forEach((p,idx)=>{
-            const fd=p.form_data||{};
-            const isEven=idx%2===0;
-            const rowStyle=isEven?{}:{fill:{fgColor:{rgb:"F4F6F9"}}};
-            const extended=(p.extensions||0)>0?"Y":"N";
-            const suspended=p.status==="revoked"?"Y":"N";
-            const closure=p.status==="closed"?"Closed":p.status==="active"?"Open":p.status==="revoked"?"Suspended":p.status==="work_complete"?"Work Complete - Pending Closure":(p.status||"Open");
-            const dateIssued=p.issued_at?new Date(p.issued_at).toLocaleDateString("en-GB"):p.created_at?new Date(p.created_at).toLocaleDateString("en-GB"):"—";
-            const dateClosed=p.closed_at?new Date(p.closed_at).toLocaleDateString("en-GB"):"—";
-            const timeFrom=fd.work_time_from||"";
-            const timeClosed=p.closed_at?new Date(p.closed_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"";
-            sheetData.push([
-              cell(idx+1,rowStyle),
-              cell(p.permit_number||"",rowStyle),
-              cell("",rowStyle),  // Permit Authority — filled manually
-              cell("",rowStyle),  // Permit Issuer — filled manually
-              cell(p.requester_name||"",rowStyle),
-              cell(p.title||"",rowStyle),
-              cell(p.area||"",rowStyle),
-              cell("",rowStyle),  // TRA Ref
-              cell(dateIssued,rowStyle),
-              cell(timeFrom,rowStyle),
-              cell(dateClosed,rowStyle),
-              cell(timeClosed,rowStyle),
-              cell(extended,{...rowStyle,font:{bold:extended==="Y",color:{rgb:extended==="Y"?"D97B00":"000000"}}}),
-              cell(suspended,{...rowStyle,font:{bold:suspended==="Y",color:{rgb:suspended==="Y"?"C0392B":"000000"}}}),
-              cell(closure,{...rowStyle,font:{color:{rgb:p.status==="closed"?"0B7A55":p.status==="active"?"185FA5":p.status==="revoked"?"C0392B":"D97B00"}}}),
-              cell("N",rowStyle),
-              cell("",rowStyle),
-            ]);
-          });
-        }
-
-        const ws=XL.utils.aoa_to_sheet(sheetData);
-        ws["!merges"]=[
-          {s:{r:0,c:0},e:{r:0,c:16}},
-          {s:{r:1,c:0},e:{r:1,c:16}},
-        ];
-        ws["!cols"]=COL_WIDTHS.map(w=>({wch:w}));
-        ws["!rows"]=[{hpt:24},{hpt:18},{hpt:30}];
-        XL.utils.book_append_sheet(wb,ws,t.label.slice(0,31));
+      // Build type sections HTML
+      let typeSections = "";
+      TYPES.forEach((t,ti) => {
+        const tp = permits.filter(p => p.type === t.id);
+        const isFirst = ti === 0;
+        typeSections += `
+          <div class="type-section ${!isFirst && tp.length > 0 ? "" : ""}">
+            <div class="type-header" style="background:${t.color}">
+              <span>${t.label.toUpperCase()} PERMIT LOG</span>
+              <span style="font-size:9px;opacity:0.85">Code: ${t.code} &nbsp;|&nbsp; ${tp.length} permit${tp.length!==1?"s":""}</span>
+            </div>
+            <div class="type-meta">Project: ${orgName} &nbsp;|&nbsp; Coordinator: ${coordinator} &nbsp;|&nbsp; ADOSH-SF: CoP 21.0</div>
+            ${tp.length === 0
+              ? `<div class="no-data">No permits recorded for this type.</div>`
+              : `<table class="log-table">
+                  <thead>
+                    <tr>
+                      <th style="width:30px">S/N</th>
+                      <th style="width:110px">PTW Ref. No.</th>
+                      <th>Work In-charge</th>
+                      <th style="width:200px">Activity / Work Description</th>
+                      <th style="width:120px">Location / Zone</th>
+                      <th style="width:80px">Date Issued</th>
+                      <th style="width:60px">Start Time</th>
+                      <th style="width:80px">Date Closed</th>
+                      <th style="width:60px">Close Time</th>
+                      <th style="width:50px">Extended</th>
+                      <th style="width:55px">Suspended</th>
+                      <th style="width:80px">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${tp.map((p,idx) => {
+                      const fd = p.form_data||{};
+                      const extended = (p.extensions||0)>0 ? "Y" : "N";
+                      const suspended = p.status==="revoked" ? "Y" : "N";
+                      const sc = statusColor(p.status);
+                      return `<tr>
+                        <td style="color:#888;text-align:center">${idx+1}</td>
+                        <td style="font-weight:700;color:#1A3A5C">${p.permit_number||""}</td>
+                        <td>${p.requester_name||""}</td>
+                        <td>${p.title||""}</td>
+                        <td>${p.area||""}</td>
+                        <td>${fmtD(p.issued_at||p.created_at)}</td>
+                        <td>${fd.work_time_from||"—"}</td>
+                        <td>${fmtD(p.closed_at)}</td>
+                        <td>${p.closed_at?fmtT(p.closed_at):"—"}</td>
+                        <td style="text-align:center;font-weight:700;color:${extended==="Y"?"#D97B00":"#888"}">${extended}</td>
+                        <td style="text-align:center;font-weight:700;color:${suspended==="Y"?"#C0392B":"#888"}">${suspended}</td>
+                        <td><span class="badge" style="background:${sc}22;color:${sc};border:0.5px solid ${sc}">${statusLabel(p.status)}</span></td>
+                      </tr>`;
+                    }).join("")}
+                  </tbody>
+                </table>`
+            }
+          </div>`;
       });
 
-      // ── DOWNLOAD ──
-      const wbout=XL.write(wb,{bookType:"xlsx",type:"array",cellStyles:true});
-      const blob=new Blob([wbout],{type:"application/octet-stream"});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url;
-      a.download=`PTW_Log_Register_${orgName.replace(/[^a-z0-9]/gi,"_")}_${new Date().toISOString().slice(0,10)}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"/>
+<title>PTW Log Register — ${orgName}</title>
+<style>${css}</style>
+</head><body>
 
-    } catch(e){ console.error("Excel export error:",e); alert("Download failed: "+e.message); }
+<!-- COVER / HEADER -->
+<div class="cover">
+  <div class="cover-header">
+    <div>
+      <div class="cover-title">${orgName}</div>
+      <div class="cover-sub">Permit to Work Log Register &nbsp;·&nbsp; Occupational Safety and Health</div>
+      <div class="cover-sub" style="margin-top:6px">Coordinator: ${coordinator} &nbsp;·&nbsp; Generated: ${now}</div>
+    </div>
+    <div class="cover-ref">
+      <div>HSE-PTW-002 | Rev 00</div>
+      <div style="margin-top:4px;font-size:9px;opacity:0.5">Managed by CONTROLIT</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box" style="background:#E8F5F0;border-color:#0E9E6E"><div class="stat-num" style="color:#0E9E6E">${stats.total}</div><div class="stat-label">Total Permits</div></div>
+    <div class="stat-box" style="background:#E0F5EE;border-color:#0E9E6E"><div class="stat-num" style="color:#0E9E6E">${stats.active}</div><div class="stat-label">Active</div></div>
+    <div class="stat-box" style="background:#FEF3DC;border-color:#D97B00"><div class="stat-num" style="color:#D97B00">${stats.pending}</div><div class="stat-label">Pending</div></div>
+    <div class="stat-box" style="background:#F4F6F9;border-color:#5A6A7A"><div class="stat-num" style="color:#5A6A7A">${stats.closed}</div><div class="stat-label">Closed</div></div>
+    <div class="stat-box" style="background:#FDECEA;border-color:#C0392B"><div class="stat-num" style="color:#C0392B">${stats.revoked}</div><div class="stat-label">Revoked</div></div>
+  </div>
+
+  <!-- INDEX TABLE -->
+  <table class="index-table">
+    <thead>
+      <tr><th>#</th><th>Code</th><th>Permit Type</th><th>ADOSH-SF Reference</th><th>Permits Recorded</th><th>Open</th><th>Closed</th></tr>
+    </thead>
+    <tbody>
+      ${TYPES.map((t,i) => {
+        const tp = permits.filter(p=>p.type===t.id);
+        const open = tp.filter(p=>p.status==="active"||p.status==="pending").length;
+        const closed = tp.filter(p=>p.status==="closed").length;
+        return `<tr>
+          <td style="text-align:center;color:#888">${i+1}</td>
+          <td><span class="code-badge" style="background:${t.color}22;color:${t.color};border:0.5px solid ${t.color}">${t.code}</span></td>
+          <td style="font-weight:600">${t.label}</td>
+          <td style="color:#5A6A7A">CoP 21.0</td>
+          <td style="text-align:center;font-weight:700">${tp.length}</td>
+          <td style="text-align:center;color:#0E9E6E;font-weight:${open>0?700:400}">${open||"—"}</td>
+          <td style="text-align:center;color:#5A6A7A">${closed||"—"}</td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table>
+</div>
+
+<!-- PER TYPE LOGS -->
+${typeSections}
+
+<div class="footer">
+  <p>(Original Register: HSE Department) &nbsp;·&nbsp; (Copy: Issuing Authority / Project Management)</p>
+  <p style="margin-top:3px">PTW Log Register · ${orgName} · Generated: ${now} · Managed digitally by CONTROLIT · getcontrolit.com</p>
+</div>
+
+</body></html>`;
+
+      const w = window.open("","_blank","width=1100,height=800");
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(()=>{ w.print(); }, 600);
+
+    } catch(e){ console.error("PDF export error:",e); alert("Export failed: "+e.message); }
     setDownloading(false);
   }
 
@@ -937,7 +986,7 @@ function Register({session,permits,onBack}){
     <div>
       <Topbar title="PTW Register" onBack={onBack} right={
         <button onClick={downloadExcel} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:600}}>
-          {downloading?"Generating…":"⬇ Download Register (.xlsx)"}
+          {downloading?"Generating PDF…":"⬇ Download Register (PDF)"}
         </button>
       }/>
       <div style={{padding:"1.25rem"}}>
