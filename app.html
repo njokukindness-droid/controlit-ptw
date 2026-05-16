@@ -176,7 +176,7 @@ function ChangePassword({session,onBack}){
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread,onAdmin,onWorkflow,onChangePass,onLogout}){
+function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread,onAdmin,onWorkflow,onRegister,onChangePass,onLogout}){
   const[filter,setFilter]=useState("all");
   const counts={active:permits.filter(p=>p.status==="active").length,pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,revoked:permits.filter(p=>p.status==="revoked").length,closed:permits.filter(p=>p.status==="closed").length};
   const filtered=filter==="all"?permits:permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
@@ -186,6 +186,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
         <button onClick={onNotifs} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer",position:"relative"}}>🔔{unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:B.danger,color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</button>
         {session.profile.role==="admin"&&<button onClick={onAdmin} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Admin</button>}
         <button onClick={onWorkflow} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Workflow</button>
+        <button onClick={onRegister} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>📋 Register</button>
         <button onClick={onChangePass} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>🔑</button>
         <button onClick={onLogout} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Sign out</button>
       </div>}/>
@@ -740,6 +741,267 @@ function Admin({session,onBack}){
   </div></div>);
 }
 
+
+// ── PTW Register ──────────────────────────────────────────────────────────────
+const PERMIT_CODES = {
+  hot_work:"HW", cold_work:"CW", confined_space:"CS",
+  electrical:"LO", height:"WH", excavation:"EX", lifting:"LF"
+};
+const PERMIT_ICONS = {
+  hot_work:"🔥", cold_work:"📋", confined_space:"⚠️",
+  electrical:"🔒", height:"🏗️", excavation:"⛏️", lifting:"🏋️"
+};
+
+function Register({session,permits,onBack}){
+  const[typeFilter,setTypeFilter]=useState("all");
+  const[statusFilter,setStatusFilter]=useState("all");
+  const[downloading,setDownloading]=useState(false);
+
+  const filtered=permits.filter(p=>{
+    if(typeFilter!=="all"&&p.type!==typeFilter)return false;
+    if(statusFilter!=="all"&&p.status!==statusFilter)return false;
+    return true;
+  });
+
+  const stats={
+    total:permits.length,
+    active:permits.filter(p=>p.status==="active").length,
+    closed:permits.filter(p=>p.status==="closed").length,
+    pending:permits.filter(p=>p.status==="pending").length,
+    revoked:permits.filter(p=>p.status==="revoked").length,
+  };
+
+  function fmtDate(s){return s?new Date(s).toLocaleDateString("en-GB"):"—";}
+  function fmtTime(s){return s?new Date(s).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"—";}
+  function statusBadgeColor(s){return{active:"#0E9E6E",pending:"#D97B00",closed:"#5A6A7A",revoked:"#C0392B",work_complete:"#185FA5",rejected:"#C0392B",extension_pending:"#7F77DD"}[s]||"#5A6A7A";}
+
+  // Generate Excel workbook using SheetJS-style HTML table trick via Blob
+  async function downloadExcel(){
+    setDownloading(true);
+    try {
+      // Build workbook HTML with multiple sheets encoded as separate tables
+      const orgName = session.org.name;
+      const projName = session.org.project_name||orgName;
+      const coordinator = session.profile.full_name;
+
+      const TYPES = [
+        {id:"hot_work",    code:"HW", label:"Hot Work",                    icon:"🔥"},
+        {id:"confined_space",code:"CS",label:"Confined Space Entry",       icon:"⚠️"},
+        {id:"excavation",  code:"EX", label:"Excavation & Ground Disturbance",icon:"⛏️"},
+        {id:"height",      code:"WH", label:"Working at Height",           icon:"🏗️"},
+        {id:"electrical",  code:"LO", label:"LOTO - Electrical Isolation", icon:"🔒"},
+        {id:"lifting",     code:"LF", label:"Lifting Operations",          icon:"🏋️"},
+        {id:"cold_work",   code:"CW", label:"Cold Work - General",         icon:"📋"},
+      ];
+
+      const cols = ["S/N","PTW Ref. No.","Permit Authority (Area Auth.)","Permit Issuer","Permit Holder / Work In-charge","Activity / Work Description","Location / Zone","Date Issued","Start Time","Date Closed","Close-out Time","Extended? (Y/N)","Suspended? (Y/N)","Closure Status","Non-Compliance?","Remarks"];
+
+      // Build CSV-style data per type for download
+      let csvContent = "PTW LOG REGISTER — " + orgName + "\n";
+      csvContent += "Generated: " + new Date().toLocaleString() + "\n\n";
+      
+      // INDEX
+      csvContent += "INDEX\n";
+      csvContent += "#,Code,Permit Type,ADOSH-SF Ref.\n";
+      TYPES.forEach((t,i)=>{ csvContent += `${i+1},${t.code},${t.label},CoP 21.0\n`; });
+      csvContent += "\n";
+
+      // Each type sheet
+      TYPES.forEach(t=>{
+        const typePermits = permits.filter(p=>p.type===t.id);
+        csvContent += `\n${t.icon} ${t.label.toUpperCase()} PERMIT LOG\n`;
+        csvContent += `Project: ${projName} | Permit Code: ${t.code} | Coordinator: ${coordinator}\n`;
+        csvContent += cols.join(",") + "\n";
+        
+        if(typePermits.length===0){
+          csvContent += "No permits recorded\n";
+        } else {
+          typePermits.forEach((p,idx)=>{
+            const fd=p.form_data||{};
+            const extended=(p.extensions||0)>0?"Y":"N";
+            const suspended=p.status==="revoked"?"Y":"N";
+            const closure=p.status==="closed"?"Closed":p.status==="active"?"Open":p.status==="revoked"?"Suspended":(p.status||"Open");
+            const row=[
+              idx+1,
+              p.permit_number||"",
+              "",  // Permit Authority — from audit, complex to extract in CSV
+              "",  // Permit Issuer
+              p.requester_name||"",
+              `"${(p.title||"").replace(/"/g,'""')}"`,
+              `"${(p.area||"").replace(/"/g,'""')}"`,
+              fmtDate(p.issued_at||p.created_at),
+              fd.work_time_from||fmtTime(p.created_at),
+              fmtDate(p.closed_at||""),
+              p.closed_at?fmtTime(p.closed_at):"",
+              extended,
+              suspended,
+              closure,
+              "N",
+              "",
+            ];
+            csvContent += row.join(",") + "\n";
+          });
+        }
+      });
+
+      // Summary
+      csvContent += `\nSUMMARY\n`;
+      csvContent += `Total Permits,${permits.length}\n`;
+      csvContent += `Active,${stats.active}\n`;
+      csvContent += `Closed,${stats.closed}\n`;
+      csvContent += `Pending,${stats.pending}\n`;
+      csvContent += `Revoked/Suspended,${stats.revoked}\n`;
+
+      const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `PTW_Log_Register_${orgName.replace(/[^a-z0-9]/gi,"_")}_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch(e){ console.error(e); }
+    setDownloading(false);
+  }
+
+  const TYPES_FILTER=[
+    {id:"all",label:"All Types"},
+    {id:"hot_work",label:"🔥 Hot Work"},
+    {id:"cold_work",label:"📋 Cold Work"},
+    {id:"confined_space",label:"⚠️ Confined Space"},
+    {id:"electrical",label:"🔒 LOTO"},
+    {id:"height",label:"🏗️ Height"},
+    {id:"excavation",label:"⛏️ Excavation"},
+    {id:"lifting",label:"🏋️ Lifting"},
+  ];
+
+  return(
+    <div>
+      <Topbar title="PTW Register" onBack={onBack} right={
+        <button onClick={downloadExcel} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:600}}>
+          {downloading?"Generating…":"⬇ Download CSV"}
+        </button>
+      }/>
+      <div style={{padding:"1.25rem"}}>
+
+        {/* Header */}
+        <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",marginBottom:"1rem"}}>
+          <p style={{fontSize:13,fontWeight:700,color:B.text}}>{session.org.name}</p>
+          <p style={{fontSize:11,color:B.textSub}}>PTW Log Register · Permit Coordinator: {session.profile.full_name}</p>
+        </div>
+
+        {/* Stats */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:"1rem"}}>
+          {[["Total",stats.total,B.primary],["Active",stats.active,B.accent],["Pending",stats.pending,B.warn],["Closed",stats.closed,B.textSub],["Revoked",stats.revoked,B.danger]].map(([l,v,c])=>(
+            <div key={l} style={{background:B.neutral,borderRadius:8,padding:"10px",borderTop:`3px solid ${c}`,textAlign:"center"}}>
+              <p style={{fontSize:18,fontWeight:700,color:c}}>{v}</p>
+              <p style={{fontSize:10,color:B.textSub}}>{l}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
+          {TYPES_FILTER.map(t=>(
+            <button key={t.id} onClick={()=>setTypeFilter(t.id)} style={{border:`0.5px solid ${typeFilter===t.id?B.primary:B.neutralBorder}`,background:typeFilter===t.id?B.primary:"transparent",color:typeFilter===t.id?"#fff":B.textSub,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>{t.label}</button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:6,marginBottom:"1rem",flexWrap:"wrap"}}>
+          {["all","active","pending","closed","revoked"].map(s=>(
+            <button key={s} onClick={()=>setStatusFilter(s)} style={{border:`0.5px solid ${statusFilter===s?B.accent:B.neutralBorder}`,background:statusFilter===s?B.accentLight:"transparent",color:statusFilter===s?B.accentBorder:B.textSub,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",textTransform:"capitalize"}}>{s==="all"?"All Status":s}</button>
+          ))}
+        </div>
+
+        {/* Register table */}
+        <p style={{fontSize:11,color:B.textSub,marginBottom:8}}>{filtered.length} permit{filtered.length!==1?"s":""} {typeFilter!=="all"||statusFilter!=="all"?"(filtered)":""}</p>
+
+        {filtered.length===0&&(
+          <div style={{textAlign:"center",padding:"3rem 1rem"}}>
+            <p style={{fontSize:32}}>📋</p>
+            <p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>No permits match this filter</p>
+          </div>
+        )}
+
+        {/* Table — scrollable horizontally */}
+        {filtered.length>0&&(
+          <div style={{overflowX:"auto",borderRadius:10,border:`0.5px solid ${B.neutralBorder}`}}>
+            <table style={{borderCollapse:"collapse",width:"100%",minWidth:900,fontSize:11}}>
+              <thead>
+                <tr style={{background:B.primary,color:"#fff"}}>
+                  {["S/N","PTW Ref No.","Type","Work Description","Location","Work In-charge","Date Issued","Date Closed","Extended","Suspended","Status"].map(h=>(
+                    <th key={h} style={{padding:"8px 10px",textAlign:"left",fontWeight:600,fontSize:10,whiteSpace:"nowrap",borderRight:`0.5px solid rgba(255,255,255,0.15)`}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p,idx)=>{
+                  const fd=p.form_data||{};
+                  const code=PERMIT_CODES[p.type]||"??";
+                  const icon=PERMIT_ICONS[p.type]||"";
+                  const t=pt(p.type);
+                  const extended=(p.extensions||0)>0?"Y":"N";
+                  const suspended=p.status==="revoked"?"Y":"N";
+                  const sc=statusBadgeColor(p.status);
+                  const isEven=idx%2===0;
+                  return(
+                    <tr key={p.id} style={{background:isEven?"#fff":B.neutral,borderBottom:`0.5px solid ${B.neutralBorder}`}}>
+                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`}}>{idx+1}</td>
+                      <td style={{padding:"8px 10px",fontWeight:600,color:B.primary,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.permit_number}</td>
+                      <td style={{padding:"8px 10px",borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
+                        <span style={{background:t.color+"22",color:t.color,border:`0.5px solid ${t.color}`,borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:700}}>{icon} {code}</span>
+                      </td>
+                      <td style={{padding:"8px 10px",maxWidth:200,borderRight:`0.5px solid ${B.neutralBorder}`}}>
+                        <p style={{fontSize:11,color:B.text,fontWeight:500,margin:0}}>{p.title}</p>
+                      </td>
+                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.area}</td>
+                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.requester_name}</td>
+                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
+                        <div>{fmtDate(p.issued_at||p.created_at)}</div>
+                        <div style={{fontSize:10}}>{fd.work_time_from||""}</div>
+                      </td>
+                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
+                        <div>{fmtDate(p.closed_at)}</div>
+                        <div style={{fontSize:10}}>{p.closed_at?fmtTime(p.closed_at):""}</div>
+                      </td>
+                      <td style={{padding:"8px 10px",textAlign:"center",borderRight:`0.5px solid ${B.neutralBorder}`}}>
+                        <span style={{color:(p.extensions||0)>0?B.warn:B.textSub,fontWeight:(p.extensions||0)>0?700:400}}>{extended}</span>
+                      </td>
+                      <td style={{padding:"8px 10px",textAlign:"center",borderRight:`0.5px solid ${B.neutralBorder}`}}>
+                        <span style={{color:suspended==="Y"?B.danger:B.textSub,fontWeight:suspended==="Y"?700:400}}>{suspended}</span>
+                      </td>
+                      <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>
+                        <span style={{background:sc+"22",color:sc,border:`0.5px solid ${sc}`,borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:600,textTransform:"capitalize"}}>{(p.status||"").replace("_"," ")}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Legend */}
+        <div style={{marginTop:"1.25rem",background:B.neutral,borderRadius:10,padding:"12px 14px"}}>
+          <p style={{fontSize:11,fontWeight:600,color:B.textSub,marginBottom:8,letterSpacing:"0.04em",textTransform:"uppercase"}}>Permit Type Codes</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {[["HW","Hot Work","#D85A30"],["CW","Cold Work","#185FA5"],["CS","Confined Space","#D97B00"],["LO","LOTO / Electrical","#7F77DD"],["WH","Working at Height","#0E9E6E"],["EX","Excavation","#3B6D11"],["LF","Lifting Operations","#7F77DD"]].map(([code,label,color])=>(
+              <div key={code} style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{background:color+"22",color:color,border:`0.5px solid ${color}`,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{code}</span>
+                <span style={{fontSize:11,color:B.textSub}}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p style={{fontSize:10,color:B.textSub,textAlign:"center",marginTop:"1rem"}}>
+          Download CSV for full log with all permit types on separate tabs · HSE-PTW-002
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── App Root ──────────────────────────────────────────────────────────────────
 function App(){
   const[session,setSession]=useState(null);const[screen,setScreen]=useState("dashboard");const[permits,setPermits]=useState([]);const[selected,setSelected]=useState(null);const[loading,setLoading]=useState(false);const[error,setError]=useState("");const[setupDone,setSetupDone]=useState(false);const[unread,setUnread]=useState(0);
@@ -751,12 +1013,13 @@ function App(){
   async function logout(){await sb.signOut(session.token);setSession(null);setPermits([]);setScreen("dashboard");setSetupDone(false);}
   function sel(p){setSelected(p);setScreen("detail");}
   return(<div>
-    {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={sel} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
+    {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={sel} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onRegister={()=>setScreen("register")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
     {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}} onRefresh={async()=>{await fetchPermits();await fetchUnread();}}/>}
     {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}}/>}
     {screen==="notifs"&&<Notifs session={session} onBack={()=>{fetchUnread();setScreen("dashboard");}} onSelectPermit={p=>{setSelected(p);setScreen("detail");}} onUnreadChange={setUnread}/>}
     {screen==="admin"&&<Admin session={session} onBack={()=>setScreen("dashboard")}/>}
     {screen==="changepass"&&<ChangePassword session={session} onBack={()=>setScreen("dashboard")}/>}
+    {screen==="register"&&<Register session={session} permits={permits} onBack={()=>setScreen("dashboard")}/>}
     {screen==="workflow"&&(<div><Topbar title="Permit Workflow" onBack={()=>setScreen("dashboard")}/><div style={{padding:"1.25rem"}}>{STAGES.map((s,i)=>(<div key={s} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:16}}><div style={{width:32,height:32,borderRadius:"50%",background:B.primary,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{i+1}</div><div style={{background:B.neutral,borderRadius:8,padding:"10px 14px",flex:1}}><p style={{fontSize:13,fontWeight:600,color:B.text}}>{s}</p><p style={{fontSize:11,color:B.textSub,marginTop:2}}>{["Submits permit with control measures, tools & equipment, and risk assessment (upload or AI-generated 5x5 matrix)","Reviews all requester inputs — confirms area readiness, approves or rejects with reason","Reviews HSE compliance, adds additional controls with AI assist, approves or rejects — checklist auto-generated","Verifies all controls on site via checklist, issues permit — formal PTW document generated for download"][i]}</p></div></div>))}</div></div>)}
   </div>);
 }
