@@ -272,6 +272,19 @@ function OwnerDashboard({token,onLogout}){
   var [orgs,setOrgs]=useState([]); var [users,setUsers]=useState([]); var [permits,setPermits]=useState([]);
   var [loading,setLoading]=useState(true); var [tab,setTab]=useState("orgs"); var [showOnboard,setShowOnboard]=useState(false);
   var [fixOrg,setFixOrg]=useState(null); var [fixName,setFixName]=useState(""); var [fixEmail,setFixEmail]=useState(""); var [fixPass,setFixPass]=useState("Controlit@2024!"); var [fixBusy,setFixBusy]=useState(false); var [fixErr,setFixErr]=useState(""); var [fixDone,setFixDone]=useState(null);
+  var [editKeyOrg,setEditKeyOrg]=useState(null); var [editKp1,setEditKp1]=useState(""); var [editKp2,setEditKp2]=useState(""); var [editKp3,setEditKp3]=useState(""); var [editKeyBusy,setEditKeyBusy]=useState(false); var [editKeyErr,setEditKeyErr]=useState(""); var [editKeyDone,setEditKeyDone]=useState(false);
+
+  async function saveApiKey(org){
+    if((!editKp1||!editKp2||!editKp3)&&(editKp1||editKp2||editKp3)){setEditKeyErr("Enter all 3 parts or leave all blank to clear the key.");return;}
+    setEditKeyBusy(true); setEditKeyErr("");
+    try {
+      var encodedKey = (editKp1&&editKp2&&editKp3) ? JSON.stringify([editKp1.trim(),editKp2.trim(),editKp3.trim()]) : null;
+      await sb.update(token,"organisations","id=eq."+org.id,{anthropic_key:encodedKey});
+      setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,{anthropic_key:encodedKey}):o;});});
+      setEditKeyDone(true);
+    } catch(e){setEditKeyErr("Error: "+e.message);}
+    setEditKeyBusy(false);
+  }
 
   async function addAdminToOrg(org){
     if(!fixName||!fixEmail){setFixErr("Name and email required.");return;}
@@ -322,6 +335,42 @@ function OwnerDashboard({token,onLogout}){
   return (
     <div style={{minHeight:"100vh",padding:"1.5rem"}}>
       {showOnboard&&<OnboardModal token={token} onClose={function(){setShowOnboard(false);}} onSuccess={load}/>}
+      {editKeyOrg&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
+          <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:480,padding:"1.5rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem"}}>
+              <div>
+                <p style={{fontSize:14,fontWeight:700,color:B.text}}>{editKeyOrg.anthropic_key?"Edit AI API Key":"Add AI API Key"}</p>
+                <p style={{fontSize:11,color:B.textSub}}>{editKeyOrg.name}</p>
+              </div>
+              <button onClick={function(){setEditKeyOrg(null);setEditKeyDone(false);setEditKeyErr("");}} style={{background:"none",border:"none",color:B.textSub,cursor:"pointer",fontSize:20}}>×</button>
+            </div>
+            {editKeyErr&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:B.danger}}>{editKeyErr}</div>}
+            {editKeyDone?(
+              <div style={{background:B.accentLight,border:"0.5px solid "+B.accent,borderRadius:10,padding:"1rem"}}>
+                <p style={{fontSize:13,fontWeight:700,color:B.accentBorder,marginBottom:6}}>{editKp1||editKp2||editKp3?"✓ API key saved — AI features enabled":"✓ API key cleared — AI features disabled"}</p>
+                <p style={{fontSize:11,color:B.textSub}}>The change takes effect immediately for all users in this organisation.</p>
+                <button onClick={function(){setEditKeyOrg(null);setEditKeyDone(false);}} style={{marginTop:12,width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Done</button>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{background:"rgba(14,158,110,0.07)",border:"0.5px solid rgba(14,158,110,0.25)",borderRadius:8,padding:"10px 12px"}}>
+                  <p style={{fontSize:11,color:B.textSub,lineHeight:1.6}}>Paste the Anthropic API key split at its two dots. Leave all parts blank to disable AI features for this org.</p>
+                  {editKeyOrg.anthropic_key&&<p style={{fontSize:11,color:B.accent,marginTop:4}}>🤖 A key is currently set. Enter new parts below to replace it.</p>}
+                </div>
+                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 1 — everything before the first dot</label><input value={editKp1} onChange={function(e){setEditKp1(e.target.value);}} placeholder="sk-ant-api03-XXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
+                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 2 — middle segment</label><input value={editKp2} onChange={function(e){setEditKp2(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
+                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 3 — everything after the second dot</label><input value={editKp3} onChange={function(e){setEditKp3(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
+                {editKp1&&editKp2&&editKp3&&<div style={{background:"rgba(14,158,110,0.1)",borderRadius:6,padding:"6px 10px"}}><p style={{fontSize:11,color:B.accent}}>✓ All 3 parts provided — key will be encoded and stored securely.</p></div>}
+                <div style={{display:"flex",gap:8,marginTop:4}}>
+                  <button onClick={function(){saveApiKey(editKeyOrg);}} disabled={editKeyBusy} style={{flex:2,background:editKeyBusy?"#555":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:editKeyBusy?"not-allowed":"pointer"}}>{editKeyBusy?"Saving…":"Save API key"}</button>
+                  {editKeyOrg.anthropic_key&&<button onClick={function(){setEditKp1("");setEditKp2("");setEditKp3("");saveApiKey(editKeyOrg);}} disabled={editKeyBusy} style={{flex:1,background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Clear key</button>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {fixOrg&&(
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
           <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:460,padding:"1.5rem"}}>
@@ -396,6 +445,7 @@ function OwnerDashboard({token,onLogout}){
                   <p style={{fontSize:10,color:"#2A3F55",flex:1}}>ID: {o.id}</p>
                   <button onClick={function(){toggleSuspend(o);}} style={{background:o.active?B.warnLight:B.accentLight,color:o.active?B.warn:B.accent,border:"0.5px solid "+(o.active?B.warn:B.accent),borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.active?"Suspend":"Reactivate"}</button>
                   {!admin&&<button onClick={function(){setFixOrg(o);setFixDone(null);setFixErr("");}} style={{background:"rgba(127,119,221,0.15)",color:"#7F77DD",border:"0.5px solid #7F77DD",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Add admin</button>}
+                  <button onClick={function(){setEditKeyOrg(o);setEditKp1("");setEditKp2("");setEditKp3("");setEditKeyErr("");setEditKeyDone(false);}} style={{background:"rgba(14,158,110,0.12)",color:B.accent,border:"0.5px solid "+B.accent,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.anthropic_key?"🤖 Edit key":"🤖 Add key"}</button>
                   <button onClick={function(){deleteOrg(o);}} style={{background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Delete</button>
                 </div>
               </div>
