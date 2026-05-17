@@ -273,8 +273,8 @@ function NewPermit({session,onBack,onSuccess}){
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work to be performed"/></div>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g. Zone A — Process Unit 3"/></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader *</label><input value={requester} onChange={e=>setRequester(e.target.value)}/></div>
-            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor *</label><input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor name"/></div>
+            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader / Work performer *</label><input value={requester} onChange={e=>setRequester(e.target.value)}/></div>
+            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor / Work in-charge *</label><input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor / manager name"/></div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
             <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Date from *</label><input type="date" value={workDateFrom} onChange={e=>setWorkDateFrom(e.target.value)}/></div>
@@ -389,7 +389,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
       {tab==="detail"&&(<>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:"1rem"}}>
-          {[["Team leader",permit.requester_name],["Supervisor",permit.supervisor_name],["Date",permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"],["Extensions",(permit.extensions||0)+" / "+MAX_EXT]].map(([k,v])=>(
+          {[["Team leader / Work performer",permit.requester_name],["Supervisor / Work in-charge",permit.supervisor_name],["Date",permit.created_at?new Date(permit.created_at).toLocaleDateString():"—"],["Extensions",(permit.extensions||0)+" / "+MAX_EXT]].map(([k,v])=>(
             <div key={k} style={{background:B.neutral,borderRadius:8,padding:"10px 12px"}}><p style={{fontSize:11,color:B.textSub}}>{k}</p><p style={{fontSize:13,fontWeight:600,color:B.text}}>{v}</p></div>
           ))}
         </div>
@@ -580,11 +580,11 @@ ${fd.ra_mode?`<table><tr><td style="background:#E0F5EE;border:0.5px solid #0E9E6
 <table>
   <tr>
     <td colspan="2">
-      <p class="decl">I, <span class="dotline">${permit.requester_name||""}</span>, the Work In-charge, have personally viewed the area, assessed the hazards, and shall ensure that all necessary precautions listed in Section 2 are implemented. I nominate <span class="dotline">${permit.supervisor_name||""}</span> as Work Performer and have briefed the team on the requirements of this PTW.</p>
+      <p class="decl">I, <span class="dotline">${permit.supervisor_name||""}</span>, the Work In-charge / Supervisor, have personally viewed the area, assessed the hazards, and shall ensure that all necessary precautions listed in Section 2 are implemented. I nominate <span class="dotline">${permit.requester_name||""}</span> as Work Performer / Team Leader and have briefed the team on the requirements of this PTW.</p>
     </td>
   </tr>
   <tr>
-    <td class="sig-cell" style="width:40%"><span class="label">Signature (WI)</span></td>
+    <td class="sig-cell" style="width:40%"><span class="label">Signature (Work In-charge / Supervisor)</span><span class="val">${permit.supervisor_name||""}</span></td>
     <td class="sig-cell" style="width:30%"><span class="label">Date</span><span class="val">${fd.work_date_from||new Date(permit.created_at).toLocaleDateString()}</span></td>
     <td class="sig-cell" style="width:30%"><span class="label">Time</span><span class="val">${fd.work_time_from||"—"}</span></td>
   </tr>
