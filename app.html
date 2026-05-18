@@ -76,6 +76,17 @@ const PERMIT_CONTROLS={
   lifting:["Lift plan reviewed and signed by lifting supervisor","Crane / lifting equipment inspected and within certification date","Rigging gear inspected and colour-coded current","SWL confirmed — load weight verified before lift","Exclusion zone below lift path — no personnel under load","Qualified rigger and banksman assigned to lift","Tag lines used to control load swing","Ground conditions assessed, crane outriggers on certified mats","Overhead power lines identified — minimum 6m clearance maintained","Wind speed checked — lift suspended if greater than 10m/s","Pre-lift toolbox talk conducted with all involved personnel","Radio communication confirmed between crane operator and banksman","RA Required"],
 };
 
+// ── SIMOPS conflict matrix ───────────────────────────────────────────────────
+const SIMOPS_CONFLICTS = {
+  hot_work:      ["confined_space","cold_work","excavation","lifting","electrical"],
+  confined_space:["hot_work","excavation","electrical"],
+  excavation:    ["hot_work","confined_space","lifting","height"],
+  electrical:    ["confined_space","hot_work"],
+  lifting:       ["hot_work","excavation","height","confined_space"],
+  height:        ["lifting","excavation"],
+  cold_work:     ["hot_work"],
+};
+
 const STAGES=["Requesting Party","Area Authority","OSH Manager","Issuer"];
 const ROLES=["requester","area_authority","safety_officer","issuer","admin"];
 const MAX_EXT=2;
@@ -178,7 +189,7 @@ function ChangePassword({session,onBack}){
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread,onAdmin,onWorkflow,onRegister,onChangePass,onLogout}){
   const[filter,setFilter]=useState("all");
-  const counts={active:permits.filter(p=>p.status==="active").length,pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,revoked:permits.filter(p=>p.status==="revoked").length,closed:permits.filter(p=>p.status==="closed").length};
+  const counts={active:permits.filter(p=>p.status==="active").length,pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,revoked:permits.filter(p=>p.status==="revoked").length,closed:permits.filter(p=>p.status==="closed").length,expired:permits.filter(p=>p.status==="expired").length};
   const filtered=filter==="all"?permits:permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
   return(
     <div>
@@ -196,12 +207,12 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
           <button onClick={onNew} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New permit</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:"1.25rem"}}>
-          {[["Active",counts.active,B.accent],["Pending",counts.pending,B.warn],["Revoked",counts.revoked,B.danger],["Closed",counts.closed,B.textSub]].map(([l,v,c])=>(
+          {[["Active",counts.active,B.accent],["Pending",counts.pending,B.warn],["Revoked",counts.revoked,B.danger],["Closed",counts.closed,B.textSub],["Expired",counts.expired,"#8B4513"]].map(([l,v,c])=>(
             <div key={l} style={{background:B.neutral,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${c}`}}><p style={{fontSize:11,color:B.textSub}}>{l}</p><p style={{fontSize:22,fontWeight:700,color:c}}>{v}</p></div>
           ))}
         </div>
         <div style={{display:"flex",gap:6,marginBottom:"1rem",flexWrap:"wrap"}}>
-          {["all","active","pending","revoked","closed"].map(s=>(
+          {["all","active","pending","revoked","closed","expired"].map(s=>(
             <button key={s} onClick={()=>setFilter(s)} style={{border:`0.5px solid ${filter===s?B.primary:B.neutralBorder}`,background:filter===s?B.primary:"transparent",color:filter===s?"#fff":B.textSub,borderRadius:20,padding:"4px 14px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{s==="all"?"All permits":s}</button>
           ))}
         </div>
@@ -216,7 +227,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
               <div key={p.id} onClick={()=>onSelect(p)} style={{background:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",borderLeft:`3px solid ${t.color||B.textSub}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                   <div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{p.title}</p><p style={{fontSize:11,color:B.textSub}}>{p.permit_number} · {p.area}</p></div>
-                  <span style={{background:B.accentLight,color:B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(p.status||"").replace("_"," ")}</span>
+                  <span style={{background:p.status==="expired"?"rgba(139,69,19,0.15)":B.accentLight,color:p.status==="expired"?"#8B4513":B.accentBorder,border:`0.5px solid ${p.status==="expired"?"#8B4513":B.accent}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(p.status||"").replace("_"," ")}</span>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{background:B.neutral,color:B.textSub,border:`0.5px solid ${B.neutralBorder}`,borderRadius:20,padding:"2px 10px",fontSize:11}}>{t.label||p.type}</span>
@@ -237,7 +248,21 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
 
 // ── New Permit ────────────────────────────────────────────────────────────────
 function NewPermit({session,onBack,onSuccess}){
-  const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");const[controls,setControls]=useState({});const[raMode,setRaMode]=useState(null);const[raFile,setRaFile]=useState(null);const[raFileData,setRaFileData]=useState(null);const[raGenerated,setRaGenerated]=useState("");const[raGenerating,setRaGenerating]=useState(false);const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
+  const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
+  const[simopsWarnings,setSimopsWarnings]=useState([]);
+
+  // Check SIMOPS conflicts whenever type or area changes
+  function checkSimops(newType, newArea){
+    if(!newType||!newArea||!permits){setSimopsWarnings([]);return;}
+    const conflicts=SIMOPS_CONFLICTS[newType]||[];
+    const warnings=permits.filter(p=>
+      p.status==="active"&&
+      p.area&&newArea&&
+      p.area.toLowerCase().trim()===newArea.toLowerCase().trim()&&
+      conflicts.includes(p.type)
+    );
+    setSimopsWarnings(warnings);
+  }const[controls,setControls]=useState({});const[raMode,setRaMode]=useState(null);const[raFile,setRaFile]=useState(null);const[raFileData,setRaFileData]=useState(null);const[raGenerated,setRaGenerated]=useState("");const[raGenerating,setRaGenerating]=useState(false);const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
   const typeControls=type?(PERMIT_CONTROLS[type]||[]):[];
   const isRARequired=controls["RA Required"];
 
@@ -257,7 +282,7 @@ function NewPermit({session,onBack,onSuccess}){
     if(isRARequired){if(!raMode){setErr("RA Required is checked — upload or generate a risk assessment.");return;}if(raMode==="upload"&&!raFileData){setErr("Upload the RA document.");return;}if(raMode==="generate"&&!raGenerated){setErr("Generate the RA first.");return;}}
     setBusy(true);setErr("");
     const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
-    const fd={tools_equipment:tools,selected_controls:sel,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons};
+    const fd={tools_equipment:tools,selected_controls:sel,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
     const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
     if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
     setBusy(false);
@@ -267,11 +292,30 @@ function NewPermit({session,onBack,onSuccess}){
     <div><Topbar title="New Permit Request" onBack={onBack}/>
     <div style={{padding:"1.25rem"}}>
       {err&&<ErrBox msg={err}/>}
+
+      {/* SIMOPS Warning */}
+      {simopsWarnings.length>0&&(
+        <div style={{background:"rgba(217,123,0,0.12)",border:"0.5px solid #D97B00",borderRadius:10,padding:"1rem",marginBottom:"1rem"}}>
+          <p style={{fontSize:13,fontWeight:700,color:"#D97B00",marginBottom:8}}>⚠ SIMOPS Conflict Detected</p>
+          <p style={{fontSize:12,color:"#D97B00",marginBottom:10,lineHeight:1.6}}>The following active permits exist in the same area and may conflict with this {pt(type).label||"permit"}. The Area Authority must assess and confirm SIMOPS clearance before approving.</p>
+          {simopsWarnings.map(p=>(
+            <div key={p.id} style={{background:"rgba(217,123,0,0.1)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <p style={{fontSize:12,fontWeight:600,color:"#1A2B3C"}}>{p.title}</p>
+                <p style={{fontSize:11,color:"#5A6A7A"}}>{p.permit_number} · {pt(p.type).label} · {p.area}</p>
+              </div>
+              <span style={{background:"#0E9E6E22",color:"#0B7A55",border:"0.5px solid #0E9E6E",borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:700}}>ACTIVE</span>
+            </div>
+          ))}
+          <p style={{fontSize:11,color:"#D97B00",marginTop:8,fontStyle:"italic"}}>This permit will be submitted with a SIMOPS flag for the Area Authority to review.</p>
+        </div>
+      )}
+
       <Card title="Permit Details">
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{setType(e.target.value);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);}}><option value="">Select permit type…</option>{PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{const v=e.target.value;setType(v);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);checkSimops(v,area);}}><option value="">Select permit type…</option>{PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work to be performed"/></div>
-          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>setArea(e.target.value)} placeholder="e.g. Zone A — Process Unit 3"/></div>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>{setArea(e.target.value);checkSimops(type,e.target.value);}} placeholder="e.g. Zone A — Process Unit 3, ICAD II"/></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader / Work performer *</label><input value={requester} onChange={e=>setRequester(e.target.value)}/></div>
             <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor / Work in-charge *</label><input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor / manager name"/></div>
@@ -329,7 +373,7 @@ function NewPermit({session,onBack,onSuccess}){
 
 // ── Permit Detail ─────────────────────────────────────────────────────────────
 function PermitDetail({permit:init,session,onBack,onRefresh}){
-  const[tab,setTab]=useState("detail");const[audit,setAudit]=useState([]);const[permit,setPermit]=useState(init);const[busy,setBusy]=useState(false);const[errMsg,setErrMsg]=useState("");const[rejectReason,setRejectReason]=useState("");const[showRejectBox,setShowRejectBox]=useState(false);const[oshControls,setOshControls]=useState((init.form_data?.osh_additional_controls)||"");const[aiSuggesting,setAiSuggesting]=useState(false);const[checklistDone,setChecklistDone]=useState({});const[showChecklist,setShowChecklist]=useState(false);const[showPDF,setShowPDF]=useState(false);
+  const[tab,setTab]=useState("detail");const[audit,setAudit]=useState([]);const[permit,setPermit]=useState(init);const[busy,setBusy]=useState(false);const[errMsg,setErrMsg]=useState("");const[rejectReason,setRejectReason]=useState("");const[showRejectBox,setShowRejectBox]=useState(false);const[oshControls,setOshControls]=useState((init.form_data?.osh_additional_controls)||"");const[extDateTo,setExtDateTo]=useState("");const[showExtForm,setShowExtForm]=useState(false);;const[aiSuggesting,setAiSuggesting]=useState(false);const[checklistDone,setChecklistDone]=useState({});const[showChecklist,setShowChecklist]=useState(false);const[showPDF,setShowPDF]=useState(false);
   const t=pt(permit.type);const fd=permit.form_data||{};
   function loadAudit(){sb.select(session.token,"permit_audit",`permit_id=eq.${permit.id}&order=created_at.asc`).then(d=>{if(Array.isArray(d))setAudit(d);});}
   useEffect(()=>{loadAudit();},[permit.id]);
@@ -359,8 +403,14 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     else if(act==="work_complete"){ns="work_complete";extra.form_data={...fd,work_completed_by:session.profile.full_name,work_completed_at:nowStr()};}
     else if(act==="suspend")ns="revoked";
     else if(act==="close"){ns="closed";extra.closed_at=nowStr();}
-    else if(act==="ext_request")ns="extension_pending";
-    else if(act==="ext_approve"){ns="active";ex=(permit.extensions||0)+1;}
+    else if(act==="ext_request"){
+      ns="extension_pending";
+      if(extDateTo)extra.form_data={...fd,work_date_to:extDateTo,ext_requested_date:extDateTo};
+    }
+    else if(act==="ext_approve"){
+      ns="active";ex=(permit.extensions||0)+1;
+      if(fd.ext_requested_date)extra.form_data={...fd,work_date_to:fd.ext_requested_date};
+    }
     else if(act==="ext_reject")ns="active";
     const labels={approve:"Approved & forwarded",issue:"Permit issued",reject:"Rejected",suspend:"Permit suspended",close:"Permit closed",work_complete:"Work completion signed off",ext_request:"Extension requested",ext_approve:"Extension approved",ext_reject:"Extension rejected"};
     const nevt={approve:permit.stage===2?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",work_complete:"closed",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
@@ -376,6 +426,18 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     <div><Topbar title={permit.permit_number} onBack={onBack}/>
     <div style={{padding:"1.25rem"}}>
       {errMsg&&<ErrBox msg={errMsg}/>}
+        {permit.status==="expired"&&(
+          <div style={{background:"rgba(139,69,19,0.12)",border:"0.5px solid #8B4513",borderRadius:10,padding:"10px 14px",marginBottom:"1rem"}}>
+            <p style={{fontSize:13,fontWeight:700,color:"#8B4513"}}>⏱ Permit Expired</p>
+            <p style={{fontSize:11,color:"#8B4513",marginTop:3}}>This permit expired on <strong>{fd.work_date_to||"the work end date"}</strong>. A new permit must be submitted to continue work.</p>
+          </div>
+        )}
+        {permit.status==="active"&&fd.work_date_to&&(()=>{
+          const endDate=new Date(fd.work_date_to);endDate.setHours(23,59,59,999);
+          const hoursLeft=Math.ceil((endDate-new Date())/3600000);
+          if(hoursLeft>0&&hoursLeft<=48)return(<div style={{background:"rgba(217,123,0,0.1)",border:"0.5px solid "+B.warn,borderRadius:10,padding:"10px 14px",marginBottom:"1rem"}}><p style={{fontSize:12,fontWeight:700,color:B.warn}}>⚠ Permit expiring soon — {hoursLeft}hrs remaining</p><p style={{fontSize:11,color:B.warn,marginTop:3}}>Expires: <strong>{fd.work_date_to}</strong>. Request an extension if work is ongoing.</p></div>);
+          return null;
+        })()}
       <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderLeft:`3px solid ${t.color||B.textSub}`,borderRadius:10,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div><p style={{fontSize:11,color:B.textSub,fontWeight:600}}>{t.label}</p><h2 style={{fontSize:16,fontWeight:600,color:B.text,margin:"4px 0 2px"}}>{permit.title}</h2><p style={{fontSize:12,color:B.textSub}}>{permit.area}</p></div>
@@ -393,6 +455,18 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
             <div key={k} style={{background:B.neutral,borderRadius:8,padding:"10px 12px"}}><p style={{fontSize:11,color:B.textSub}}>{k}</p><p style={{fontSize:13,fontWeight:600,color:B.text}}>{v}</p></div>
           ))}
         </div>
+        {/* SIMOPS flag in detail view */}
+        {fd.simops_conflicts&&fd.simops_conflicts.length>0&&(
+          <div style={{background:"rgba(217,123,0,0.1)",border:"0.5px solid #D97B00",borderRadius:10,padding:"1rem",marginBottom:"1rem"}}>
+            <p style={{fontSize:12,fontWeight:700,color:"#D97B00",marginBottom:8}}>⚠ SIMOPS Flag — Conflicting permits detected at submission</p>
+            {fd.simops_conflicts.map((p,i)=>(
+              <div key={i} style={{fontSize:11,color:"#5A6A7A",padding:"4px 0",borderBottom:"0.5px solid rgba(217,123,0,0.2)"}}>
+                <strong style={{color:"#1A2B3C"}}>{p.permit_number}</strong> · {pt(p.type).label} · {p.area}
+              </div>
+            ))}
+            <p style={{fontSize:11,color:"#D97B00",marginTop:8,fontStyle:"italic"}}>Area Authority must confirm SIMOPS clearance before approving this permit.</p>
+          </div>
+        )}
         {fd.tools_equipment&&<Card title="Tools & Equipment" collapsible><p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.tools_equipment}</p></Card>}
         {fd.selected_controls?.length>0&&(<Card title="Control Measures — Requester" collapsible>{fd.selected_controls.map((c,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"5px 0",borderBottom:`0.5px solid ${B.neutralBorder}`}}><span style={{color:B.accent,fontWeight:700,flexShrink:0}}>✓</span><span style={{fontSize:13,color:c==="RA Required"?B.accentBorder:B.text,fontWeight:c==="RA Required"?700:400}}>{c}</span></div>))}</Card>)}
         {fd.ra_mode&&(<Card title="Risk Assessment" accent={B.accent} collapsible>
@@ -432,11 +506,27 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         {showRejectBox&&(<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"1rem"}}><p style={{fontSize:12,fontWeight:600,color:B.danger,marginBottom:8}}>Reason for rejection *</p><textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Provide clear reason…" rows={3} style={{marginBottom:8,borderColor:B.danger}}/><div style={{display:"flex",gap:8}}><button onClick={()=>action("reject")} disabled={busy||!rejectReason.trim()} style={{flex:1,background:B.danger,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Confirm rejection</button><button onClick={()=>{setShowRejectBox(false);setRejectReason("");}} style={{flex:1,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"9px",fontSize:12,cursor:"pointer",color:B.textSub}}>Cancel</button></div></div>)}
         {permit.status==="pending"&&permit.stage!==4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>{busy?"Processing…":"Approve & forward"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {permit.status==="pending"&&permit.stage===4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("issue")} disabled={busy||!allChecked} style={{flex:2,background:(busy||!allChecked)?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:(busy||!allChecked)?"not-allowed":"pointer"}}>{busy?"Processing…":allChecked?"Issue permit":"Complete checklist first"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
-        {permit.status==="active"&&(<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-  {canExtend&&<button onClick={()=>action("ext_request")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Extend ({MAX_EXT-(permit.extensions||0)} left)</button>}
-  {(session.profile.role==="requester"||session.profile.role==="admin")&&<button onClick={()=>action("work_complete")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>✓ Work complete</button>}
-  {(session.profile.role==="issuer"||session.profile.role==="admin")&&<button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Suspend</button>}
-  {(session.profile.role==="issuer"||session.profile.role==="admin")&&<button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Close permit</button>}
+        {permit.status==="active"&&(<div style={{display:"flex",flexDirection:"column",gap:8}}>
+  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+    {canExtend&&!showExtForm&&<button onClick={()=>setShowExtForm(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.warn}`,background:B.warnLight,color:B.warn,borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>⟳ Extend permit ({MAX_EXT-(permit.extensions||0)} left)</button>}
+    {(session.profile.role==="requester"||session.profile.role==="admin")&&<button onClick={()=>action("work_complete")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>✓ Work complete</button>}
+    {(session.profile.role==="issuer"||session.profile.role==="admin")&&<button onClick={()=>action("suspend")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Suspend</button>}
+    {(session.profile.role==="issuer"||session.profile.role==="admin")&&<button onClick={()=>action("close")} disabled={busy} style={{flex:1,border:`0.5px solid ${B.accentBorder}`,background:B.accentLight,color:B.accentBorder,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Close permit</button>}
+  </div>
+  {showExtForm&&canExtend&&(
+    <div style={{background:B.warnLight,border:`0.5px solid ${B.warn}`,borderRadius:10,padding:"1rem"}}>
+      <p style={{fontSize:12,fontWeight:700,color:B.warn,marginBottom:8}}>⟳ Request Extension — set new end date</p>
+      <p style={{fontSize:11,color:B.warn,marginBottom:10}}>Current end date: <strong>{fd.work_date_to||"Not set"}</strong> · Extensions used: {permit.extensions||0} / {MAX_EXT}</p>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <div style={{flex:1}}>
+          <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>New end date *</label>
+          <input type="date" value={extDateTo} onChange={e=>setExtDateTo(e.target.value)} min={new Date().toISOString().slice(0,10)} style={{borderColor:B.warn}}/>
+        </div>
+        <button onClick={()=>{if(!extDateTo){setErrMsg("Select a new end date.");return;}action("ext_request");setShowExtForm(false);}} disabled={busy||!extDateTo} style={{background:B.warn,color:"#fff",border:"none",borderRadius:8,padding:"10px 16px",fontSize:12,fontWeight:600,cursor:"pointer",marginTop:18}}>Submit extension</button>
+        <button onClick={()=>setShowExtForm(false)} style={{background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"10px 12px",fontSize:12,cursor:"pointer",color:B.textSub,marginTop:18}}>Cancel</button>
+      </div>
+    </div>
+  )}
 </div>)}
 {permit.status==="work_complete"&&(
   <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -1113,7 +1203,30 @@ function App(){
   const[session,setSession]=useState(null);const[screen,setScreen]=useState("dashboard");const[permits,setPermits]=useState([]);const[selected,setSelected]=useState(null);const[loading,setLoading]=useState(false);const[error,setError]=useState("");const[setupDone,setSetupDone]=useState(false);const[unread,setUnread]=useState(0);
   const fetchPermits=useCallback(async()=>{if(!session)return;setLoading(true);setError("");try{const d=await sb.select(session.token,"permits","order=created_at.desc");if(Array.isArray(d))setPermits(d);else setError("Failed to load permits.");}catch(e){setError("Connection error.");}setLoading(false);},[session]);
   const fetchUnread=useCallback(async()=>{if(!session)return;try{const d=await sb.select(session.token,"notifications",`user_id=eq.${session.userId}&is_read=eq.false&select=id`);if(Array.isArray(d))setUnread(d.length);}catch(e){}},[session]);
-  useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);
+
+  // Permit expiry check — runs after permits load
+  // Marks active permits as expired if work_date_to has passed (with 24hr grace)
+  const checkExpiry=useCallback(async(loadedPermits)=>{
+    if(!session||!loadedPermits)return;
+    const now=new Date();
+    const grace=24*60*60*1000; // 24 hours grace period
+    const toExpire=loadedPermits.filter(p=>{
+      if(p.status!=="active")return false;
+      const fd=p.form_data||{};
+      if(!fd.work_date_to)return false;
+      const endDate=new Date(fd.work_date_to);
+      endDate.setHours(23,59,59,999); // end of work_date_to day
+      return (now-endDate)>grace; // expired more than 24hrs ago
+    });
+    if(toExpire.length===0)return;
+    for(const p of toExpire){
+      await sb.update(session.token,"permits",`id=eq.${p.id}`,{status:"expired"});
+      await sb.insert(session.token,"permit_audit",{org_id:p.org_id,permit_id:p.id,user_id:session.userId,user_name:"System",user_role:"Auto-expiry",action:"Permit auto-expired",note:`Work end date ${p.form_data?.work_date_to} passed. Permit expired automatically.`});
+      await sb.notify(session.token,p.org_id,p.id,p.permit_number,p.title,"closed","System (Auto-expiry)");
+    }
+    if(toExpire.length>0)await fetchPermits();
+  },[session,fetchPermits]);
+  useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
   if(!session)return <Login onLogin={s=>setSession(s)}/>;
   if(session.firstTime&&!setupDone)return <AccountSetup session={session} onComplete={s=>{setSession(s);setSetupDone(true);}}/>;
   async function logout(){await sb.signOut(session.token);setSession(null);setPermits([]);setScreen("dashboard");setSetupDone(false);}
