@@ -35,19 +35,21 @@
     .nav-links { display: flex; align-items: center; gap: 2rem; }
     .nav-links a { font-size: 13px; color: var(--textsub); transition: color 0.2s; }
     .nav-links a:hover { color: var(--white); }
-    .nav-cta { background: var(--accent); color: var(--white); border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--accent2); }
+    .nav-cta { background: #25D366; color: var(--white); border: none; border-radius: 8px; padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: background 0.2s; display: flex; align-items: center; gap: 7px; }
+    .nav-cta:hover { background: #1fb358; }
 
     /* HERO */
     .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 120px 5% 80px; background: linear-gradient(180deg, #0A1520 0%, #0F1F2E 60%, #0F2A1E 100%); position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(14,158,110,0.08) 0%, transparent 70%); pointer-events: none; }
-    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.3); borderRadius: 20px; padding: 6px 16px; font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 2rem; border-radius: 20px; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.3); padding: 6px 16px; font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 2rem; border-radius: 20px; }
     .hero h1 { font-size: clamp(36px, 6vw, 72px); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 1.5rem; max-width: 900px; }
     .hero h1 span { color: var(--accent); }
     .hero p { font-size: clamp(16px, 2vw, 20px); color: var(--textsub); max-width: 640px; margin: 0 auto 2.5rem; line-height: 1.7; }
     .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
-    .btn-primary { background: var(--accent); color: var(--white); border: none; border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: var(--white); border: none; border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
     .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-wa { background: #25D366; color: var(--white); border: none; border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-wa:hover { background: #1fb358; transform: translateY(-1px); }
     .btn-secondary { background: transparent; color: var(--white); border: 0.5px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 14px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
     .hero-stats { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; }
@@ -120,11 +122,11 @@
     .plan-features { list-style: none; margin-bottom: 2rem; }
     .plan-features li { font-size: 13px; color: var(--textsub); padding: 6px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; }
     .plan-features li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
-    .plan-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .plan-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; }
     .plan-btn-outline { background: transparent; color: var(--white); border: 0.5px solid rgba(255,255,255,0.2); }
-    .plan-btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-    .plan-btn-filled { background: var(--accent); color: var(--white); border: none; }
-    .plan-btn-filled:hover { background: var(--accent2); }
+    .plan-btn-outline:hover { border-color: #25D366; color: #25D366; }
+    .plan-btn-wa { background: #25D366; color: var(--white); border: none; }
+    .plan-btn-wa:hover { background: #1fb358; }
 
     /* CTA SECTION */
     .cta-section { background: linear-gradient(135deg, #0A1E14 0%, #0F1F2E 50%, #0A1520 100%); text-align: center; padding: 6rem 5%; position: relative; overflow: hidden; }
@@ -142,15 +144,19 @@
     .contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--textsub); }
     .contact-form textarea { resize: vertical; min-height: 120px; }
     .contact-form select option { background: var(--navy2); }
-    .submit-btn { background: var(--accent); color: var(--white); border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
-    .submit-btn:hover { background: var(--accent2); }
-    .contact-info { }
+    .submit-btn { background: #25D366; color: var(--white); border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .submit-btn:hover { background: #1fb358; }
     .contact-info h3 { font-size: 22px; font-weight: 700; margin-bottom: 1rem; }
     .contact-info p { font-size: 14px; color: var(--textsub); line-height: 1.7; margin-bottom: 2rem; }
     .contact-detail { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 1.25rem; }
     .contact-detail-icon { width: 36px; height: 36px; background: rgba(14,158,110,0.1); border: 0.5px solid rgba(14,158,110,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     .contact-detail-text p:first-child { font-size: 12px; color: var(--textsub); }
     .contact-detail-text p:last-child { font-size: 14px; font-weight: 600; }
+    .wa-direct { background: rgba(37,211,102,0.1); border: 0.5px solid rgba(37,211,102,0.3); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; margin-top: 1.5rem; }
+    .wa-direct:hover { background: rgba(37,211,102,0.18); border-color: #25D366; }
+    .wa-direct-icon { width: 44px; height: 44px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .wa-direct p:first-child { font-size: 12px; color: var(--textsub); }
+    .wa-direct p:last-child { font-size: 14px; font-weight: 700; color: #25D366; }
 
     /* FOOTER */
     footer { background: #080F18; border-top: 0.5px solid var(--border); padding: 3rem 5% 2rem; }
@@ -165,24 +171,13 @@
     .suite-badge { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--textsub); font-weight: 600; }
     .suite-badge.active { border-color: var(--accent); color: var(--accent); }
 
-    /* MODAL */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--navy2); border: 0.5px solid var(--border); border-radius: 16px; width: 100%; max-width: 480px; overflow: hidden; }
-    .modal-header { background: #0A1E2E; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid var(--border); }
-    .modal-header h3 { font-size: 15px; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--textsub); font-size: 22px; cursor: pointer; line-height: 1; }
-    .modal-body { padding: 1.5rem; }
-    .modal-body p { font-size: 13px; color: var(--textsub); margin-bottom: 1.25rem; line-height: 1.6; }
-    .modal-form { display: flex; flex-direction: column; gap: 12px; }
-    .modal-form input, .modal-form select { background: var(--navy); border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
-    .modal-form input:focus, .modal-form select:focus { border-color: var(--accent); }
-    .modal-form input::placeholder { color: var(--textsub); }
-    .modal-submit { background: var(--accent); color: var(--white); border: none; border-radius: 8px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; }
-    .modal-success { text-align: center; padding: 1rem 0; }
-    .modal-success .check { font-size: 48px; margin-bottom: 1rem; }
-    .modal-success h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-    .modal-success p { font-size: 13px; color: var(--textsub); }
+    /* FLOATING WA BUTTON */
+    .wa-float { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.4); cursor: pointer; z-index: 999; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; }
+    .wa-float:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(37,211,102,0.5); }
+    .wa-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 4px 20px rgba(37,211,102,0.4)} 50%{box-shadow:0 4px 32px rgba(37,211,102,0.7)} }
+    .wa-tooltip { position: fixed; bottom: 90px; right: 24px; background: #1A3A5C; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; white-space: nowrap; z-index: 998; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .wa-float:hover ~ .wa-tooltip { opacity: 1; }
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
@@ -216,7 +211,10 @@
     <a href="#contact">Contact</a>
     <a href="app.html" style="color: #7A9AB0;">Sign in</a>
   </div>
-  <button class="nav-cta" onclick="openModal('demo')">Request a demo</button>
+  <button class="nav-cta" onclick="openWA('demo')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Request a demo
+  </button>
 </nav>
 
 <!-- HERO -->
@@ -229,8 +227,11 @@
     <h1>The Digital <span>Permit to Work</span><br/>Platform Built for the Field</h1>
     <p>CONTROLIT digitises your entire PTW system — from request to issuance, extension to closure — with multi-stage approvals, SIMOPS detection, and mandatory field verification. Built for Oil & Gas, Construction, and heavy industry.</p>
     <div class="hero-btns">
-      <button class="btn-primary" onclick="openModal('signup')">Sign up your organisation</button>
-      <button class="btn-secondary" onclick="openModal('demo')">Book a demo</button>
+      <button class="btn-wa" onclick="openWA('signup')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Sign up your organisation
+      </button>
+      <button class="btn-secondary" onclick="openWA('demo')">Book a demo</button>
       <a href="app.html"><button class="btn-secondary">Sign in →</button></a>
     </div>
     <div class="hero-stats">
@@ -246,12 +247,7 @@
 <div class="trusted">
   <p>Trusted by teams in</p>
   <div class="trusted-logos">
-    <span>OIL & GAS</span>
-    <span>CONSTRUCTION</span>
-    <span>PETROCHEMICAL</span>
-    <span>ENERGY</span>
-    <span>MINING</span>
-    <span>MARINE</span>
+    <span>OIL & GAS</span><span>CONSTRUCTION</span><span>PETROCHEMICAL</span><span>ENERGY</span><span>MINING</span><span>MARINE</span>
   </div>
 </div>
 
@@ -263,51 +259,15 @@
     <p class="section-sub">CONTROLIT is benchmarked against the ADNOC PTW standard and built for real field conditions — including low-literacy environments.</p>
   </div>
   <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">🔐</div>
-      <h3>Multi-stage approval workflow</h3>
-      <p>Requesting Party → Area Authority → Safety Officer → Issuer. Every stage digitally signed with timestamp and role verification.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📋</div>
-      <h3>Mandatory field verification</h3>
-      <p>The Issuer must physically verify all site controls on a permit-specific checklist before the permit can go live. No shortcuts.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">⚡</div>
-      <h3>SIMOPS conflict detection</h3>
-      <p>Automatically detects conflicting active permits in the same zone. Hot Work, Confined Space, Excavation, Lifting — all cross-checked in real time.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🤖</div>
-      <h3>AI risk assessment</h3>
-      <p>Claude-powered risk analysis generates key hazards, precautionary controls, and emergency procedures for every permit type.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🏢</div>
-      <h3>Multi-tenant architecture</h3>
-      <p>Each organisation operates in complete isolation. Row-level security enforced at the database level — no cross-tenant data leakage.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📊</div>
-      <h3>Immutable audit trail</h3>
-      <p>Every action — approval, rejection, extension, revocation — is timestamped and logged. Full permit history for inspections and incidents.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔔</div>
-      <h3>Role-aware notifications</h3>
-      <p>Approvers are alerted when permits reach their stage. Escalation alerts for overdue permits. Expiry warnings before validity lapses.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📱</div>
-      <h3>Mobile-first PWA</h3>
-      <p>Designed for field use. Works on any device without an app store. Installable on Android and iOS for offline-capable access.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🖨️</div>
-      <h3>Branded permit printout</h3>
-      <p>Once issued, a professional permit document is generated and ready to print for posting at the job site — as required by regulations.</p>
-    </div>
+    <div class="feature-card"><div class="feature-icon">🔐</div><h3>Multi-stage approval workflow</h3><p>Requesting Party → Area Authority → Safety Officer → Issuer. Every stage digitally signed with timestamp and role verification.</p></div>
+    <div class="feature-card"><div class="feature-icon">📋</div><h3>Mandatory field verification</h3><p>The Issuer must physically verify all site controls on a permit-specific checklist before the permit can go live. No shortcuts.</p></div>
+    <div class="feature-card"><div class="feature-icon">⚡</div><h3>SIMOPS conflict detection</h3><p>Automatically detects conflicting active permits in the same zone. Hot Work, Confined Space, Excavation, Lifting — all cross-checked in real time.</p></div>
+    <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI risk assessment</h3><p>Claude-powered risk analysis generates key hazards, precautionary controls, and emergency procedures for every permit type.</p></div>
+    <div class="feature-card"><div class="feature-icon">🏢</div><h3>Multi-tenant architecture</h3><p>Each organisation operates in complete isolation. Row-level security enforced at the database level — no cross-tenant data leakage.</p></div>
+    <div class="feature-card"><div class="feature-icon">📊</div><h3>Immutable audit trail</h3><p>Every action — approval, rejection, extension, revocation — is timestamped and logged. Full permit history for inspections and incidents.</p></div>
+    <div class="feature-card"><div class="feature-icon">🔔</div><h3>Role-aware notifications</h3><p>Approvers are alerted when permits reach their stage. Escalation alerts for overdue permits. Expiry warnings before validity lapses.</p></div>
+    <div class="feature-card"><div class="feature-icon">📱</div><h3>Mobile-first PWA</h3><p>Designed for field use. Works on any device without an app store. Installable on Android and iOS for offline-capable access.</p></div>
+    <div class="feature-card"><div class="feature-icon">🖨️</div><h3>Branded permit printout</h3><p>Once issued, a professional permit document is generated and ready to print for posting at the job site — as required by regulations.</p></div>
   </div>
 </section>
 
@@ -319,26 +279,10 @@
     <p class="section-sub">CONTROLIT enforces a structured, auditable permit lifecycle that mirrors international PTW standards.</p>
   </div>
   <div class="workflow-steps">
-    <div class="workflow-step">
-      <div class="step-num">1</div>
-      <div class="step-title">Requesting Party</div>
-      <div class="step-desc">Team leader and supervisor jointly complete and submit the permit form with all job details and hazard information.</div>
-    </div>
-    <div class="workflow-step">
-      <div class="step-num">2</div>
-      <div class="step-title">Area Authority</div>
-      <div class="step-desc">Confirms area readiness, checks for SIMOPS conflicts, and verifies all isolations are in place before approving.</div>
-    </div>
-    <div class="workflow-step">
-      <div class="step-num">3</div>
-      <div class="step-title">Safety Officer</div>
-      <div class="step-desc">Reviews the risk assessment, PPE requirements, gas tests, and HSE compliance before forwarding for issuance.</div>
-    </div>
-    <div class="workflow-step">
-      <div class="step-num">4</div>
-      <div class="step-title">Issuer</div>
-      <div class="step-desc">Goes to site, verifies all controls physically via checklist, signs digitally, and issues the permit. Work may now commence.</div>
-    </div>
+    <div class="workflow-step"><div class="step-num">1</div><div class="step-title">Requesting Party</div><div class="step-desc">Team leader and supervisor jointly complete and submit the permit form with all job details and hazard information.</div></div>
+    <div class="workflow-step"><div class="step-num">2</div><div class="step-title">Area Authority</div><div class="step-desc">Confirms area readiness, checks for SIMOPS conflicts, and verifies all isolations are in place before approving.</div></div>
+    <div class="workflow-step"><div class="step-num">3</div><div class="step-title">Safety Officer</div><div class="step-desc">Reviews the risk assessment, PPE requirements, gas tests, and HSE compliance before forwarding for issuance.</div></div>
+    <div class="workflow-step"><div class="step-num">4</div><div class="step-title">Issuer</div><div class="step-desc">Goes to site, verifies all controls physically via checklist, signs digitally, and issues the permit. Work may now commence.</div></div>
   </div>
 </section>
 
@@ -367,30 +311,9 @@
     <h2 class="section-title">Built for people who work in the field</h2>
   </div>
   <div class="testimonial-grid">
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p>"CONTROLIT replaced a paper-based PTW system that was causing delays and compliance gaps. The SIMOPS detection alone has prevented three potential incidents in our first month."</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">AO</div>
-        <div><div class="author-name">Ahmed O.</div><div class="author-role">HSE Manager · Oil & Gas</div></div>
-      </div>
-    </div>
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p>"The field verification checklist is the feature that impressed our auditors most. Every permit has a complete, timestamped record of what was physically verified before work started."</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">SK</div>
-        <div><div class="author-name">Sarah K.</div><div class="author-role">Safety Officer · Construction</div></div>
-      </div>
-    </div>
-    <div class="testimonial-card">
-      <div class="stars">★★★★★</div>
-      <p>"We onboarded our entire 200-person site in under a week. The role-based access means each person only sees what they need to act on. It's genuinely changed how we work."</p>
-      <div class="testimonial-author">
-        <div class="author-avatar">JN</div>
-        <div><div class="author-name">James N.</div><div class="author-role">Operations Director · Petrochemical</div></div>
-      </div>
-    </div>
+    <div class="testimonial-card"><div class="stars">★★★★★</div><p>"CONTROLIT replaced a paper-based PTW system that was causing delays and compliance gaps. The SIMOPS detection alone has prevented three potential incidents in our first month."</p><div class="testimonial-author"><div class="author-avatar">AO</div><div><div class="author-name">Ahmed O.</div><div class="author-role">HSE Manager · Oil & Gas</div></div></div></div>
+    <div class="testimonial-card"><div class="stars">★★★★★</div><p>"The field verification checklist is the feature that impressed our auditors most. Every permit has a complete, timestamped record of what was physically verified before work started."</p><div class="testimonial-author"><div class="author-avatar">SK</div><div><div class="author-name">Sarah K.</div><div class="author-role">Safety Officer · Construction</div></div></div></div>
+    <div class="testimonial-card"><div class="stars">★★★★★</div><p>"We onboarded our entire 200-person site in under a week. The role-based access means each person only sees what they need to act on. It's genuinely changed how we work."</p><div class="testimonial-author"><div class="author-avatar">JN</div><div><div class="author-name">James N.</div><div class="author-role">Operations Director · Petrochemical</div></div></div></div>
   </div>
 </section>
 
@@ -407,14 +330,12 @@
       <div class="plan-price">$199 <span>/ month</span></div>
       <div class="plan-desc">For smaller teams getting started with digital PTW.</div>
       <ul class="plan-features">
-        <li>Up to 25 users</li>
-        <li>All 7 permit types</li>
-        <li>Full approval workflow</li>
-        <li>AI risk assessment</li>
-        <li>Audit trail</li>
-        <li>Email support</li>
+        <li>Up to 25 users</li><li>All 7 permit types</li><li>Full approval workflow</li><li>AI risk assessment</li><li>Audit trail</li><li>Email support</li>
       </ul>
-      <button class="plan-btn plan-btn-outline" onclick="openModal('signup')">Get started</button>
+      <button class="plan-btn plan-btn-outline" onclick="openWA('signup')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Get started
+      </button>
     </div>
     <div class="pricing-card featured">
       <div class="featured-badge">MOST POPULAR</div>
@@ -422,31 +343,21 @@
       <div class="plan-price">$499 <span>/ month</span></div>
       <div class="plan-desc">For growing organisations with multiple sites or zones.</div>
       <ul class="plan-features">
-        <li>Up to 100 users</li>
-        <li>All 7 permit types</li>
-        <li>Full approval workflow</li>
-        <li>SIMOPS detection</li>
-        <li>AI risk assessment</li>
-        <li>Advanced notifications</li>
-        <li>Priority support</li>
-        <li>Custom branding</li>
+        <li>Up to 100 users</li><li>All 7 permit types</li><li>Full approval workflow</li><li>SIMOPS detection</li><li>AI risk assessment</li><li>Advanced notifications</li><li>Priority support</li><li>Custom branding</li>
       </ul>
-      <button class="plan-btn plan-btn-filled" onclick="openModal('signup')">Get started</button>
+      <button class="plan-btn plan-btn-wa" onclick="openWA('signup')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Get started
+      </button>
     </div>
     <div class="pricing-card">
       <div class="plan-name">Enterprise</div>
       <div class="plan-price">Custom</div>
       <div class="plan-desc">For large organisations with complex requirements.</div>
       <ul class="plan-features">
-        <li>Unlimited users</li>
-        <li>Multi-site management</li>
-        <li>SSO / LDAP integration</li>
-        <li>Custom permit types</li>
-        <li>Dedicated support</li>
-        <li>SLA guarantee</li>
-        <li>On-premise option</li>
+        <li>Unlimited users</li><li>Multi-site management</li><li>SSO / LDAP integration</li><li>Custom permit types</li><li>Dedicated support</li><li>SLA guarantee</li><li>On-premise option</li>
       </ul>
-      <button class="plan-btn plan-btn-outline" onclick="openModal('contact')">Contact sales</button>
+      <button class="plan-btn plan-btn-outline" onclick="openWA('sales')">Contact sales</button>
     </div>
   </div>
 </section>
@@ -456,8 +367,11 @@
   <h2>Ready to control your permits?</h2>
   <p>Join organisations across the Middle East, Africa, and beyond who have digitised their PTW systems with CONTROLIT.</p>
   <div class="cta-btns">
-    <button class="btn-primary" onclick="openModal('signup')">Sign up your organisation</button>
-    <button class="btn-secondary" onclick="openModal('demo')">Book a demo first</button>
+    <button class="btn-wa" onclick="openWA('signup')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Sign up your organisation
+    </button>
+    <button class="btn-secondary" onclick="openWA('demo')">Book a demo first</button>
   </div>
 </section>
 
@@ -483,8 +397,11 @@
         <option>General enquiry</option>
       </select>
       <textarea placeholder="Tell us about your organisation and PTW needs…" id="cf-msg"></textarea>
-      <button class="submit-btn" onclick="submitContact()">Send message</button>
-      <p id="cf-success" style="color: #0E9E6E; font-size: 13px; display:none;">✓ Message sent. We'll be in touch within one business day.</p>
+      <button class="submit-btn" onclick="submitContactWA()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Send via WhatsApp
+      </button>
+      <p style="font-size:11px;color:var(--textsub);text-align:center">Opens WhatsApp with your details pre-filled · responds within 1 business day</p>
     </div>
     <div class="contact-info">
       <h3>We typically respond within one business day.</h3>
@@ -508,6 +425,16 @@
         <div class="contact-detail-text">
           <p>Industries</p>
           <p>Oil & Gas · Construction · Energy · Mining</p>
+        </div>
+      </div>
+      <!-- WhatsApp direct card -->
+      <div class="wa-direct" onclick="openWA('demo')">
+        <div class="wa-direct-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <div>
+          <p>WhatsApp — fastest response</p>
+          <p>+971 52 321 6061 · Tap to message now</p>
         </div>
       </div>
     </div>
@@ -542,12 +469,12 @@
     <div class="footer-col">
       <h4>Company</h4>
       <a href="#contact">Contact us</a>
-      <a href="#" onclick="openModal('demo')">Book a demo</a>
-      <a href="#" onclick="openModal('signup')">Sign up</a>
+      <a href="#" onclick="openWA('demo')">Book a demo</a>
+      <a href="#" onclick="openWA('signup')">Sign up</a>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2024 CONTROLIT. All rights reserved. · kindnessnjoku@outlook.com</p>
+    <p>© 2025 CONTROLIT. All rights reserved. · kindnessnjoku@outlook.com</p>
     <div class="footer-suite">
       <span class="suite-badge active">CONTROLIT — PTW</span>
       <span class="suite-badge">FLAGIT — Observations</span>
@@ -555,150 +482,47 @@
   </div>
 </footer>
 
-<!-- MODALS -->
-<!-- Demo Modal -->
-<div class="modal-overlay" id="modal-demo">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Request a demo</h3>
-      <button class="modal-close" onclick="closeModal('demo')">×</button>
-    </div>
-    <div class="modal-body">
-      <p>Tell us about your organisation and we'll arrange a personalised walkthrough of CONTROLIT for your team.</p>
-      <div class="modal-form">
-        <input placeholder="Full name *" id="demo-name" />
-        <input placeholder="Work email *" type="email" id="demo-email" />
-        <input placeholder="Company name *" id="demo-company" />
-        <select id="demo-industry">
-          <option value="">Industry</option>
-          <option>Oil & Gas</option><option>Construction</option><option>Petrochemical</option><option>Energy</option><option>Mining</option><option>Marine</option><option>Other</option>
-        </select>
-        <input placeholder="Team size (approx.)" id="demo-size" />
-        <button class="modal-submit" onclick="submitDemo()">Request demo</button>
-      </div>
-      <div id="demo-success" style="display:none" class="modal-success">
-        <div class="check">✓</div>
-        <h4>Demo requested!</h4>
-        <p>We'll reach out to kindnessnjoku@outlook.com within one business day to schedule your walkthrough.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Signup Modal -->
-<div class="modal-overlay" id="modal-signup">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Sign up your organisation</h3>
-      <button class="modal-close" onclick="closeModal('signup')">×</button>
-    </div>
-    <div class="modal-body">
-      <p>Submit your organisation details and we'll set up your CONTROLIT account within one business day.</p>
-      <div class="modal-form">
-        <input placeholder="Your full name *" id="su-name" />
-        <input placeholder="Work email *" type="email" id="su-email" />
-        <input placeholder="Organisation name *" id="su-org" />
-        <select id="su-industry">
-          <option value="">Industry *</option>
-          <option>Oil & Gas</option><option>Construction</option><option>Petrochemical</option><option>Energy</option><option>Mining</option><option>Marine</option><option>Other</option>
-        </select>
-        <select id="su-country">
-          <option value="">Country *</option>
-          <option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Kuwait</option><option>Nigeria</option><option>Ghana</option><option>UK</option><option>Other</option>
-        </select>
-        <select id="su-plan">
-          <option value="">Plan *</option>
-          <option>Starter — $199/month</option>
-          <option>Professional — $499/month</option>
-          <option>Enterprise — Custom</option>
-        </select>
-        <button class="modal-submit" onclick="submitSignup()">Submit request</button>
-      </div>
-      <div id="signup-success" style="display:none" class="modal-success">
-        <div class="check">✓</div>
-        <h4>Request received!</h4>
-        <p>We'll set up your CONTROLIT account and send your login details to your email within one business day.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Contact Modal -->
-<div class="modal-overlay" id="modal-contact">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Contact sales</h3>
-      <button class="modal-close" onclick="closeModal('contact')">×</button>
-    </div>
-    <div class="modal-body">
-      <p>For enterprise pricing, custom integrations, or large-scale deployments — reach out and we'll get back to you within one business day.</p>
-      <div class="modal-form">
-        <input placeholder="Full name *" id="cs-name" />
-        <input placeholder="Work email *" type="email" id="cs-email" />
-        <input placeholder="Organisation *" id="cs-org" />
-        <input placeholder="Number of users (approx.)" id="cs-users" />
-        <button class="modal-submit" onclick="submitContact2()">Contact sales</button>
-      </div>
-      <div id="contact2-success" style="display:none" class="modal-success">
-        <div class="check">✓</div>
-        <h4>Message sent!</h4>
-        <p>Our team will be in touch shortly to discuss your enterprise requirements.</p>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- FLOATING WHATSAPP BUTTON -->
+<a class="wa-float wa-pulse" href="https://wa.me/971523216061?text=Hi%20Kindness%2C%20I%E2%80%99d%20like%20to%20learn%20more%20about%20CONTROLIT." target="_blank" title="Chat on WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<div class="wa-tooltip">Chat with us on WhatsApp</div>
 
 <script>
-function openModal(type) {
-  document.getElementById('modal-' + type).classList.add('open');
-}
-function closeModal(type) {
-  document.getElementById('modal-' + type).classList.remove('open');
-}
-document.querySelectorAll('.modal-overlay').forEach(function(el) {
-  el.addEventListener('click', function(e) {
-    if (e.target === el) el.classList.remove('open');
-  });
-});
+var WA = "971523216061";
 
-function submitDemo() {
-  var name = document.getElementById('demo-name').value;
-  var email = document.getElementById('demo-email').value;
-  var company = document.getElementById('demo-company').value;
-  if (!name || !email || !company) { alert('Please fill in all required fields.'); return; }
-  document.querySelector('#modal-demo .modal-form').style.display = 'none';
-  document.getElementById('demo-success').style.display = 'block';
+function openWA(type) {
+  var msgs = {
+    demo: "Hi Kindness, I'd like to request a CONTROLIT demo. Please get in touch.",
+    signup: "Hi Kindness, I'd like to sign up my organisation on CONTROLIT. Can we discuss?",
+    sales: "Hi Kindness, I'd like to discuss CONTROLIT Enterprise pricing for a large deployment."
+  };
+  var text = encodeURIComponent(msgs[type] || msgs.demo);
+  window.open("https://wa.me/" + WA + "?text=" + text, "_blank");
 }
 
-function submitSignup() {
-  var name = document.getElementById('su-name').value;
-  var email = document.getElementById('su-email').value;
-  var org = document.getElementById('su-org').value;
-  if (!name || !email || !org) { alert('Please fill in all required fields.'); return; }
-  document.querySelector('#modal-signup .modal-form').style.display = 'none';
-  document.getElementById('signup-success').style.display = 'block';
+function submitContactWA() {
+  var first = document.getElementById("cf-first").value.trim();
+  var last = document.getElementById("cf-last").value.trim();
+  var email = document.getElementById("cf-email").value.trim();
+  var company = document.getElementById("cf-company").value.trim();
+  var interest = document.getElementById("cf-interest").value;
+  var msg = document.getElementById("cf-msg").value.trim();
+  if (!first || !email) { alert("Please fill in your name and email."); return; }
+  var text = "Hi Kindness, I found CONTROLIT and would like to get in touch.\n\n";
+  text += "Name: " + first + " " + last + "\n";
+  text += "Email: " + email + "\n";
+  if (company) text += "Company: " + company + "\n";
+  if (interest) text += "Interest: " + interest + "\n";
+  if (msg) text += "\nMessage: " + msg;
+  window.open("https://wa.me/" + WA + "?text=" + encodeURIComponent(text), "_blank");
 }
 
-function submitContact2() {
-  var name = document.getElementById('cs-name').value;
-  var email = document.getElementById('cs-email').value;
-  if (!name || !email) { alert('Please fill in all required fields.'); return; }
-  document.querySelector('#modal-contact .modal-form').style.display = 'none';
-  document.getElementById('contact2-success').style.display = 'block';
-}
-
-function submitContact() {
-  var email = document.getElementById('cf-email').value;
-  var first = document.getElementById('cf-first').value;
-  if (!first || !email) { alert('Please fill in your name and email.'); return; }
-  document.getElementById('cf-success').style.display = 'block';
-}
-
-// Smooth scroll for nav links
-document.querySelectorAll('a[href^="#"]').forEach(function(a) {
-  a.addEventListener('click', function(e) {
-    var target = document.querySelector(this.getAttribute('href'));
-    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+// Smooth scroll
+document.querySelectorAll("a[href^='#']").forEach(function(a) {
+  a.addEventListener("click", function(e) {
+    var target = document.querySelector(this.getAttribute("href"));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: "smooth" }); }
   });
 });
 </script>
