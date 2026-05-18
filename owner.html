@@ -222,11 +222,19 @@ function OnboardModal({token,onClose,onSuccess}){
                 </p>
                 {showKey&&(
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:10}}>
-                    <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 1 — everything before the first dot</label><input value={kp1} onChange={function(e){setKp1(e.target.value);}} placeholder="sk-ant-api03-XXXXXXXXXX" style={{fontFamily:"monospace",fontSize:11,letterSpacing:"0.03em"}}/></div>
-                    <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 2 — middle segment</label><input value={kp2} onChange={function(e){setKp2(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{fontFamily:"monospace",fontSize:11,letterSpacing:"0.03em"}}/></div>
-                    <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 3 — everything after the second dot</label><input value={kp3} onChange={function(e){setKp3(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{fontFamily:"monospace",fontSize:11,letterSpacing:"0.03em"}}/></div>
-                    {kp1&&kp2&&kp3&&<div style={{background:"rgba(14,158,110,0.12)",borderRadius:6,padding:"7px 10px"}}><p style={{fontSize:11,color:B.accent}}>✓ All 3 parts provided — key will be encoded and stored securely.</p></div>}
-                    {(kp1||kp2||kp3)&&(!kp1||!kp2||!kp3)&&<div style={{background:"rgba(217,123,0,0.12)",borderRadius:6,padding:"7px 10px"}}><p style={{fontSize:11,color:B.warn}}>⚠ Enter all 3 parts or leave all blank.</p></div>}
+                    <div>
+                      <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Paste full Anthropic API key</label>
+                      <input value={kp1} onChange={function(e){
+                        var raw=e.target.value.trim();
+                        setKp1(raw);
+                        var parts=raw.split(".");
+                        if(parts.length>=3){setKp2(parts[1]);setKp3(parts.slice(2).join("."));}
+                        else{setKp2("");setKp3("");}
+                      }} placeholder="sk-ant-api03-..." style={{fontFamily:"monospace",fontSize:11}}/>
+                      <p style={{fontSize:10,color:B.textSub,marginTop:4}}>From console.anthropic.com · starts with sk-ant-api03-</p>
+                    </div>
+                    {kp1&&kp2&&kp3&&<div style={{background:"rgba(14,158,110,0.12)",borderRadius:6,padding:"7px 10px"}}><p style={{fontSize:11,color:B.accent}}>✓ Valid key format — will be encoded and stored securely.</p></div>}
+                    {kp1&&(!kp2||!kp3)&&<div style={{background:"rgba(217,123,0,0.12)",borderRadius:6,padding:"7px 10px"}}><p style={{fontSize:11,color:B.warn}}>⚠ Key format not recognised. Must start with sk-ant-api03- and contain two dots.</p></div>}
                   </div>
                 )}
               </div>
@@ -358,12 +366,21 @@ function OwnerDashboard({token,onLogout}){
                   <p style={{fontSize:11,color:B.textSub,lineHeight:1.6}}>Paste the Anthropic API key split at its two dots. Leave all parts blank to disable AI features for this org.</p>
                   {editKeyOrg.anthropic_key&&<p style={{fontSize:11,color:B.accent,marginTop:4}}>🤖 A key is currently set. Enter new parts below to replace it.</p>}
                 </div>
-                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 1 — everything before the first dot</label><input value={editKp1} onChange={function(e){setEditKp1(e.target.value);}} placeholder="sk-ant-api03-XXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
-                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 2 — middle segment</label><input value={editKp2} onChange={function(e){setEditKp2(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
-                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Part 3 — everything after the second dot</label><input value={editKp3} onChange={function(e){setEditKp3(e.target.value);}} placeholder="XXXXXXXXXXXXXXXXXXXXXXXX" style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/></div>
-                {editKp1&&editKp2&&editKp3&&<div style={{background:"rgba(14,158,110,0.1)",borderRadius:6,padding:"6px 10px"}}><p style={{fontSize:11,color:B.accent}}>✓ All 3 parts provided — key will be encoded and stored securely.</p></div>}
+                <div>
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Paste full Anthropic API key</label>
+                  <input value={editKp1} onChange={function(e){
+                    var raw=e.target.value.trim();
+                    setEditKp1(raw);
+                    var parts=raw.split(".");
+                    if(parts.length>=3){setEditKp2(parts[1]);setEditKp3(parts.slice(2).join("."));}
+                    else{setEditKp2("");setEditKp3("");}
+                  }} placeholder="sk-ant-api03-..." style={{background:B.navy,border:"0.5px solid "+B.border,color:B.text,borderRadius:8,fontFamily:"monospace",fontSize:11}}/>
+                  <p style={{fontSize:10,color:B.textSub,marginTop:4}}>Starts with sk-ant-api03- · from console.anthropic.com</p>
+                </div>
+                {editKp1&&editKp2&&editKp3&&<div style={{background:"rgba(14,158,110,0.1)",borderRadius:6,padding:"6px 10px"}}><p style={{fontSize:11,color:B.accent}}>✓ Valid key format detected — ready to save.</p></div>}
+                {editKp1&&(!editKp2||!editKp3)&&<div style={{background:"rgba(217,123,0,0.1)",borderRadius:6,padding:"6px 10px"}}><p style={{fontSize:11,color:B.warn}}>⚠ Key format not recognised. Anthropic keys start with sk-ant-api03- and contain two dots.</p></div>}
                 <div style={{display:"flex",gap:8,marginTop:4}}>
-                  <button onClick={function(){saveApiKey(editKeyOrg);}} disabled={editKeyBusy} style={{flex:2,background:editKeyBusy?"#555":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:editKeyBusy?"not-allowed":"pointer"}}>{editKeyBusy?"Saving…":"Save API key"}</button>
+                  <button onClick={function(){saveApiKey(editKeyOrg);}} disabled={editKeyBusy||(!editKp1||!editKp2||!editKp3)} style={{flex:2,background:(editKeyBusy||!editKp2||!editKp3)?"#555":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:13,fontWeight:600,cursor:(editKeyBusy||!editKp2||!editKp3)?"not-allowed":"pointer"}}>{editKeyBusy?"Saving…":"Save API key"}</button>
                   {editKeyOrg.anthropic_key&&<button onClick={function(){setEditKp1("");setEditKp2("");setEditKp3("");saveApiKey(editKeyOrg);}} disabled={editKeyBusy} style={{flex:1,background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Clear key</button>}
                 </div>
               </div>
