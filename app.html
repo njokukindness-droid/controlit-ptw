@@ -1113,11 +1113,27 @@ ${typeSections}
 
 </body></html>`;
 
+      const toolbar = `<div style="position:fixed;top:0;left:0;right:0;background:#1A3A5C;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:999;print-color-adjust:exact">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:28px;height:28px;background:#0E9E6E;border-radius:6px;display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M8 16 L14 22 L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span style="color:white;font-family:Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1px">CONTROLIT</span>
+          <span style="color:rgba(255,255,255,0.5);font-family:Arial,sans-serif;font-size:12px">· PTW Log Register</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="window.print()" style="background:#0E9E6E;color:white;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">🖨 Print / Save PDF</button>
+          <button onclick="window.close()" style="background:transparent;color:white;border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:Arial,sans-serif">✕ Close</button>
+        </div>
+      </div>
+      <div style="height:52px"></div>
+      <style>@media print{div[style*="position:fixed"]{display:none!important;}div[style*="height:52px"]{display:none!important;}}</style>`;
+
       const w = window.open("","_blank","width=1100,height=800");
-      w.document.write(html);
+      w.document.write(html.replace("<body>", "<body>" + toolbar));
       w.document.close();
       w.focus();
-      setTimeout(()=>{ w.print(); }, 600);
+      setTimeout(()=>{ w.print(); }, 800);
 
     } catch(e){ console.error("PDF export error:",e); alert("Export failed: "+e.message); }
     setDownloading(false);
