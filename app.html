@@ -612,16 +612,14 @@ function PermitPDF({permit,audit,orgName,orgLogo,onClose}){
 <!-- HEADER -->
 <table style="margin-bottom:0;border:0.5px solid #999">
   <tr>
-    <td style="border:none;padding:10px 12px;width:55%">
+    <td style="border:none;padding:10px 12px;width:65%">
       <div style="font-size:16px;font-weight:700;color:#1A2B3C">${orgName||"Organisation"}</div>
       <div style="font-size:9px;color:#5A6A7A;margin-top:2px;letter-spacing:0.06em;text-transform:uppercase">Occupational Safety and Health</div>
     </td>
-    <td style="border:none;padding:6px 12px;text-align:center;vertical-align:middle;width:20%">
-      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:48px;max-width:100px;object-fit:contain"/>`:``}
-    </td>
-    <td style="border:none;padding:10px 12px;text-align:right;vertical-align:top;width:25%">
+    <td style="border:none;padding:8px 12px;text-align:right;vertical-align:top;width:35%">
+      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:52px;max-width:130px;object-fit:contain;display:block;margin-left:auto;margin-bottom:4px"/>`:""}
       <div style="font-size:11px;font-weight:700;color:#1A3A5C">${permit.permit_number}</div>
-      <div style="font-size:8px;color:#888;margin-top:3px">Powered by CONTROLIT</div>
+      <div style="font-size:8px;color:#888;margin-top:2px">Powered by CONTROLIT</div>
     </td>
   </tr>
 </table>
