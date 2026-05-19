@@ -545,13 +545,13 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         {permit.status==="extension_pending"&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
-      {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} onClose={()=>setShowPDF(false)}/>}
+      {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} orgLogo={session.org.logo||null} onClose={()=>setShowPDF(false)}/>}
     </div></div>
   );
 }
 
 // ── Permit PDF ────────────────────────────────────────────────────────────────
-function PermitPDF({permit,audit,orgName,onClose}){
+function PermitPDF({permit,audit,orgName,orgLogo,onClose}){
   const fd=permit.form_data||{};const t=pt(permit.type);
   const allControls=[...(fd.selected_controls||[]).filter(c=>c!=="RA Required"),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
   const fmtD=(s)=>s?new Date(s).toLocaleDateString():"—";
@@ -612,11 +612,14 @@ function PermitPDF({permit,audit,orgName,onClose}){
 <!-- HEADER -->
 <table style="margin-bottom:0;border:0.5px solid #999">
   <tr>
-    <td style="border:none;padding:10px 12px;width:65%">
+    <td style="border:none;padding:10px 12px;width:55%">
       <div style="font-size:16px;font-weight:700;color:#1A2B3C">${orgName||"Organisation"}</div>
       <div style="font-size:9px;color:#5A6A7A;margin-top:2px;letter-spacing:0.06em;text-transform:uppercase">Occupational Safety and Health</div>
     </td>
-    <td style="border:none;padding:10px 12px;text-align:right;vertical-align:top">
+    <td style="border:none;padding:6px 12px;text-align:center;vertical-align:middle;width:20%">
+      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:48px;max-width:100px;object-fit:contain"/>`:``}
+    </td>
+    <td style="border:none;padding:10px 12px;text-align:right;vertical-align:top;width:25%">
       <div style="font-size:11px;font-weight:700;color:#1A3A5C">${permit.permit_number}</div>
       <div style="font-size:8px;color:#888;margin-top:3px">Powered by CONTROLIT</div>
     </td>
@@ -812,12 +815,70 @@ function Notifs({session,onBack,onSelectPermit,onUnreadChange}){
 // ── Admin ─────────────────────────────────────────────────────────────────────
 function Admin({session,onBack}){
   const[users,setUsers]=useState([]);const[loading,setLoading]=useState(true);const[showForm,setShowForm]=useState(false);const[nm,setNm]=useState("");const[em,setEm]=useState("");const[rl,setRl]=useState("requester");const[pw,setPw]=useState("Controlit@2024!");const[busy,setBusy]=useState(false);const[result,setResult]=useState(null);const[err,setErr]=useState("");
+  const[logo,setLogo]=useState(session.org.logo||null);
+  const[logoUploading,setLogoUploading]=useState(false);
+  const[logoMsg,setLogoMsg]=useState("");
+
+  async function uploadLogo(e){
+    const file=e.target.files?.[0];if(!file)return;
+    if(file.size>500000){setLogoMsg("File too large — max 500KB.");return;}
+    setLogoUploading(true);setLogoMsg("");
+    const reader=new FileReader();
+    reader.onload=async function(ev){
+      const b64=ev.target.result;
+      await sb.update(session.token,"organisations","id=eq."+session.profile.org_id,{logo:b64});
+      setLogo(b64);session.org.logo=b64;
+      setLogoMsg("✓ Logo saved — appears on all generated PDFs.");
+      setLogoUploading(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function removeLogo(){
+    await sb.update(session.token,"organisations","id=eq."+session.profile.org_id,{logo:null});
+    setLogo(null);session.org.logo=null;setLogoMsg("Logo removed.");
+  }
+
   function load(){setLoading(true);sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc").then(d=>{if(Array.isArray(d))setUsers(d);setLoading(false);});}
   useEffect(()=>{load();},[]);
   async function invite(){if(!nm||!em){setErr("Name and email required.");return;}setBusy(true);setErr("");setResult(null);try{const au=await sb.createUser(em,pw);if(!au||!au.id){setErr("Failed: "+(au&&au.message?au.message:"Unknown"));setBusy(false);return;}await sb.insert(session.token,"profiles",{id:au.id,org_id:session.profile.org_id,full_name:nm,email:em,role:rl,active:true});setResult({name:nm,email:em,pass:pw,role:rl});setNm("");setEm("");setPw("Controlit@2024!");setRl("requester");load();}catch(e){setErr("Error: "+e.message);}setBusy(false);}
   async function updRole(uid,r){await sb.update(session.token,"profiles",`id=eq.${uid}`,{role:r});setUsers(p=>p.map(u=>u.id===uid?{...u,role:r}:u));}
   async function toggle(u){const n=!u.active;await sb.update(session.token,"profiles",`id=eq.${u.id}`,{active:n});setUsers(p=>p.map(x=>x.id===u.id?{...x,active:n}:x));}
   return(<div><Topbar title="Admin Panel" onBack={onBack}/><div style={{padding:"1.25rem"}}>
+    {/* ── Organisation Logo Section ── */}
+    <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
+      <p style={{fontSize:12,fontWeight:700,color:B.textSub,marginBottom:10,letterSpacing:"0.04em",textTransform:"uppercase"}}>Organisation Logo</p>
+      <p style={{fontSize:11,color:B.textSub,marginBottom:12,lineHeight:1.6}}>Upload your company logo — it will appear on all generated permit documents and the PTW register. PNG or JPG, max 500KB, transparent background recommended.</p>
+      <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap"}}>
+        {logo?(
+          <div style={{display:"flex",gap:12,alignItems:"center",flex:1}}>
+            <div style={{width:80,height:60,background:"#fff",borderRadius:8,border:`0.5px solid ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",padding:6}}>
+              <img src={logo} alt="Org logo" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>
+            </div>
+            <div>
+              <p style={{fontSize:12,fontWeight:600,color:B.accent}}>✓ Logo uploaded</p>
+              <p style={{fontSize:11,color:B.textSub}}>Appears on all permit PDFs</p>
+            </div>
+          </div>
+        ):(
+          <div style={{flex:1,display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:80,height:60,background:B.neutral,borderRadius:8,border:`0.5px dashed ${B.neutralBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <p style={{fontSize:20,opacity:0.3}}>🏢</p>
+            </div>
+            <p style={{fontSize:11,color:B.textSub}}>No logo uploaded yet</p>
+          </div>
+        )}
+        <div style={{display:"flex",gap:8}}>
+          <label style={{background:B.accent,color:"#fff",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:logoUploading?"not-allowed":"pointer",opacity:logoUploading?0.6:1}}>
+            {logoUploading?"Uploading…":logo?"Replace logo":"Upload logo"}
+            <input type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={uploadLogo} style={{display:"none"}} disabled={logoUploading}/>
+          </label>
+          {logo&&<button onClick={removeLogo} style={{background:B.dangerLight,color:B.danger,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Remove</button>}
+        </div>
+      </div>
+      {logoMsg&&<p style={{fontSize:11,color:logoMsg.startsWith("✓")?B.accent:B.danger,marginTop:8}}>{logoMsg}</p>}
+    </div>
+
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}><p style={{fontSize:13,fontWeight:600,color:B.text}}>Team ({users.length})</p><button onClick={()=>{setShowForm(!showForm);setResult(null);setErr("");}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{showForm?"Cancel":"+ Invite member"}</button></div>
     {showForm&&(<div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:12,padding:"1rem 1.25rem",marginBottom:"1rem"}}><p style={{fontSize:13,fontWeight:600,color:B.text,marginBottom:"1rem"}}>New team member</p>{err&&<ErrBox msg={err}/>}
       {result&&(<div style={{background:B.accentLight,border:`0.5px solid ${B.accent}`,borderRadius:10,padding:"1rem",marginBottom:"1rem"}}><p style={{fontSize:12,fontWeight:700,color:B.accentBorder,marginBottom:8}}>✓ {result.name} added</p><div style={{background:"#fff",borderRadius:8,padding:"10px 12px",fontSize:12,fontFamily:"monospace",color:B.text,lineHeight:2}}><div>URL: https://getcontrolit.com/app.html</div><div>Email: {result.email}</div><div>Password: {result.pass}</div><div>Role: {roleLabel(result.role)}</div></div><button onClick={()=>setResult(null)} style={{marginTop:10,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:6,padding:"6px 12px",fontSize:12,cursor:"pointer",color:B.textSub}}>Invite another</button></div>)}
@@ -997,11 +1058,12 @@ function Register({session,permits,onBack}){
 <!-- COVER / HEADER -->
 <div class="cover">
   <div class="cover-header">
-    <div>
+    <div style="flex:1">
       <div class="cover-title">${orgName}</div>
       <div class="cover-sub">Permit to Work Log Register &nbsp;·&nbsp; Occupational Safety and Health</div>
       <div class="cover-sub" style="margin-top:6px">Coordinator: ${coordinator} &nbsp;·&nbsp; Generated: ${now}</div>
     </div>
+    ${session.org.logo?`<div style="margin:0 20px;display:flex;align-items:center"><img src="${session.org.logo}" alt="Logo" style="max-height:52px;max-width:120px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.85"/></div>`:""}
     <div class="cover-ref">
       <div>HSE-PTW-002 | Rev 00</div>
       <div style="margin-top:4px;font-size:9px;opacity:0.5">Managed by CONTROLIT</div>
