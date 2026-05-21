@@ -55,8 +55,8 @@ function showLocalNotification(title, body, url) {
   navigator.serviceWorker.ready.then(function(reg) {
     reg.showNotification(title, {
       body: body,
-      icon: "/icons/android-chrome-192x192.png",
-      badge: "/icons/favicon-32x32.png",
+      icon: "/icons/apple-touch-icon.png",
+      badge: "/icons/favicon-16x16.png",
       vibrate: [200, 100, 200],
       tag: "controlit-" + Date.now(),
       data: { url: url || "/app.html" }
@@ -79,7 +79,7 @@ function showLocalNotification(title, body, url) {
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="CONTROLIT"/>
-  <script>if('serviceWorker'in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/controlit-ptw/sw.js').catch(function(){});});}</script>
+  <script>if('serviceWorker'in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(e){console.warn('SW registration failed:',e)});});}</script>
 </head>
 <body>
 <div id="root"></div>
