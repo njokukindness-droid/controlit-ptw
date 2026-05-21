@@ -28,7 +28,53 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const SUPABASE_URL="https://sguptjhsfyygwazmxfpk.supabase.co";
+const // ── Push Notifications ───────────────────────────────────────────
+const VAPID_PUBLIC_KEY="BBYtNHnx4QtdMT5TaKAqpC_eRwZePbpTtXn3OEioBb2aBcqSB56Um6fuvoSG8EuFiHUYDUyCUt6lXe-lBjakvQI";
+
+function urlB64ToUint8(b64){
+  const pad="=".repeat((4-b64.length%4)%4);
+  const raw=atob((b64+pad).replace(/-/g,"+").replace(/_/g,"/"));
+  const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+
+async function subscribeToPush(token,userId,orgId){
+  try{
+    if(!("serviceWorker" in navigator)||!("PushManager" in window))return;
+    const reg=await navigator.serviceWorker.ready;
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted")return;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlB64ToUint8(VAPID_PUBLIC_KEY)
+      });
+    }
+    // Store subscription in profile
+    await sb.update(token,"profiles","id=eq."+userId,{push_subscription:JSON.stringify(sub.toJSON())});
+    console.log("Push subscription saved");
+  }catch(e){console.warn("Push subscribe failed:",e);}
+}
+
+// Show a local notification (works without server for same-device actions)
+async function showLocalNotification(title,body,url){
+  try{
+    if(Notification.permission!=="granted")return;
+    const reg=await navigator.serviceWorker.ready;
+    reg.showNotification(title,{
+      body,
+      icon:"/icons/android-chrome-192x192.png",
+      badge:"/icons/favicon-32x32.png",
+      vibrate:[200,100,200],
+      tag:"controlit-"+Date.now(),
+      data:{url:url||"/app.html"}
+    });
+  }catch(e){console.warn("Local notification failed:",e);}
+}
+
+SUPABASE_URL="https://sguptjhsfyygwazmxfpk.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
 const SERVICE_KEY=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",".","eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ",".","7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"].join("");
 
@@ -130,6 +176,8 @@ function Login({onLogin}){
       const org=orgs&&orgs[0]?orgs[0]:{name:"Your Organisation"};
       if(org&&org.active===false){setErr("Organisation suspended. Contact support.");setBusy(false);return;}
       onLogin({token,userId:uid,profile,org,apiKey:decodeApiKey(org.anthropic_key)});
+      // Request push permission after login
+      setTimeout(()=>subscribeToPush(token,uid,profile.org_id),2000);
     }catch(e){setErr("Connection error.");}
     setBusy(false);
   }
@@ -202,6 +250,16 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
         <button onClick={onLogout} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Sign out</button>
       </div>}/>
       <div style={{padding:"1.25rem 1.25rem 0"}}>
+        {/* Push notification permission banner */}
+        {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
+          <div style={{background:"rgba(14,158,110,0.1)",border:"0.5px solid "+B.accent,borderRadius:10,padding:"10px 14px",marginBottom:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <p style={{fontSize:12,fontWeight:600,color:B.accentBorder}}>🔔 Enable push notifications</p>
+              <p style={{fontSize:11,color:B.textSub}}>Get notified when permits reach your stage — even when the app is closed.</p>
+            </div>
+            <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:10}}>Enable</button>
+          </div>
+        )}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
           <div><p style={{fontSize:13,color:B.textSub}}>Welcome, <strong style={{color:B.text}}>{session.profile.full_name}</strong></p><p style={{fontSize:11,color:B.textSub}}>{session.org.name} · {roleLabel(session.profile.role)}</p></div>
           <button onClick={onNew} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New permit</button>
@@ -417,6 +475,9 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     await sb.update(session.token,"permits",`id=eq.${permit.id}`,{status:ns,stage:st,extensions:ex,...extra});
     await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(role),action:labels[act]||act,note:rejectReason||""});
     await sb.notify(session.token,session.profile.org_id,permit.id,permit.permit_number,permit.title,nevt[act]||act,session.profile.full_name);
+    // Show local push notification for the actor
+    const pushMsgs={approve:"Permit approved and forwarded",issue:"Permit issued — work may commence",reject:"Permit rejected",suspend:"Permit suspended",close:"Permit closed",work_complete:"Work completion signed off",ext_request:"Extension requested",ext_approve:"Extension approved"};
+    showLocalNotification("CONTROLIT — "+permit.permit_number,pushMsgs[act]||"Permit updated","/app.html");
     setPermit({...permit,status:ns,stage:st,extensions:ex,...extra});setRejectReason("");setShowRejectBox(false);loadAudit();await onRefresh();setBusy(false);
   }
 
