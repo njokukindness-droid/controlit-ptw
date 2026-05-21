@@ -266,6 +266,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <div>
               <p style={{fontSize:12,fontWeight:600,color:B.accentBorder}}>🔔 Enable push notifications</p>
               <p style={{fontSize:11,color:B.textSub}}>Get notified when permits reach your stage — even when the app is closed.</p>
+              {/iPhone|iPad|iPod/.test(navigator.userAgent)&&(
+                <p style={{fontSize:10,color:B.warn,marginTop:4}}>📱 iOS: First add this app to your Home Screen via Safari Share → "Add to Home Screen", then enable.</p>
+              )}
             </div>
             <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:10}}>Enable</button>
           </div>
