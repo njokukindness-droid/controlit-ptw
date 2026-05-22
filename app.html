@@ -68,6 +68,7 @@ function showLocalNotification(title, body, url) {
 function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorId) {
   var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  console.log("Sending cross-device push:", eventType, "orgId:", orgId, "actorId:", actorId);
   fetch(SUPABASE_URL + "/functions/v1/push-notify", {
     method: "POST",
     headers: {
@@ -78,13 +79,13 @@ function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorI
     body: JSON.stringify({
       orgId: orgId,
       permitNumber: permitNumber,
-      permitTitle: permitTitle,
+      permitTitle: permitTitle || "Permit",
       eventType: eventType,
-      actorId: actorId,
+      actorId: actorId || "",
     }),
   })
   .then(function(r) { return r.json(); })
-  .then(function(d) { console.log("Cross-device push sent:", d.sent, "of", d.total); })
+  .then(function(d) { console.log("Cross-device push result — sent:", d.sent, "total:", d.total, "expired:", d.expired); })
   .catch(function(e) { console.warn("Cross-device push failed:", e); });
 }
 </script>
@@ -1404,6 +1405,28 @@ function App(){
     if(toExpire.length>0)await fetchPermits();
   },[session,fetchPermits]);
   useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
+
+  // Real-time polling — refresh every 30 seconds silently
+  useEffect(()=>{
+    if(!session)return;
+    const interval=setInterval(()=>{
+      fetchPermits();
+      fetchUnread();
+    },30000);
+    return ()=>clearInterval(interval);
+  },[session,fetchPermits,fetchUnread]);
+
+  // Also refresh when tab becomes visible again
+  useEffect(()=>{
+    function onVisible(){
+      if(document.visibilityState==="visible"&&session){
+        fetchPermits();
+        fetchUnread();
+      }
+    }
+    document.addEventListener("visibilitychange",onVisible);
+    return ()=>document.removeEventListener("visibilitychange",onVisible);
+  },[session,fetchPermits,fetchUnread]);
   if(!session)return <Login onLogin={s=>setSession(s)}/>;
   if(session.firstTime&&!setupDone)return <AccountSetup session={session} onComplete={s=>{setSession(s);setSetupDone(true);}}/>;
   async function logout(){await sb.signOut(session.token);setSession(null);setPermits([]);setScreen("dashboard");setSetupDone(false);}
