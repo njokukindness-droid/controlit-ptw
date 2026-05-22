@@ -54,7 +54,8 @@ const sb = {
   select: async function(t,table,q){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+(q||""),{headers:sb.h(t)}); return r.json(); },
   insert: async function(t,table,data){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table,{method:"POST",headers:sb.h(t),body:JSON.stringify(data)}); return r.json(); },
   insertSilent: async function(t,table,data){ 
-    var h={"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+(t||SUPABASE_ANON_KEY)};
+    var key=t||SUPABASE_ANON_KEY;
+    var h={"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key};
     var r=await fetch(SUPABASE_URL+"/rest/v1/"+table,{method:"POST",headers:h,body:JSON.stringify(data)}); 
     return r.ok;
   },
@@ -145,10 +146,10 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 2: Insert org — use silent insert (no return=representation) then fetch back by slug
-      await sb.insertSilent(token,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
+      await sb.insertSilent(SUPABASE_SECRET,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
 
       // Step 3: Always fetch the org back by slug (works regardless of RLS response)
-      var fetched = await sb.select(token,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
+      var fetched = await sb.select(SUPABASE_SECRET,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
       var org = (Array.isArray(fetched)&&fetched[0]) ? fetched[0] : null;
 
       if(!org){
@@ -164,7 +165,7 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 5: Create profile
-      await sb.insertSilent(token,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+      await sb.insertSilent(SUPABASE_SECRET,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
 
       // Step 6: Done
       setResult({org,orgName,adminName,adminEmail,tempPass,hasKey:!!encodedKey});
@@ -316,7 +317,10 @@ function OwnerDashboard({token,onLogout}){
       sb.select(SUPABASE_SECRET,"profiles","order=full_name.asc"),
       sb.select(SUPABASE_SECRET,"permits","order=created_at.desc&select=id,permit_number,status,type,org_id,created_at")
     ]);
+    console.log("Orgs result:", results[0]);
+    console.log("Users result length:", Array.isArray(results[1]) ? results[1].length : results[1]);
     if(Array.isArray(results[0]))setOrgs(results[0]);
+    else console.warn("Orgs not array:", results[0]);
     if(Array.isArray(results[1]))setUsers(results[1]);
     if(Array.isArray(results[2]))setPermits(results[2]);
     setLoading(false);
