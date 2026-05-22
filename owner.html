@@ -48,7 +48,7 @@ function encodeApiKey(p1,p2,p3){
 }
 
 const sb = {
-  h: function(t){ return {"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+(t||SUPABASE_ANON_KEY),"Prefer":"return=representation"}; },
+  h: function(t){ var key=t||SUPABASE_ANON_KEY; return {"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key,"Prefer":"return=representation"}; },
   signIn: async function(email,pass){ var r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY},body:JSON.stringify({email,password:pass})}); return r.json(); },
   signOut: async function(t){ await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:sb.h(t)}); },
   select: async function(t,table,q){ var r=await fetch(SUPABASE_URL+"/rest/v1/"+table+"?"+(q||""),{headers:sb.h(t)}); return r.json(); },
@@ -138,7 +138,7 @@ function OnboardModal({token,onClose,onSuccess}){
       var slug = slugify(orgName);
 
       // Step 1: Check for duplicate slug
-      var existing = await sb.select(token,"organisations","slug=eq."+slug+"&select=id,name");
+      var existing = await sb.select(SUPABASE_SECRET,"organisations","slug=eq."+slug+"&select=id,name");
       if(Array.isArray(existing)&&existing.length>0){
         setErr("An organisation with this name already exists: "+existing[0].name);
         setBusy(false); return;
@@ -287,7 +287,7 @@ function OwnerDashboard({token,onLogout}){
     setEditKeyBusy(true); setEditKeyErr("");
     try {
       var encodedKey = (editKp1&&editKp2&&editKp3) ? JSON.stringify([editKp1.trim(),editKp2.trim(),editKp3.trim()]) : null;
-      await sb.update(token,"organisations","id=eq."+org.id,{anthropic_key:encodedKey});
+      await sb.update(SUPABASE_SECRET,"organisations","id=eq."+org.id,{anthropic_key:encodedKey});
       setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,{anthropic_key:encodedKey}):o;});});
       setEditKeyDone(true);
     } catch(e){setEditKeyErr("Error: "+e.message);}
@@ -300,7 +300,7 @@ function OwnerDashboard({token,onLogout}){
     try {
       var authUser=await sb.createUser(fixEmail,fixPass);
       if(!authUser||!authUser.id){setFixErr("Failed to create user: "+(authUser&&authUser.message?authUser.message:"Unknown"));setFixBusy(false);return;}
-      await sb.insert(token,"profiles",{id:authUser.id,org_id:org.id,full_name:fixName,email:fixEmail,role:"admin",active:true});
+      await sb.insert(SUPABASE_SECRET,"profiles",{id:authUser.id,org_id:org.id,full_name:fixName,email:fixEmail,role:"admin",active:true});
       setFixDone({name:fixName,email:fixEmail,pass:fixPass});
       setFixName(""); setFixEmail(""); setFixPass("Controlit@2024!");
       load();
@@ -310,14 +310,21 @@ function OwnerDashboard({token,onLogout}){
 
   async function load(){
     setLoading(true);
-    var results=await Promise.all([sb.select(token,"organisations","order=created_at.desc"),sb.select(token,"profiles","order=full_name.asc"),sb.select(token,"permits","order=created_at.desc")]);
-    if(Array.isArray(results[0]))setOrgs(results[0]); if(Array.isArray(results[1]))setUsers(results[1]); if(Array.isArray(results[2]))setPermits(results[2]);
+    // Use service role key to bypass RLS for owner dashboard
+    var results=await Promise.all([
+      sb.select(SUPABASE_SECRET,"organisations","order=created_at.desc"),
+      sb.select(SUPABASE_SECRET,"profiles","order=full_name.asc"),
+      sb.select(SUPABASE_SECRET,"permits","order=created_at.desc&select=id,permit_number,status,type,org_id,created_at")
+    ]);
+    if(Array.isArray(results[0]))setOrgs(results[0]);
+    if(Array.isArray(results[1]))setUsers(results[1]);
+    if(Array.isArray(results[2]))setPermits(results[2]);
     setLoading(false);
   }
   useEffect(function(){load();},[]);
 
   async function toggleSuspend(org){
-    var n=!org.active; await sb.update(token,"organisations","id=eq."+org.id,{active:n});
+    var n=!org.active; await sb.update(SUPABASE_SECRET,"organisations","id=eq."+org.id,{active:n});
     setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,{active:n}):o;});});
   }
 
