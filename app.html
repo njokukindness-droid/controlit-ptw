@@ -1406,17 +1406,7 @@ function App(){
   },[session,fetchPermits]);
   useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
 
-  // Real-time polling — refresh every 30 seconds silently
-  useEffect(()=>{
-    if(!session)return;
-    const interval=setInterval(()=>{
-      fetchPermits();
-      fetchUnread();
-    },30000);
-    return ()=>clearInterval(interval);
-  },[session,fetchPermits,fetchUnread]);
-
-  // Also refresh when tab becomes visible again
+  // Refresh when tab becomes visible — no continuous polling
   useEffect(()=>{
     function onVisible(){
       if(document.visibilityState==="visible"&&session){
