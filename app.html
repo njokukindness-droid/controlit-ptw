@@ -63,6 +63,30 @@ function showLocalNotification(title, body, url) {
     });
   }).catch(function(e) { console.warn("Notification failed:", e); });
 }
+
+// Send cross-device push to all org members via Edge Function
+function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorId) {
+  var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
+  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  fetch(SUPABASE_URL + "/functions/v1/push-notify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + ANON_KEY,
+      "apikey": ANON_KEY,
+    },
+    body: JSON.stringify({
+      orgId: orgId,
+      permitNumber: permitNumber,
+      permitTitle: permitTitle,
+      eventType: eventType,
+      actorId: actorId,
+    }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) { console.log("Cross-device push sent:", d.sent, "of", d.total); })
+  .catch(function(e) { console.warn("Cross-device push failed:", e); });
+}
 </script>
 
   <style>
@@ -488,9 +512,12 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     await sb.update(session.token,"permits",`id=eq.${permit.id}`,{status:ns,stage:st,extensions:ex,...extra});
     await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(role),action:labels[act]||act,note:rejectReason||""});
     await sb.notify(session.token,session.profile.org_id,permit.id,permit.permit_number,permit.title,nevt[act]||act,session.profile.full_name);
-    // Show local push notification for the actor
+    // Show local push notification for the actor (same device)
     const pushMsgs={approve:"Permit approved and forwarded",issue:"Permit issued — work may commence",reject:"Permit rejected",suspend:"Permit suspended",close:"Permit closed",work_complete:"Work completion signed off",ext_request:"Extension requested",ext_approve:"Extension approved"};
     showLocalNotification("CONTROLIT — "+permit.permit_number,pushMsgs[act]||"Permit updated","/app.html");
+    // Send cross-device push to all other org members
+    const evtMap={approve:permit.stage===2?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",work_complete:"work_complete",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
+    sendCrossDevicePush(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId);
     setPermit({...permit,status:ns,stage:st,extensions:ex,...extra});setRejectReason("");setShowRejectBox(false);loadAudit();await onRefresh();setBusy(false);
   }
 
