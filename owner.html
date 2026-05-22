@@ -158,14 +158,19 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 4: Create auth user
+      console.log("Creating auth user:", adminEmail);
       var authUser = await sb.createUser(adminEmail,tempPass);
+      console.log("Auth user response:", JSON.stringify(authUser));
       if(!authUser||!authUser.id){
-        setErr("Organisation created but failed to create admin user: "+(authUser&&authUser.message?authUser.message:"Unknown error")+". Please add the admin manually from the Users tab.");
+        var errMsg = authUser&&authUser.message ? authUser.message : authUser&&authUser.error_description ? authUser.error_description : JSON.stringify(authUser);
+        setErr("Organisation created but failed to create admin user: "+errMsg+". Use '+ Add admin' on the org card to add manually.");
         setBusy(false); return;
       }
 
       // Step 5: Create profile
-      await sb.insertSilent(SUPABASE_SECRET,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+      console.log("Creating profile for:", authUser.id);
+      var profileResp = await sb.insertSilent(SUPABASE_SECRET,"profiles",{id:authUser.id,org_id:org.id,full_name:adminName,email:adminEmail,role:"admin",active:true});
+      console.log("Profile response:", JSON.stringify(profileResp));
 
       // Step 6: Done
       setResult({org,orgName,adminName,adminEmail,tempPass,hasKey:!!encodedKey});
