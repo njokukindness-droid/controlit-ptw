@@ -65,6 +65,30 @@ function showLocalNotification(title, body, url) {
 }
 
 // Send cross-device push to all org members via Edge Function
+function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, actorId, actorName) {
+  var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
+  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  fetch(SUPABASE_URL + "/functions/v1/send-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + ANON_KEY,
+      "apikey": ANON_KEY,
+    },
+    body: JSON.stringify({
+      orgId: orgId,
+      permitNumber: permitNumber,
+      permitTitle: permitTitle || "Permit",
+      eventType: eventType,
+      actorId: actorId || "",
+      actorName: actorName || "",
+    }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) { console.log("Email sent:", d.sent, "of", d.total); })
+  .catch(function(e) { console.warn("Email notification failed:", e); });
+}
+
 function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorId) {
   var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
@@ -519,6 +543,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     // Send cross-device push to all other org members
     const evtMap={approve:permit.stage===2?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",work_complete:"work_complete",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
     sendCrossDevicePush(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId);
+    sendEmailNotification(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId,session.profile.full_name);
     setPermit({...permit,status:ns,stage:st,extensions:ex,...extra});setRejectReason("");setShowRejectBox(false);loadAudit();await onRefresh();setBusy(false);
   }
 
