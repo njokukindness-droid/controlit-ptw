@@ -510,11 +510,38 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
   }
 
   async function action(act){
-    setErrMsg("");const role=session.profile.role;
-    if(act==="approve"&&role!=="admin"){const exp=ROLE_STAGE[role];if(exp===undefined){setErrMsg("Your role is not in the approval chain.");return;}if(permit.stage!==exp){setErrMsg(`This permit is at stage ${permit.stage} and is not yet ready for your approval.`);return;}}
-    if(act==="issue"&&role!=="issuer"&&role!=="admin"){setErrMsg("Only the Issuer can issue a permit.");return;}
-    if(act==="issue"&&!allChecked){setErrMsg("Complete all checklist items before issuing.");return;}
-    if(act==="reject"&&!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
+    setErrMsg("");const role=session.profile.role;const isAdmin=role==="admin";
+
+    // ── Comprehensive role-action guards ─────────────────────────────
+    // Approve: only AA (stage 1), OSH (stage 2), or admin
+    if(act==="approve"&&!isAdmin){
+      const exp=ROLE_STAGE[role];
+      if(exp===undefined){setErrMsg("Your role is not authorised to approve permits.");return;}
+      if(permit.stage!==exp){setErrMsg("This permit is not yet at your stage for approval.");return;}
+    }
+    // Reject: only AA (stage 1), OSH (stage 2), or admin — same as approve
+    if(act==="reject"&&!isAdmin){
+      const exp=ROLE_STAGE[role];
+      if(exp===undefined){setErrMsg("Your role is not authorised to reject permits.");return;}
+      if(permit.stage!==exp){setErrMsg("This permit is not at your stage — you cannot reject it.");return;}
+      if(!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
+    }
+    if(act==="reject"&&isAdmin&&!rejectReason.trim()){setErrMsg("Provide a rejection reason.");return;}
+    // Issue: only issuer or admin, only at stage 3
+    if(act==="issue"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuer can issue a permit.");return;}
+    if(act==="issue"&&permit.stage!==3&&!isAdmin){setErrMsg("Permit must be OSH-approved before issuance.");return;}
+    if(act==="issue"&&!allChecked){setErrMsg("Complete all site verification checklist items before issuing.");return;}
+    // Work complete: only requester or admin
+    if(act==="work_complete"&&!isAdmin&&role!=="requester"){setErrMsg("Only the Work In-charge can sign off work completion.");return;}
+    // Close: only issuer or admin
+    if(act==="close"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can close a permit.");return;}
+    // Suspend: only issuer or admin
+    if(act==="suspend"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can suspend a permit.");return;}
+    // Extension request: only requester or admin
+    if(act==="ext_request"&&!isAdmin&&role!=="requester"){setErrMsg("Only the Work In-charge can request an extension.");return;}
+    // Extension approve/reject: only issuer or admin
+    if((act==="ext_approve"||act==="ext_reject")&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can approve or reject extensions.");return;}
+    // ─────────────────────────────────────────────────────────────────
     setBusy(true);
     let ns=permit.status,st=permit.stage,ex=permit.extensions||0;const extra={};
     if(act==="approve"){if(role==="safety_officer"||permit.stage===2)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st===4?"pending":"pending";}
@@ -631,7 +658,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
       <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
         {showRejectBox&&(<div style={{background:B.dangerLight,border:`0.5px solid ${B.danger}`,borderRadius:8,padding:"1rem"}}><p style={{fontSize:12,fontWeight:600,color:B.danger,marginBottom:8}}>Reason for rejection *</p><textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Provide clear reason…" rows={3} style={{marginBottom:8,borderColor:B.danger}}/><div style={{display:"flex",gap:8}}><button onClick={()=>action("reject")} disabled={busy||!rejectReason.trim()} style={{flex:1,background:B.danger,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Confirm rejection</button><button onClick={()=>{setShowRejectBox(false);setRejectReason("");}} style={{flex:1,background:"transparent",border:`0.5px solid ${B.neutralBorder}`,borderRadius:8,padding:"9px",fontSize:12,cursor:"pointer",color:B.textSub}}>Cancel</button></div></div>)}
-        {permit.status==="pending"&&permit.stage!==4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>{busy?"Processing…":"Approve & forward"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
+        {permit.status==="pending"&&permit.stage!==4&&!showRejectBox&&(session.profile.role==="admin"||(ROLE_STAGE[session.profile.role]===permit.stage))&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("approve")} disabled={busy} style={{flex:1,background:busy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:busy?"not-allowed":"pointer"}}>{busy?"Processing…":"Approve & forward"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {permit.status==="pending"&&permit.stage===4&&!showRejectBox&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("issue")} disabled={busy||!allChecked} style={{flex:2,background:(busy||!allChecked)?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:(busy||!allChecked)?"not-allowed":"pointer"}}>{busy?"Processing…":allChecked?"Issue permit":"Complete checklist first"}</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {permit.status==="active"&&(<div style={{display:"flex",flexDirection:"column",gap:8}}>
   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
