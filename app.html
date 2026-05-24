@@ -549,7 +549,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     // ─────────────────────────────────────────────────────────────────
     setBusy(true);
     let ns=permit.status,st=permit.stage,ex=permit.extensions||0;const extra={};
-    if(act==="approve"){if(role==="safety_officer"||permit.stage===2)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st===4?"pending":"pending";}
+    if(act==="approve"){if(role==="safety_officer"||permit.stage===2)extra.form_data={...fd,osh_additional_controls:oshControls,checklist_generated:true};st=Math.min(permit.stage+1,4);ns=st===4?"active":"pending";}
     else if(act==="issue"){st=4;ns="active";extra.issued_by=session.userId;extra.issued_at=nowStr();extra.form_data={...fd,issuer_checklist:checklistDone,issued_by_name:session.profile.full_name};}
     else if(act==="reject"){ns="rejected";extra.form_data={...fd,rejection_reason:rejectReason,rejected_by:session.profile.full_name,rejected_at:nowStr()};}
     else if(act==="work_complete"){ns="work_complete";extra.form_data={...fd,work_completed_by:session.profile.full_name,work_completed_at:nowStr()};}
