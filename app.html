@@ -236,6 +236,8 @@ function Login({onLogin}){
       const org=orgs&&orgs[0]?orgs[0]:{name:"Your Organisation"};
       if(org&&org.active===false){setErr("Organisation suspended. Contact support.");setBusy(false);return;}
       onLogin({token,userId:uid,profile,org,apiKey:decodeApiKey(org.anthropic_key)});
+      // Persist session so PDF window.open doesn't lose it on mobile
+      try{sessionStorage.setItem("controlit_session",JSON.stringify({token,userId:uid,profile,org,apiKey:decodeApiKey(org.anthropic_key)}));}catch(e){}
       // Request push permission after login
       setTimeout(()=>subscribeToPush(token,uid,profile.org_id),2000);
     }catch(e){setErr("Connection error.");}
@@ -627,7 +629,10 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
           </div>
         )}
         {fd.tools_equipment&&<Card title="Tools & Equipment" collapsible><p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.tools_equipment}</p></Card>}
-        {fd.selected_controls?.length>0&&(<Card title="Control Measures — Requester" collapsible>{fd.selected_controls.map((c,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"5px 0",borderBottom:`0.5px solid ${B.neutralBorder}`}}><span style={{color:B.accent,fontWeight:700,flexShrink:0}}>✓</span><span style={{fontSize:13,color:c==="RA Required"?B.accentBorder:B.text,fontWeight:c==="RA Required"?700:400}}>{c}</span></div>))}</Card>)}
+        {fd.selected_controls?.length>0&&(<Card title="Control Measures — Requester" collapsible>
+              <div style={{background:"rgba(217,123,0,0.08)",border:`0.5px solid ${B.warn}`,borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+                <p style={{fontSize:11,color:B.warn,lineHeight:1.6}}>⚠ <strong>Disclaimer:</strong> The control measures listed here are standard HSE requirements for this permit type. They are not exhaustive. The OSH Manager may add additional site-specific controls relevant to the activity. All parties must ensure controls appropriate to the specific task and environment are implemented.</p>
+              </div>{fd.selected_controls.map((c,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"5px 0",borderBottom:`0.5px solid ${B.neutralBorder}`}}><span style={{color:B.accent,fontWeight:700,flexShrink:0}}>✓</span><span style={{fontSize:13,color:c==="RA Required"?B.accentBorder:B.text,fontWeight:c==="RA Required"?700:400}}>{c}</span></div>))}</Card>)}
         {fd.ra_mode&&(<Card title="Risk Assessment" accent={B.accent} collapsible>
           {fd.ra_mode==="upload"&&fd.ra_file_name&&(<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>📄</span><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{fd.ra_file_name}</p><p style={{fontSize:11,color:B.textSub}}>Uploaded risk assessment</p></div>{fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{marginLeft:"auto",background:B.accent,color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:600,textDecoration:"none"}}>Download</a>}</div>)}
           {fd.ra_mode==="generate"&&fd.ra_generated&&(<div><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>AI-Generated 5×5 Risk Assessment</p><div style={{fontSize:11,lineHeight:1.6,maxHeight:280,overflowY:"auto"}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/></div>)}
@@ -820,6 +825,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,onClose}){
 <!-- SECTION 2 -->
 <div class="sec-head">Section 2 — Precautions Required</div>
 <div class="sec-sub">(To be filled by Permit Requestor) — Tick the required precautions implemented</div>
+<table style="margin-bottom:0"><tr><td style="background:#FEF3DC;border:0.5px solid #D97B00;font-size:9px;color:#7A4500;padding:5px 8px;"><strong>Note:</strong> The controls listed below are standard requirements for this permit type and are not exhaustive. The OSH Manager may add additional site-specific controls in Section 5. All parties must ensure all controls relevant to the specific activity and environment are implemented.</td></tr></table>
 ${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0
   ? `<table>${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}</table>`
   : `<table><tr><td colspan="2" style="color:#888;font-style:italic">No controls recorded</td></tr></table>`}
@@ -930,10 +936,45 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>{
           const w=window.open("","_blank","width=900,height=700");
-          w.document.write(`<!DOCTYPE html><html><head><title>${permit.permit_number} — ${orgName}</title><style>body{margin:0;padding:20px;font-family:Arial,sans-serif}@media print{@page{size:A4;margin:15mm}}</style></head><body>${html}</body></html>`);
-          w.document.close();
-          w.focus();
-          setTimeout(()=>{w.print();},500);
+          if(w){
+            w.document.write(`<!DOCTYPE html><html><head>
+              <meta charset="UTF-8"/>
+              <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+              <title>${permit.permit_number} — ${orgName}</title>
+              <style>
+                *{box-sizing:border-box;margin:0;padding:0;}
+                body{font-family:Arial,sans-serif;background:#fff;}
+                .pbar{
+                  position:sticky;top:0;left:0;right:0;
+                  background:#1A3A5C;
+                  padding:60px 16px 12px 16px;
+                  display:flex;justify-content:space-between;align-items:center;
+                  z-index:9999;gap:8px;
+                }
+                .pbar-title{color:#fff;font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+                .btn-p{background:#0E9E6E;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+                .btn-c{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;white-space:nowrap;}
+                .pcontent{padding:16px;}
+                @media print{
+                  .pbar{display:none!important;}
+                  .pcontent{padding:0;}
+                  @page{size:A4;margin:15mm;}
+                }
+              </style>
+            </head><body>
+              <div class="pbar">
+                <span class="pbar-title">📄 ${permit.permit_number}</span>
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                  <button class="btn-p" onclick="window.print()">🖨 Print / PDF</button>
+                  <button class="btn-c" onclick="window.close()">✕ Close</button>
+                </div>
+              </div>
+              <div class="pcontent">${html}</div>
+            </body></html>`);
+            w.document.close();
+            w.focus();
+            setTimeout(()=>{w.print();},600);
+          }
         }} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>🖨 Print / Save as PDF</button>
           <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
         </div>
@@ -1437,7 +1478,14 @@ ${typeSections}
 
 // ── App Root ──────────────────────────────────────────────────────────────────
 function App(){
-  const[session,setSession]=useState(null);const[screen,setScreen]=useState("dashboard");const[permits,setPermits]=useState([]);const[selected,setSelected]=useState(null);const[loading,setLoading]=useState(false);const[error,setError]=useState("");const[setupDone,setSetupDone]=useState(false);const[unread,setUnread]=useState(0);
+  const[session,setSession]=useState(()=>{
+    // Restore session from sessionStorage if available (prevents logout after PDF print on mobile)
+    try{
+      const saved=sessionStorage.getItem("controlit_session");
+      if(saved)return JSON.parse(saved);
+    }catch(e){}
+    return null;
+  });const[screen,setScreen]=useState("dashboard");const[permits,setPermits]=useState([]);const[selected,setSelected]=useState(null);const[loading,setLoading]=useState(false);const[error,setError]=useState("");const[setupDone,setSetupDone]=useState(false);const[unread,setUnread]=useState(0);
   const fetchPermits=useCallback(async()=>{if(!session)return;setLoading(true);setError("");try{const d=await sb.select(session.token,"permits","order=created_at.desc");if(Array.isArray(d))setPermits(d);else setError("Failed to load permits.");}catch(e){setError("Connection error.");}setLoading(false);},[session]);
   const fetchUnread=useCallback(async()=>{if(!session)return;try{const d=await sb.select(session.token,"notifications",`user_id=eq.${session.userId}&is_read=eq.false&select=id`);if(Array.isArray(d))setUnread(d.length);}catch(e){}},[session]);
 
