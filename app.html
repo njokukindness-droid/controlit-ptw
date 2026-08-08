@@ -296,79 +296,407 @@ function ChangePassword({session,onBack}){
   return(<div><Topbar title="Change Password" onBack={onBack}/><div style={{padding:"1.25rem"}}>{ok?(<div style={{textAlign:"center",padding:"2rem"}}><div style={{fontSize:48,marginBottom:16}}>✓</div><p style={{fontSize:16,fontWeight:600,color:B.text,marginBottom:8}}>Password updated</p><button onClick={onBack} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 24px",fontSize:13,fontWeight:600,cursor:"pointer"}}>Back</button></div>):(<><div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"10px 14px",marginBottom:"1rem"}}><p style={{fontSize:12,color:B.textSub}}>Signed in as <strong>{session.profile.email}</strong></p></div>{err&&<ErrBox msg={err}/>}<div style={{display:"flex",flexDirection:"column",gap:12}}><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Current password *</label><input type="password" value={c} onChange={e=>setC(e.target.value)}/></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>New password *</label><input type="password" value={n} onChange={e=>setN(e.target.value)}/></div><div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Confirm new *</label><input type="password" value={cn} onChange={e=>setCn(e.target.value)}/></div></div><button onClick={save} disabled={busy} style={{marginTop:"1.5rem",width:"100%",background:busy?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:busy?"not-allowed":"pointer"}}>{busy?"Updating…":"Update password"}</button></>)}</div></div>);
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// ── Dashboard (Cockpit Edition) ───────────────────────────────────────────────
+// DROP-IN REPLACEMENT for the existing Dashboard function in app.html
+// All props, logic, and Supabase data flow unchanged — visual layer only.
+//
+// REQUIRES: Add Chart.js before </body> in app.html if not already present:
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+// ─────────────────────────────────────────────────────────────────────────────
+
 function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread,onAdmin,onWorkflow,onRegister,onChangePass,onLogout}){
   const[filter,setFilter]=useState("all");
-  const counts={active:permits.filter(p=>p.status==="active").length,pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,revoked:permits.filter(p=>p.status==="revoked").length,closed:permits.filter(p=>p.status==="closed").length,expired:permits.filter(p=>p.status==="expired").length};
+  const counts={
+    active:permits.filter(p=>p.status==="active").length,
+    pending:permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,
+    revoked:permits.filter(p=>p.status==="revoked").length,
+    closed:permits.filter(p=>p.status==="closed").length,
+    expired:permits.filter(p=>p.status==="expired").length
+  };
   const filtered=filter==="all"?permits:permits.filter(p=>p.status===filter||(filter==="pending"&&p.status==="extension_pending"));
+
+  // Donut chart — rendered once after mount
+  React.useEffect(()=>{
+    if(typeof Chart==="undefined")return;
+    const canvas=document.getElementById("cockpit-donut");
+    if(!canvas)return;
+    if(canvas._chartInstance)canvas._chartInstance.destroy();
+    const typeCounts={};
+    permits.forEach(p=>{const t=pt(p.type);typeCounts[t.label||p.type]=(typeCounts[t.label||p.type]||0)+1;});
+    const labels=Object.keys(typeCounts);
+    const data=Object.values(typeCounts);
+    const palette=["#0E9E6E","#E24B4A","#378ADD","#EDA100","#7F77DD","#1BAFA7","#EB6834"];
+    canvas._chartInstance=new Chart(canvas,{
+      type:"doughnut",
+      data:{labels,datasets:[{data,backgroundColor:palette.slice(0,labels.length),borderWidth:2,borderColor:"rgba(10,20,40,0.9)",hoverOffset:4}]},
+      options:{responsive:false,cutout:"68%",plugins:{legend:{display:false},tooltip:{enabled:true}},animation:{animateRotate:true,duration:900}}
+    });
+  },[permits]);
+
+  // Starfield — rendered once on mount
+  React.useEffect(()=>{
+    const sf=document.getElementById("cockpit-stars");
+    if(!sf||sf.children.length>0)return;
+    for(let i=0;i<60;i++){
+      const s=document.createElement("div");
+      const sz=Math.random()*1.5+0.5;
+      s.style.cssText=`position:absolute;border-radius:50%;background:rgba(255,255,255,0.6);width:${sz}px;height:${sz}px;top:${Math.random()*60}%;left:${Math.random()*100}%;opacity:${Math.random()*0.5+0.1}`;
+      sf.appendChild(s);
+    }
+  },[]);
+
+  const typeBreakdown=(()=>{
+    const map={};
+    permits.forEach(p=>{const t=pt(p.type);const k=t.label||p.type;map[k]=(map[k]||0)+1;});
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  })();
+  const palette=["#0E9E6E","#E24B4A","#378ADD","#EDA100","#7F77DD","#1BAFA7","#EB6834"];
+  const total=permits.length||0;
+  const maxType=typeBreakdown.length?typeBreakdown[0][1]:1;
+
+  // Recent alerts — last 5 non-active permits sorted by updated_at
+  const alerts=[...permits]
+    .filter(p=>["revoked","expired","rejected","closed"].includes(p.status))
+    .sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at))
+    .slice(0,5);
+
+  const alertColor=s=>s==="revoked"||s==="rejected"?"#E24B4A":s==="expired"?"#888":"#0E9E6E";
+  const alertLabel=s=>s==="revoked"?"Revoked":s==="rejected"?"Rejected":s==="expired"?"Expired":"Closed";
+
+  const timeAgo=ts=>{
+    if(!ts)return"";
+    const d=Math.floor((Date.now()-new Date(ts))/864e5);
+    if(d===0)return"today";
+    if(d===1)return"1d ago";
+    if(d<30)return d+"d ago";
+    if(d<60)return"1mo ago";
+    return Math.floor(d/30)+"mo ago";
+  };
+
+  const badgeStyle=status=>{
+    const map={
+      active:{bg:"rgba(14,158,110,0.15)",color:"#4DDBAB",border:"rgba(14,158,110,0.35)"},
+      pending:{bg:"rgba(237,161,0,0.15)",color:"#FFCC55",border:"rgba(237,161,0,0.35)"},
+      extension_pending:{bg:"rgba(237,161,0,0.15)",color:"#FFCC55",border:"rgba(237,161,0,0.35)"},
+      revoked:{bg:"rgba(226,75,74,0.15)",color:"#F88",border:"rgba(226,75,74,0.35)"},
+      rejected:{bg:"rgba(226,75,74,0.15)",color:"#F88",border:"rgba(226,75,74,0.35)"},
+      closed:{bg:"rgba(55,138,221,0.15)",color:"#7BC",border:"rgba(55,138,221,0.35)"},
+      expired:{bg:"rgba(136,135,128,0.15)",color:"#AAA",border:"rgba(136,135,128,0.35)"},
+    };
+    return map[status]||{bg:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.6)",border:"rgba(255,255,255,0.15)"};
+  };
+
+  const borderLeft=status=>{
+    const map={active:"#0E9E6E",pending:"#EDA100",extension_pending:"#EDA100",revoked:"#E24B4A",rejected:"#E24B4A",closed:"#378ADD",expired:"#888"};
+    return map[status]||"#444";
+  };
+
+  const now=new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+
+  const cockpitStyles=`
+    .cockpit-wrap{position:relative;min-height:100vh;background:#0a1a2e;font-family:inherit;overflow:hidden;}
+    .cockpit-scene{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#0a1520 0%,#0d2035 35%,#1a3a5c 60%,#1e4a30 78%,#152e1e 100%);}
+    .cockpit-stars{position:absolute;inset:0;}
+    .cockpit-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(14,158,110,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(14,158,110,0.04) 1px,transparent 1px);background-size:40px 40px;}
+    .cockpit-site{position:absolute;bottom:0;left:0;right:0;}
+    .cockpit-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.55) 100%);}
+    .cockpit-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(14,158,110,0.12),transparent);animation:cscan 5s linear infinite;}
+    @keyframes cscan{0%{top:0%}100%{top:100%}}
+    .cockpit-hud{position:relative;z-index:10;}
+    .cp-topbar{background:rgba(10,20,40,0.88);border-bottom:1px solid rgba(14,158,110,0.3);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(8px);}
+    .cp-logo-box{width:30px;height:30px;background:#0E9E6E;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .cp-orgbar{background:rgba(14,158,110,0.07);border-bottom:1px solid rgba(14,158,110,0.15);padding:7px 18px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(4px);}
+    .cp-content{padding:14px 16px 16px;}
+    .cp-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;}
+    .cp-kpi{background:rgba(10,20,40,0.72);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);}
+    .cp-mid{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px;margin-bottom:12px;}
+    .cp-panel{background:rgba(10,20,40,0.72);border:1px solid rgba(14,158,110,0.2);border-radius:12px;padding:13px;backdrop-filter:blur(8px);}
+    .cp-panel-title{font-size:9px;color:rgba(14,158,110,0.85);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px;display:flex;align-items:center;gap:6px;}
+    .cp-panel-title::before{content:'';display:block;width:3px;height:10px;background:#0E9E6E;border-radius:2px;}
+    .cp-permit{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;margin-bottom:7px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:4px;border-left:3px solid #444;transition:background 0.15s;}
+    .cp-permit:hover{background:rgba(255,255,255,0.07);}
+    .cp-bottom{background:rgba(10,20,40,0.88);border-top:1px solid rgba(14,158,110,0.2);padding:7px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;backdrop-filter:blur(8px);}
+    .cp-navbtn{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.75);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;}
+    .cp-navbtn:hover{background:rgba(255,255,255,0.12);}
+    .cp-livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#0E9E6E;margin-right:5px;animation:cpulse 2s infinite;}
+    @keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.25}}
+    .cp-filter{border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.55);border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;}
+    .cp-filter.on{background:#1A3A5C;color:#fff;border-color:#1A3A5C;}
+    .cp-notif-badge{position:absolute;top:-4px;right:-4px;background:#E24B4A;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  `;
+
   return(
-    <div>
-      <Topbar right={<div style={{display:"flex",gap:6}}>
-        <button onClick={onNotifs} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer",position:"relative"}}>🔔{unread>0&&<span style={{position:"absolute",top:-4,right:-4,background:B.danger,color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</button>
-        {session.profile.role==="admin"&&<button onClick={onAdmin} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Admin</button>}
-        <button onClick={onWorkflow} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Workflow</button>
-        <button onClick={onRegister} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>📋 Register</button>
-        <button onClick={onChangePass} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>🔑</button>
-        <button onClick={onLogout} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>Sign out</button>
-      </div>}/>
-      <div style={{padding:"1.25rem 1.25rem 0"}}>
-        {/* Push notification permission banner */}
-        {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
-          <div style={{background:"rgba(14,158,110,0.1)",border:"0.5px solid "+B.accent,borderRadius:10,padding:"10px 14px",marginBottom:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <p style={{fontSize:12,fontWeight:600,color:B.accentBorder}}>🔔 Enable push notifications</p>
-              <p style={{fontSize:11,color:B.textSub}}>Get notified when permits reach your stage — even when the app is closed.</p>
-              {/iPhone|iPad|iPod/.test(navigator.userAgent)&&(
-                <p style={{fontSize:10,color:B.warn,marginTop:4}}>📱 iOS: First add this app to your Home Screen via Safari Share → "Add to Home Screen", then enable.</p>
-              )}
-            </div>
-            <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:10}}>Enable</button>
-          </div>
-        )}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
-          <div><p style={{fontSize:13,color:B.textSub}}>Welcome, <strong style={{color:B.text}}>{session.profile.full_name}</strong></p><p style={{fontSize:11,color:B.textSub}}>{session.org.name} · {roleLabel(session.profile.role)}</p></div>
-          <button onClick={onNew} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New permit</button>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:"1.25rem"}}>
-          {[["Active",counts.active,B.accent],["Pending",counts.pending,B.warn],["Revoked",counts.revoked,B.danger],["Closed",counts.closed,B.textSub],["Expired",counts.expired,"#8B4513"]].map(([l,v,c])=>(
-            <div key={l} style={{background:B.neutral,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${c}`}}><p style={{fontSize:11,color:B.textSub}}>{l}</p><p style={{fontSize:22,fontWeight:700,color:c}}>{v}</p></div>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:6,marginBottom:"1rem",flexWrap:"wrap"}}>
-          {["all","active","pending","revoked","closed","expired"].map(s=>(
-            <button key={s} onClick={()=>setFilter(s)} style={{border:`0.5px solid ${filter===s?B.primary:B.neutralBorder}`,background:filter===s?B.primary:"transparent",color:filter===s?"#fff":B.textSub,borderRadius:20,padding:"4px 14px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{s==="all"?"All permits":s}</button>
-          ))}
-        </div>
+    <div className="cockpit-wrap">
+      <style>{cockpitStyles}</style>
+
+      {/* ── Scene ── */}
+      <div className="cockpit-scene">
+        <div className="cockpit-stars" id="cockpit-stars"/>
+        <div className="cockpit-grid"/>
+        <svg className="cockpit-site" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="90" width="800" height="110" fill="#0d1e10" opacity="0.97"/>
+          <rect x="20" y="55" width="65" height="85" fill="#0f2218" rx="2"/>
+          <rect x="40" y="44" width="22" height="16" fill="#0f2218"/>
+          <rect x="110" y="68" width="85" height="62" fill="#0d1e10" rx="2"/>
+          <rect x="125" y="57" width="16" height="15" fill="#0d2015"/>
+          <rect x="152" y="57" width="16" height="15" fill="#0d2015"/>
+          <rect x="220" y="28" width="3" height="95" fill="#112b17"/>
+          <line x1="221" y1="28" x2="255" y2="56" stroke="#112b17" stroke-width="1.5"/>
+          <line x1="221" y1="28" x2="187" y2="56" stroke="#112b17" stroke-width="1.5"/>
+          <rect x="218" y="56" width="38" height="3" fill="#112b17"/>
+          <rect x="270" y="62" width="55" height="68" fill="#0e2214" rx="2"/>
+          <rect x="283" y="51" width="28" height="15" fill="#0e2214"/>
+          <rect x="345" y="42" width="3" height="80" fill="#122a18"/>
+          <line x1="346" y1="42" x2="380" y2="66" stroke="#122a18" stroke-width="1.5"/>
+          <rect x="343" y="66" width="38" height="3" fill="#122a18"/>
+          <rect x="390" y="68" width="95" height="62" fill="#0c1d10" rx="2"/>
+          <rect x="408" y="56" width="22" height="16" fill="#0c1d10"/>
+          <rect x="440" y="56" width="22" height="16" fill="#0c1d10"/>
+          <rect x="510" y="52" width="3" height="70" fill="#112b17"/>
+          <line x1="511" y1="52" x2="548" y2="76" stroke="#112b17" stroke-width="1.5"/>
+          <rect x="508" y="76" width="42" height="3" fill="#112b17"/>
+          <rect x="558" y="70" width="75" height="60" fill="#0d2012" rx="2"/>
+          <rect x="655" y="36" width="3" height="86" fill="#122a18"/>
+          <line x1="656" y1="36" x2="692" y2="60" stroke="#122a18" stroke-width="1.5"/>
+          <rect x="652" y="60" width="42" height="3" fill="#122a18"/>
+          <rect x="704" y="62" width="90" height="68" fill="#0e2114" rx="2"/>
+          <rect x="0" y="162" width="800" height="38" fill="#091708" opacity="0.92"/>
+          <rect x="0" y="190" width="800" height="10" fill="#071208"/>
+          <circle cx="221" cy="29" r="3.5" fill="#0E9E6E" opacity="0.7"/>
+          <circle cx="346" cy="43" r="3.5" fill="#0E9E6E" opacity="0.7"/>
+          <circle cx="511" cy="53" r="3.5" fill="#EDA100" opacity="0.6"/>
+          <circle cx="656" cy="37" r="3.5" fill="#0E9E6E" opacity="0.7"/>
+        </svg>
+        <div className="cockpit-vignette"/>
+        <div className="cockpit-scan"/>
       </div>
-      <div style={{padding:"0 1.25rem 2rem"}}>
-        {loading&&<Spinner/>}{error&&<ErrBox msg={error}/>}
-        {!loading&&!error&&filtered.length===0&&<div style={{textAlign:"center",padding:"3rem 1rem"}}><p style={{fontSize:32}}>📋</p><p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>No permits yet</p><p style={{fontSize:13,color:B.textSub}}>Create your first permit to get started.</p></div>}
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {filtered.map(p=>{
-            const t=pt(p.type);
-            return(
-              <div key={p.id} onClick={()=>onSelect(p)} style={{background:"#fff",border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",borderLeft:`3px solid ${t.color||B.textSub}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                  <div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{p.title}</p><p style={{fontSize:11,color:B.textSub}}>{p.permit_number} · {p.area}</p></div>
-                  <span style={{background:p.status==="expired"?"rgba(139,69,19,0.15)":B.accentLight,color:p.status==="expired"?"#8B4513":B.accentBorder,border:`0.5px solid ${p.status==="expired"?"#8B4513":B.accent}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(p.status||"").replace("_"," ")}</span>
+
+      {/* ── HUD ── */}
+      <div className="cockpit-hud">
+
+        {/* Top bar */}
+        <div className="cp-topbar">
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div className="cp-logo-box">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2,8 7,13 14,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div>
+              <div style={{color:"#fff",fontSize:15,fontWeight:500,letterSpacing:"1.5px"}}>CONTROLIT</div>
+              <div style={{color:"rgba(14,158,110,0.8)",fontSize:10,letterSpacing:"0.5px"}}>PERMIT TO WORK PLATFORM</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={onNotifs} className="cp-navbtn" style={{position:"relative"}}>
+              🔔{unread>0&&<span className="cp-notif-badge">{unread}</span>}
+            </button>
+            {session.profile.role==="admin"&&<button onClick={onAdmin} className="cp-navbtn">Admin</button>}
+            <button onClick={onWorkflow} className="cp-navbtn">Workflow</button>
+            <button onClick={onRegister} className="cp-navbtn">📋 Register</button>
+            <button onClick={onChangePass} className="cp-navbtn">🔑</button>
+            <button onClick={onLogout} className="cp-navbtn">Sign out</button>
+          </div>
+          <button onClick={onNew} style={{background:"#0E9E6E",color:"#fff",border:"none",borderRadius:7,padding:"7px 16px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ New permit</button>
+        </div>
+
+        {/* Org bar */}
+        <div className="cp-orgbar">
+          <div>
+            <div style={{color:"rgba(255,255,255,0.88)",fontSize:12,fontWeight:500}}>
+              Welcome, <strong style={{color:"#fff"}}>{session.profile.full_name}</strong>
+            </div>
+            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)}</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span><span className="cp-livedot"/><span style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>Live · {now}</span></span>
+          </div>
+        </div>
+
+        <div className="cp-content">
+
+          {/* Push notification banner */}
+          {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
+            <div style={{background:"rgba(14,158,110,0.1)",border:"1px solid rgba(14,158,110,0.3)",borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <p style={{fontSize:12,fontWeight:600,color:"#4DDBAB"}}>🔔 Enable push notifications</p>
+                <p style={{fontSize:11,color:"rgba(255,255,255,0.55)"}}>Get notified when permits reach your stage — even when the app is closed.</p>
+                {/iPhone|iPad|iPod/.test(navigator.userAgent)&&(
+                  <p style={{fontSize:10,color:"#EDA100",marginTop:4}}>📱 iOS: Add to Home Screen first via Safari Share → "Add to Home Screen"</p>
+                )}
+              </div>
+              <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:"#0E9E6E",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:10}}>Enable</button>
+            </div>
+          )}
+
+          {/* KPI row */}
+          <div className="cp-kpi-row">
+            {[
+              ["Active",counts.active,"#0E9E6E","live permits"],
+              ["Pending",counts.pending,"#EDA100","awaiting approval"],
+              ["Revoked",counts.revoked,"#E24B4A","this month"],
+              ["Closed",counts.closed,"#378ADD","completed"],
+              ["Expired",counts.expired,"#888","past deadline"]
+            ].map(([l,v,c,sub])=>(
+              <div key={l} className="cp-kpi" style={{borderTop:`2px solid ${c}`}}>
+                <p style={{fontSize:9,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>{l}</p>
+                <p style={{fontSize:26,fontWeight:500,color:c,lineHeight:1}}>{v}</p>
+                <p style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:3}}>{sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mid row */}
+          <div className="cp-mid">
+
+            {/* Donut */}
+            <div className="cp-panel">
+              <div className="cp-panel-title">Permit breakdown</div>
+              <div style={{position:"relative",width:110,height:110,margin:"0 auto 12px"}}>
+                <canvas id="cockpit-donut" width="110" height="110" role="img" aria-label="Donut chart of permit types"/>
+                <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+                  <span style={{fontSize:22,fontWeight:500,color:"#fff",lineHeight:1}}>{total}</span>
+                  <span style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>total</span>
                 </div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{background:B.neutral,color:B.textSub,border:`0.5px solid ${B.neutralBorder}`,borderRadius:20,padding:"2px 10px",fontSize:11}}>{t.label||p.type}</span>
-                  <div style={{display:"flex",gap:3,minWidth:100,alignItems:"center"}}>
-                    {[0,1,2,3].map(i=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<p.stage?B.accent:i===p.stage?B.warn:"#D1D8E0"}}/>)}
-                    <span style={{fontSize:10,color:B.textSub,marginLeft:4}}>{p.stage}/4</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {typeBreakdown.slice(0,5).map(([label,count],i)=>(
+                  <div key={label} style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:palette[i],flexShrink:0}}/>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.6)",flex:1}}>{label}</span>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.9)",fontWeight:500}}>{count}</span>
+                  </div>
+                ))}
+                {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>No permits yet</p>}
+              </div>
+            </div>
+
+            {/* Bar chart */}
+            <div className="cp-panel">
+              <div className="cp-panel-title">Types this month</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {typeBreakdown.slice(0,6).map(([label,count],i)=>(
+                  <div key={label} style={{display:"flex",alignItems:"center",gap:7}}>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.5)",width:80,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
+                    <div style={{flex:1,height:5,background:"rgba(255,255,255,0.07)",borderRadius:3,overflow:"hidden"}}>
+                      <div style={{height:"100%",borderRadius:3,background:palette[i],width:`${Math.round((count/maxType)*100)}%`}}/>
+                    </div>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",width:14,textAlign:"right"}}>{count}</span>
+                  </div>
+                ))}
+                {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>No data yet</p>}
+              </div>
+              <div style={{marginTop:14,paddingTop:10,borderTop:"1px solid rgba(255,255,255,0.07)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Approval rate</span>
+                <span style={{fontSize:12,color:"#0E9E6E",fontWeight:500}}>
+                  {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
+                </span>
+              </div>
+            </div>
+
+            {/* Alerts */}
+            <div className="cp-panel">
+              <div className="cp-panel-title">Alerts &amp; activity</div>
+              {alerts.length===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>No recent activity</p>}
+              {alerts.map((p,i)=>{
+                const t=pt(p.type);
+                return(
+                  <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 0",borderBottom:i<alerts.length-1?"1px solid rgba(255,255,255,0.05)":"none",cursor:"pointer"}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",background:alertColor(p.status),marginTop:4,flexShrink:0}}/>
+                    <div style={{flex:1,fontSize:11,color:"rgba(255,255,255,0.75)",lineHeight:1.3}}>
+                      <span style={{color:"rgba(14,158,110,0.85)",fontWeight:500}}>{p.permit_number}</span> {alertLabel(p.status)} — {t.label||p.type} · {p.area}
+                    </div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",whiteSpace:"nowrap"}}>{timeAgo(p.updated_at||p.created_at)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Permit register */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.7)"}}>Permit register</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {["all","active","pending","revoked","closed","expired"].map(s=>(
+                <button key={s} onClick={()=>setFilter(s)} className={`cp-filter${filter===s?" on":""}`}>
+                  {s==="all"?"All":s.charAt(0).toUpperCase()+s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading&&<Spinner/>}
+          {error&&<ErrBox msg={error}/>}
+          {!loading&&!error&&filtered.length===0&&(
+            <div style={{textAlign:"center",padding:"3rem 1rem"}}>
+              <p style={{fontSize:32}}>📋</p>
+              <p style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.7)",marginTop:8}}>No permits yet</p>
+              <p style={{fontSize:13,color:"rgba(255,255,255,0.4)"}}>Create your first permit to get started.</p>
+            </div>
+          )}
+
+          <div style={{display:"flex",flexDirection:"column",gap:7,paddingBottom:"6rem"}}>
+            {filtered.map(p=>{
+              const t=pt(p.type);
+              const bs=badgeStyle(p.status);
+              return(
+                <div key={p.id} onClick={()=>onSelect(p)} className="cp-permit" style={{borderLeftColor:borderLeft(p.status)}}>
+                  <div>
+                    <div style={{fontSize:9,color:"#0E9E6E",fontWeight:500,marginBottom:2}}>{p.permit_number}</div>
+                    <div style={{fontSize:12,color:"rgba(255,255,255,0.85)",marginBottom:3,lineHeight:1.35}}>{p.title}</div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>{p.area}</div>
+                    {p.status==="rejected"&&<p style={{fontSize:10,color:"#E24B4A",marginTop:4}}>Rejected — see permit for reason</p>}
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
+                    <span style={{fontSize:9,padding:"2px 8px",borderRadius:20,fontWeight:500,background:bs.bg,color:bs.color,border:`1px solid ${bs.border}`,whiteSpace:"nowrap",textTransform:"capitalize"}}>
+                      {(p.status||"").replace("_"," ")}
+                    </span>
+                    <span style={{fontSize:9,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",padding:"2px 7px",borderRadius:20,whiteSpace:"nowrap"}}>
+                      {t.label||p.type}
+                    </span>
+                    <div style={{display:"flex",gap:2}}>
+                      {[0,1,2,3].map(i=>(
+                        <div key={i} style={{width:12,height:3,borderRadius:2,background:i<p.stage?"#0E9E6E":i===p.stage?"#EDA100":"rgba(255,255,255,0.12)"}}/>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                {p.status==="rejected"&&<p style={{fontSize:10,color:B.danger,marginTop:5}}>Rejected — see permit for reason</p>}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="cp-bottom" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20}}>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Platform</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>CONTROLIT v1.0</span>
+          </div>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Org</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>{session.org.name}</span>
+          </div>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Total permits</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>{total}</span>
+          </div>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Approval rate</span>
+            <span style={{fontSize:11,color:"#0E9E6E",fontWeight:500}}>
+              {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
+            </span>
+          </div>
+          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <span className="cp-livedot"/>
+            <span style={{fontSize:11,color:"rgba(14,158,110,0.85)",fontWeight:500}}>Operational</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
 // ── New Permit ────────────────────────────────────────────────────────────────
 function NewPermit({session,onBack,onSuccess}){
   const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
