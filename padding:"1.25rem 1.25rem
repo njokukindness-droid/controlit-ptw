@@ -442,23 +442,23 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
           <rect x="125" y="57" width="16" height="15" fill="#0d2015"/>
           <rect x="152" y="57" width="16" height="15" fill="#0d2015"/>
           <rect x="220" y="28" width="3" height="95" fill="#112b17"/>
-          <line x1="221" y1="28" x2="255" y2="56" stroke="#112b17" stroke-width="1.5"/>
-          <line x1="221" y1="28" x2="187" y2="56" stroke="#112b17" stroke-width="1.5"/>
+          <line x1="221" y1="28" x2="255" y2="56" stroke="#112b17" strokeWidth="1.5"/>
+          <line x1="221" y1="28" x2="187" y2="56" stroke="#112b17" strokeWidth="1.5"/>
           <rect x="218" y="56" width="38" height="3" fill="#112b17"/>
           <rect x="270" y="62" width="55" height="68" fill="#0e2214" rx="2"/>
           <rect x="283" y="51" width="28" height="15" fill="#0e2214"/>
           <rect x="345" y="42" width="3" height="80" fill="#122a18"/>
-          <line x1="346" y1="42" x2="380" y2="66" stroke="#122a18" stroke-width="1.5"/>
+          <line x1="346" y1="42" x2="380" y2="66" stroke="#122a18" strokeWidth="1.5"/>
           <rect x="343" y="66" width="38" height="3" fill="#122a18"/>
           <rect x="390" y="68" width="95" height="62" fill="#0c1d10" rx="2"/>
           <rect x="408" y="56" width="22" height="16" fill="#0c1d10"/>
           <rect x="440" y="56" width="22" height="16" fill="#0c1d10"/>
           <rect x="510" y="52" width="3" height="70" fill="#112b17"/>
-          <line x1="511" y1="52" x2="548" y2="76" stroke="#112b17" stroke-width="1.5"/>
+          <line x1="511" y1="52" x2="548" y2="76" stroke="#112b17" strokeWidth="1.5"/>
           <rect x="508" y="76" width="42" height="3" fill="#112b17"/>
           <rect x="558" y="70" width="75" height="60" fill="#0d2012" rx="2"/>
           <rect x="655" y="36" width="3" height="86" fill="#122a18"/>
-          <line x1="656" y1="36" x2="692" y2="60" stroke="#122a18" stroke-width="1.5"/>
+          <line x1="656" y1="36" x2="692" y2="60" stroke="#122a18" strokeWidth="1.5"/>
           <rect x="652" y="60" width="42" height="3" fill="#122a18"/>
           <rect x="704" y="62" width="90" height="68" fill="#0e2114" rx="2"/>
           <rect x="0" y="162" width="800" height="38" fill="#091708" opacity="0.92"/>
@@ -1678,7 +1678,7 @@ ${typeSections}
       <div class="safe-bar" style="position:fixed;top:0;left:0;right:0;background:#1A3A5C;padding:50px 16px 10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:9999;print-color-adjust:exact">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:28px;height:28px;background:#0E9E6E;border-radius:6px;display:flex;align-items:center;justify-content:center">
-            <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M8 16 L14 22 L24 10" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M8 16 L14 22 L24 10" stroke="white" strokeWidth="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <span style="color:white;font-family:Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1px">CONTROLIT</span>
           <span style="color:rgba(255,255,255,0.5);font-family:Arial,sans-serif;font-size:12px">· PTW Log Register</span>
