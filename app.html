@@ -160,7 +160,7 @@ async function callClaude(apiKey,sys,usr,maxTok=1400){
   const d=await r.json();if(d.error)throw new Error(d.error.message||"AI error");return d.content?.[0]?.text||"";
 }
 
-const B={primary:"#1A3A5C",accent:"#0E9E6E",accentLight:"#E0F5EE",accentBorder:"#0B7A55",warn:"#D97B00",warnLight:"#FEF3DC",danger:"#C0392B",dangerLight:"#FDECEA",neutral:"#F4F6F9",neutralBorder:"#D1D8E0",text:"#1A2B3C",textSub:"#5A6A7A",white:"#FFFFFF"};
+const B={primary:"#1A3A5C",accent:"#0E9E6E",accentLight:"#E0F5EE",accentBorder:"#0B7A55",warn:"#D97B00",warnLight:"#FEF3DC",danger:"#C0392B",dangerLight:"#FDECEA",neutral:"#F4F6F9",neutralBorder:"#D1D8E0",text:"#1A2B3C",textSub:"#5A6A7A",white:"#FFFFFF",navy:"#0F1F2E",navy2:"#152535",border:"#1E3448"};
 
 const PERMIT_TYPES=[
   {id:"hot_work",label:"Hot Work",color:"#D85A30"},
@@ -1584,7 +1584,7 @@ function App(){
   if(session.firstTime&&!setupDone)return <AccountSetup session={session} onComplete={s=>{setSession(s);setSetupDone(true);}}/>;
   async function logout(){await sb.signOut(session.token);setSession(null);setPermits([]);setScreen("dashboard");setSetupDone(false);}
   function sel(p){setSelected(p);setScreen("detail");}
-  return(<div>
+  return(<div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0A1520 0%,#0F1F2E 50%,#0A2018 100%)"}}>
     {screen==="dashboard"&&<Dashboard session={session} permits={permits} loading={loading} error={error} onSelect={sel} onNew={()=>setScreen("new")} onNotifs={()=>setScreen("notifs")} unread={unread} onAdmin={()=>setScreen("admin")} onWorkflow={()=>setScreen("workflow")} onRegister={()=>setScreen("register")} onChangePass={()=>setScreen("changepass")} onLogout={logout}/>}
     {screen==="detail"&&selected&&<PermitDetail permit={selected} session={session} onBack={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}} onRefresh={async()=>{await fetchPermits();await fetchUnread();}}/>}
     {screen==="new"&&<NewPermit session={session} onBack={()=>setScreen("dashboard")} onSuccess={()=>{fetchPermits();fetchUnread();setScreen("dashboard");}}/>}
