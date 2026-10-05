@@ -1190,25 +1190,26 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
   const TASETI_COLORS={
     hot_work:"#C0392B",        // Red — Hot Work
     cold_work:"#1A5276",       // Dark Blue — Cold Work
-    confined_space:"#1E8449",  // Dark Green — Confined Space
-    electrical:"#B7950B",      // Dark Yellow/Gold — Electrical (Yellow format)
-    height:"#1F618D",          // Blue — Working at Height
-    excavation:"#784212",      // Brown/Amber — Excavation
-    lifting:"#6C3483",         // Purple — Lifting
+    confined_space:"#70AD47",  // Bright lime green — Confined Space (matching TASETI form)
+    electrical:"#FFD700",      // Yellow — Electrical (Yellow format)
+    height:"#70AD47",          // Lime green — Working at Height
+    excavation:"#ED7D31",      // Orange — Excavation
+    lifting:"#4472C4",         // Blue — Lifting
   };
   const secColor=TASETI_COLORS[permit.type]||"#1A3A5C";
+  const secTextColor=permit.type==="electrical"?"#000":"#fff";
 
   const css=`
     @page{size:A4;margin:15mm}
     body{font-family:Arial,sans-serif;font-size:10px;color:#000;margin:0;padding:0}
     table{border-collapse:collapse;width:100%}
     td,th{border:0.5px solid #999;padding:5px 8px;font-size:10px;vertical-align:top}
-    th{background:${secColor};color:#fff;font-weight:700;text-align:left}
-    .sec-head{background:${secColor};color:#fff;font-weight:700;font-size:10px;padding:5px 10px;text-transform:uppercase}
+    th{background:${secColor};color:${secTextColor};font-weight:700;text-align:left}
+    .sec-head{background:${secColor};color:${secTextColor};font-weight:700;font-size:10px;padding:5px 10px;text-transform:uppercase}
     .permit-title{font-size:14px;font-weight:700;padding:4px 0;color:${secColor};text-transform:uppercase}
     .company-header{text-align:center;font-size:13px;font-weight:700}
     .dept-header{text-align:center;font-size:11px;font-weight:600;color:${secColor}}
-    .top-header{background:${secColor};color:#fff;text-align:center;font-weight:700;font-size:13px;padding:6px;text-transform:uppercase}
+    .top-header{background:${secColor};color:${secTextColor};text-align:center;font-weight:700;font-size:13px;padding:6px;text-transform:uppercase}
     .note{font-size:9px;color:#333;padding:5px 8px;border:0.5px solid #ccc;line-height:1.5}
     .sig-row{height:36px}
     .dotline{display:inline-block;border-bottom:0.5px solid #000;min-width:180px}
@@ -1224,13 +1225,13 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     <td style="border:0.5px solid #999;width:18%;padding:6px;vertical-align:middle;text-align:center;background:#fff">
       ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:55px;max-width:85px;object-fit:contain"/>`:``}
     </td>
-    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:#fff;text-align:center;padding:5px 8px;font-size:13px;font-weight:700">
+    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:${secTextColor};text-align:center;padding:5px 8px;font-size:13px;font-weight:700">
       HEALTH, SAFETY AND ENVIRONMENT
     </td>
   </tr>
   <tr>
     <td style="border:0.5px solid #999;width:18%;background:#fff"></td>
-    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:#fff;text-align:center;padding:5px 8px;font-size:14px;font-weight:700;letter-spacing:0.5px">
+    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:${secTextColor};text-align:center;padding:5px 8px;font-size:14px;font-weight:700;letter-spacing:0.5px">
       ${(t.label||permit.type).toUpperCase()} PERMIT TO WORK
     </td>
   </tr>
