@@ -514,7 +514,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <button onClick={onChangePass} className="cp-navbtn">🔑</button>
             <button onClick={onLogout} className="cp-navbtn">Sign out</button>
           </div>
-          <button onClick={onNew} style={{background:"#0E9E6E",color:"#fff",border:"none",borderRadius:7,padding:"7px 16px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ New permit</button>
+
         </div>
 
         {/* Org bar */}
@@ -682,6 +682,30 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             })}
           </div>
         </div>
+
+        {/* Floating Action Button — New Permit */}
+        {onNew&&(
+          <button onClick={onNew} style={{
+            position:"fixed",
+            bottom:"calc(60px + env(safe-area-inset-bottom, 0px))",
+            right:20,
+            width:58,
+            height:58,
+            borderRadius:"50%",
+            background:"#0E9E6E",
+            color:"#fff",
+            border:"none",
+            fontSize:28,
+            fontWeight:300,
+            cursor:"pointer",
+            zIndex:30,
+            boxShadow:"0 4px 20px rgba(14,158,110,0.5)",
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"center",
+            lineHeight:1,
+          }} title="New Permit">+</button>
+        )}
 
         {/* Bottom bar */}
         <div className="cp-bottom" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20}}>
