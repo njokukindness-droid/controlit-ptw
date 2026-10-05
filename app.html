@@ -1082,13 +1082,256 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         {permit.status==="extension_pending"&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
-      {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} orgLogo={session.org.logo||null} onClose={()=>setShowPDF(false)}/>}
+      {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} orgLogo={session.org.logo||null} orgTemplate={session.org.pdf_template||"standard"} onClose={()=>setShowPDF(false)}/>}
     </div></div>
   );
 }
 
 // ── Permit PDF ────────────────────────────────────────────────────────────────
-function PermitPDF({permit,audit,orgName,orgLogo,onClose}){
+
+// ── TASETI PDF Template ───────────────────────────────────────────────────────
+function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry){
+  const fmtD=(s)=>s?new Date(s).toLocaleDateString("en-GB"):"___________";
+  const fmtT=(s)=>s||"___________";
+  const dotline=(val,width)=>`<span style="display:inline-block;border-bottom:0.5px solid #000;min-width:${width||180}px;padding:0 4px">${val||""}</span>`;
+  const checked=`<span style="font-size:14px">☑</span>`;
+  const unchecked=`<span style="font-size:14px">☐</span>`;
+
+  // Build precautions checklist from selected controls
+  const sel=fd.selected_controls||[];
+  const allControls=(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[]);
+
+  function ctrlTick(item){
+    const ticked=sel.some(s=>s.toLowerCase().includes(item.toLowerCase().slice(0,15)));
+    return `${ticked?checked:unchecked} ${item}`;
+  }
+
+  // Permit-type specific precautions matching TASETI forms
+  const PRECAUTIONS={
+    hot_work:[
+      "Method Statement & Risk Assessment available","TBT Conducted, recorded and attached with this PTW",
+      "Fire extinguisher (min 9kg dry powder) within 5m of work area","Hot work blanket / spark containment screen erected",
+      "Fire watch assigned, briefed and stationed throughout work","All combustibles removed or shielded within 10m radius",
+      "Welding / cutting equipment inspected and certified","Fire watch to remain 30 minutes after work completion",
+      "Continuous gas monitoring for duration of work","Area barricaded and warning signs provided","Others:"
+    ],
+    cold_work:[
+      "Risk Assessment available","Toolbox Talk (M)","Rescue Tripod","Controlled Access",
+      "Protective Clothing","Top Man","Gas Test","Warning Signage (M)",
+      "Eye Protection (M)","Fire Extinguisher","BA Set","Erect Barriers",
+      "Ear Protection","Life Vest","Forced Ventilation","Standby Boat",
+      "Protective Gloves (M)","Use of Radios","Safety Harness","Area Barricaded",
+      "Scaff Tags","Display Permit (M)","Mech./Elec. Isolation","Others"
+    ],
+    confined_space:[
+      "Gas test done and recorded","Required PPE is provided",
+      "The area been fenced / cordoned off","Attendant is identified and deployed",
+      "Proper illumination is provided","Entry/Exit log sheet available",
+      "Traffic diversion signs is displayed","Respirator is available, if required",
+      "All concerned persons been informed","Only trained personnel involved",
+      "Enough ventilation is available / provided","TBT for the activity has been given",
+      "Low voltage & flameproof lighting is arranged","Tripod availability","Others:"
+    ],
+    electrical:[
+      "Risk Assessment available","Proper illumination been arranged",
+      "TBT Conducted, recorded and attached with this PTW","Area cordon off and proper warning signage been displayed",
+      "Sources of energy have been switched off","Unauthorised entry restricted",
+      "Lockout/Tag out devices in place","PTW displayed",
+      "Protective clothing worn by operatives","Ventilation required and provided",
+      "Eye protection worn by operatives","Stand-by personnel required and provided",
+      "Fire Extinguisher available","Others:"
+    ],
+    excavation:[
+      "Is the Work Area Clearly Defined? Have the Latest work drawings been verified?",
+      "NOC from relevant authorities where required has been obtained and copy available for evidence?",
+      "Approved Method Statement and Risk Assessment Available and explained to the involved personnel?",
+      "Has the Area been Scanned for Services with CAT Scanner and CAT Scan competent person sign in the highlighted drawing?",
+      "Are All Service Locations Clearly Marked?","Has the Excavator been inspected and passed as fit to work?",
+      "Arrangement for Light/Illumination provided for any proposed night work?",
+      "If there are live underground utilities in the corridor, is there trial pit made?",
+      "In presence of Live Underground Services, a signed Permit checklist for working near live utilities has been attached?",
+      "Has the daily excavation inspection checklist been attached with this permit?",
+      "Arrangements of Barricades, Signages and Warnings lights are available in excavation area?",
+      "Excavation Design (Including structures, shoring/Benches/Slope/cross section made?"
+    ],
+    height:[
+      "Risk Assessment available","Appropriate equipment is used for material shifting/handling",
+      "TBT Conducted, recorded and attached with this PTW","Safety harness and life is provided and used by all personnel",
+      "Barrication and warning signs on ground below work activity","Secured aluminium ladder is available",
+      "No roof work shall be conducted if strong wind is blowing","Aluminium ladder access / CAT ladder is provided",
+      "Edge protection is provided for unguarded roof edges","Trained personnel involved in the activity",
+      "Work area is cleaned, tidy and has suitable work space","Others:"
+    ],
+    lifting:[
+      "Equipment/lifting gear 3rd party certificates verified","Over head lines have been identified",
+      "Equipment/lifting gears is checked for any damage","Lifting area is barricaded and warning signs provided",
+      "Trained and certified Operator available","Lifting plan prepared and attached",
+      "Trained and certified rigger available","Training/TBT has been conducted",
+      "Applicable Third party certificates attached with PTW","Crane is positioned on firm and compacted ground",
+      "Risk Assessment available","Nearest excavation is at least 1.5 meters away from crane","Others:"
+    ],
+  };
+
+  const precautions=PRECAUTIONS[permit.type]||sel;
+
+  // Build precaution rows — 2 columns
+  function precautionTable(items){
+    let rows="";
+    for(let i=0;i<items.length;i+=2){
+      rows+=`<tr>
+        <td style="padding:4px 8px;border:0.5px solid #999;width:50%;font-size:10px">${ctrlTick(items[i])}</td>
+        <td style="padding:4px 8px;border:0.5px solid #999;width:50%;font-size:10px">${items[i+1]?ctrlTick(items[i+1]):"&nbsp;"}</td>
+      </tr>`;
+    }
+    return `<table style="width:100%;border-collapse:collapse">${rows}</table>`;
+  }
+
+  const css=`
+    @page{size:A4;margin:15mm}
+    body{font-family:Arial,sans-serif;font-size:10px;color:#000;margin:0;padding:0}
+    table{border-collapse:collapse;width:100%}
+    td,th{border:0.5px solid #999;padding:5px 8px;font-size:10px;vertical-align:top}
+    th{background:#1A3A5C;color:#fff;font-weight:700;text-align:left}
+    .sec-head{background:#1A3A5C;color:#fff;font-weight:700;font-size:10px;padding:5px 10px;text-transform:uppercase}
+    .permit-title{text-align:center;font-size:16px;font-weight:700;padding:6px;text-transform:uppercase}
+    .company-header{text-align:center;font-size:13px;font-weight:700}
+    .dept-header{text-align:center;font-size:11px;font-weight:600}
+    .note{font-size:9px;color:#333;padding:5px 8px;border:0.5px solid #ccc;line-height:1.5}
+    .sig-row{height:36px}
+    .dotline{display:inline-block;border-bottom:0.5px solid #000;min-width:180px}
+    .ref{font-size:9px;color:#555;text-align:right;margin-top:4px}
+    h4{margin:0;font-size:10px}
+  `;
+
+  return `<style>${css}</style>
+
+<!-- HEADER -->
+<table style="border:0.5px solid #999;margin-bottom:0">
+  <tr>
+    <td style="border:none;width:70%;padding:8px 10px">
+      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:50px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`:``}
+      <div class="company-header">${orgName}</div>
+      <div class="dept-header">Occupational Safety and Health</div>
+      <div class="permit-title" style="font-size:14px;text-align:left;padding:4px 0">${t.label||permit.type} Permit to Work</div>
+    </td>
+    <td style="border:none;width:30%;padding:8px 10px;text-align:right;vertical-align:top">
+      <div style="font-size:10px;font-weight:700">Permit No:</div>
+      <div style="font-size:13px;font-weight:700;color:#1A3A5C">${permit.permit_number}</div>
+      <div style="font-size:8px;color:#888;margin-top:6px">Managed by CONTROLIT</div>
+    </td>
+  </tr>
+</table>
+<div class="note">This permit-to-work (PTW) is to be retained by the Work In-charge / Work Performer while work is in progress and must be displayed in the working area. A copy of this PTW must be retained by the Issuing Authority. After completion/cancellation of the work this PTW must be returned to the Issuing Authority / OSH Department for the record keeping procedure.</div>
+
+<!-- SECTION 1: WORK DESCRIPTION -->
+<div class="sec-head" style="margin-top:8px">Section-1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Work Description</div>
+<table>
+  <tr>
+    <td style="width:50%"><b>Work Duration</b><br/>Date: From: <b>${fd.work_date_from||"___________"}</b> &nbsp; To: <b>${fd.work_date_to||"___________"}</b></td>
+    <td style="width:50%">Time: From: <b>${fmtT(fd.work_time_from)}</b> &nbsp; To: <b>${fmtT(fd.work_time_to)}</b></td>
+  </tr>
+  <tr>
+    <td>Exact location of work: <b>${permit.area||""}</b></td>
+    <td>No. of persons involved: <b>${fd.num_persons||"_____"}</b></td>
+  </tr>
+  <tr>
+    <td colspan="2">Description of work: <b>${permit.title||""}</b></td>
+  </tr>
+  <tr>
+    <td colspan="2">Name of Department / Contractor Company conducting the work: <b>${orgName}</b></td>
+  </tr>
+  <tr>
+    <td>Manager / Supervisor in charge: <b>${permit.supervisor_name||"___________________________"}</b></td>
+    <td>Name of Subcontractor(s) involved: <b>${fd.subcontractor||"___________________________"}</b></td>
+  </tr>
+</table>
+
+<!-- SECTION 2: PRECAUTIONS -->
+<div class="sec-head" style="margin-top:8px">Section-2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Precautions Required</div>
+<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be filled by Permit requestor): Tick the required precautions taken. Write N/A to the precautions not applicable.</div>
+${precautionTable(precautions)}
+${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"><b>Risk Assessment:</b> ${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated (see digital record)"}</div>`:""}
+
+<!-- SECTION 3: PTW REQUEST -->
+<div class="sec-head" style="margin-top:8px">Section-3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Request</div>
+<table>
+  <tr>
+    <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
+      I ${dotline(permit.supervisor_name,160)} the Work In-charge have personally viewed the area, assessed the hazards, and shall make sure that necessary precautions are implemented for this work. I nominate ${dotline(permit.requester_name,160)} as Work performer and have made him and his team understood the requirements of this PTW and ensure their adherence to it.
+    </td>
+  </tr>
+  <tr class="sig-row">
+    <td style="width:45%">Signature (WI) ${dotline("",120)} (Supervisor)</td>
+    <td style="width:30%">Date: <b>${fd.work_date_from||"___________"}</b></td>
+    <td style="width:25%">Time: <b>${fmtT(fd.work_time_from)}</b></td>
+  </tr>
+</table>
+
+<!-- SECTION 4: PTW AUTHORISATION -->
+<div class="sec-head" style="margin-top:8px">Section-4 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Authorisation / Issuance</div>
+<table>
+  <tr>
+    <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
+      I ${dotline(issuerEntry?issuerEntry.user_name:"",160)} the Issuing Authority declare that the above work has been discussed with the person(s) in charge of the work, the risk assessment / method statement has been reviewed and all safety precautions / actions required are in place have been inspected by myself in accordance with this PTW requirements.
+    </td>
+  </tr>
+  <tr class="sig-row">
+    <td style="width:45%">Signature (IA) ${dotline("",120)} (Engineer)</td>
+    <td style="width:30%">Date: <b>${issuerEntry?new Date(issuerEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
+    <td style="width:25%">Time: <b>${issuerEntry?new Date(issuerEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+  </tr>
+</table>
+
+<!-- SECTION 5: OSH COMPLIANCE -->
+<div class="sec-head" style="margin-top:8px">Section-5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Compliance Verification (OSH Department)</div>
+<table>
+  <tr>
+    <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
+      I ${dotline(oshEntry?oshEntry.user_name:"",160)} the OSH professional have personally viewed the area, verified the implementation of required precautions. I found no objection to execute the activity in accordance with this PTW.
+      ${fd.osh_additional_controls?`<br/><br/><b>Additional Controls / Recommendations:</b><br/><span style="white-space:pre-wrap">${fd.osh_additional_controls}</span>`:""}
+    </td>
+  </tr>
+  <tr class="sig-row">
+    <td style="width:45%">Signature (OSH) ${dotline("",120)}</td>
+    <td style="width:30%">Date: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
+    <td style="width:25%">Time: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+  </tr>
+</table>
+
+<!-- SECTION 6: COMPLETION / CANCELLATION -->
+<div class="sec-head" style="margin-top:8px">Section-6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Completion / Cancellation of PTW</div>
+<table>
+  <tr><td colspan="3" style="background:#f5f5f5;font-weight:700;font-size:10px;font-style:italic">Contractor / Employee (Work In-charge):</td></tr>
+  <tr>
+    <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
+      I ${dotline(completionEntry?completionEntry.user_name:"",160)}, the Work In-charge certify that the work specified in this PTW has been completed. All persons, materials and equipment involved have been withdrawn, and the area has been left clean, tidy and safe.
+    </td>
+  </tr>
+  <tr class="sig-row">
+    <td style="width:45%">Signature (WI) ${dotline("",120)}</td>
+    <td style="width:30%">Date: <b>${completionEntry?new Date(completionEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
+    <td style="width:25%">Time: <b>${completionEntry?new Date(completionEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+  </tr>
+  <tr><td colspan="3" style="background:#f5f5f5;font-weight:700;font-size:10px;font-style:italic">Issuing Authority:</td></tr>
+  <tr>
+    <td colspan="3" style="padding:6px 8px;font-size:10px">• The work covered by this PTW is complete and the area has been left safe, clean and tidy.</td>
+  </tr>
+  <tr class="sig-row">
+    <td style="width:45%">Name (IA): ${dotline(closureEntry?closureEntry.user_name:"",120)}</td>
+    <td style="width:30%">Signature: ${dotline("",100)}</td>
+    <td style="width:25%">Date: <b>${closureEntry?new Date(closureEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b> Time: <b>${closureEntry?new Date(closureEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+  </tr>
+</table>
+
+${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;padding:8px;margin-top:8px;font-size:9px"><b style="color:#c00">Rejection Record:</b> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():""}</div>`:""}
+
+<div style="font-size:8px;color:#555;text-align:center;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px">
+  (Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Department)<br/>
+  ${permit.permit_number} &nbsp;·&nbsp; ${t.id?`TAS/PTW/OSH-${permit.permit_number.slice(-4)}`:"TAS/PTW"} Rev 00 &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT
+</div>`;
+}
+
+function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const fd=permit.form_data||{};const t=pt(permit.type);
   const allControls=[...(fd.selected_controls||[]).filter(c=>c!=="RA Required"),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
   const fmtD=(s)=>s?new Date(s).toLocaleDateString():"—";
@@ -1114,6 +1357,50 @@ function PermitPDF({permit,audit,orgName,orgLogo,onClose}){
   const issuerEntry = auditIssued();
   const completionEntry = audit.find(a=>a.action==="Work completion signed off");
   const closureEntry = audit.find(a=>a.action==="Permit closed");
+
+  // ── TASETI Template ──────────────────────────────────────────────
+  if(orgTemplate==="taseti"){
+    const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry);
+    const openPrint=()=>{
+      const w=window.open("","_blank","width=900,height=700");
+      if(w){
+        w.document.write(`<!DOCTYPE html><html><head>
+          <meta charset="UTF-8"/>
+          <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+          <title>${permit.permit_number}</title>
+          <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;}
+          .pbar{position:sticky;top:0;background:#1A3A5C;padding:50px 16px 12px;display:flex;justify-content:space-between;align-items:center;z-index:9999;gap:8px;}
+          .pbar-title{color:#fff;font-size:13px;font-weight:600;flex:1;}
+          .btn-p{background:#0E9E6E;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;}
+          .btn-c{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;}
+          .pcontent{padding:16px;}
+          @media print{.pbar{display:none!important;}.pcontent{padding:0;}@page{size:A4;margin:15mm;}}</style>
+        </head><body>
+          <div class="pbar">
+            <span class="pbar-title">📄 ${permit.permit_number} — ${orgName}</span>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <button class="btn-p" onclick="window.print()">🖨 Print / PDF</button>
+              <button class="btn-c" onclick="window.close()">✕ Close</button>
+            </div>
+          </div>
+          <div class="pcontent">${tasHtml}</div>
+        </body></html>`);
+        w.document.close();w.focus();setTimeout(()=>{w.print();},600);
+      }
+    };
+    return(
+      <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
+        <div style={{background:B.primary,padding:"12px 16px",paddingTop:"calc(12px + env(safe-area-inset-top))",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+          <span style={{color:"#fff",fontWeight:600,fontSize:14}}>📄 {permit.permit_number} — {orgName}</span>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={openPrint} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>🖨 Print / Save as PDF</button>
+            <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:tasHtml}}/></div>
+      </div>
+    );
+  }
 
   function ctrlRows(items){
     const rows=[];
