@@ -1218,27 +1218,29 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
 
   return `<style>${css}</style>
 
-<!-- HEADER — TASETI Format with colour per permit type -->
-<table style="border:0.5px solid #999;margin-bottom:0;border-bottom:none">
+<!-- HEADER — TASETI Format -->
+<table style="border:0.5px solid #999;margin-bottom:0;border-collapse:collapse">
   <tr>
-    <td style="border:none;width:20%;padding:6px 8px;vertical-align:middle">
-      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:55px;max-width:90px;object-fit:contain"/>`:``}
+    <td style="border:0.5px solid #999;width:18%;padding:6px;vertical-align:middle;text-align:center;background:#fff">
+      ${orgLogo?`<img src="${orgLogo}" alt="Logo" style="max-height:55px;max-width:85px;object-fit:contain"/>`:``}
     </td>
-    <td style="border:none;width:60%;padding:4px 8px;text-align:center;vertical-align:middle">
-      <div style="font-size:13px;font-weight:700;color:#000">HEALTH, SAFETY AND ENVIRONMENT</div>
-      <div class="top-header" style="margin-top:4px">${t.label||permit.type} PERMIT TO WORK</div>
-    </td>
-    <td style="border:none;width:20%;padding:6px 8px;text-align:right;vertical-align:top">
-      <div style="font-size:9px;font-weight:700">Permit No:</div>
-      <div style="font-size:12px;font-weight:700;color:${secColor}">${permit.permit_number}</div>
-      <div style="font-size:7px;color:#888;margin-top:4px">Managed by CONTROLIT</div>
+    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:#fff;text-align:center;padding:5px 8px;font-size:13px;font-weight:700">
+      HEALTH, SAFETY AND ENVIRONMENT
     </td>
   </tr>
-</table>
-<table style="border:0.5px solid #999;margin-bottom:0">
   <tr>
-    <td style="width:60%;font-size:10px"><b>Project:</b> ${orgName}</td>
-    <td style="width:40%;font-size:10px;text-align:right"><b>Permit No: ${permit.permit_number}</b></td>
+    <td style="border:0.5px solid #999;width:18%;background:#fff"></td>
+    <td colspan="2" style="border:0.5px solid #999;background:${secColor};color:#fff;text-align:center;padding:5px 8px;font-size:14px;font-weight:700;letter-spacing:0.5px">
+      ${(t.label||permit.type).toUpperCase()} PERMIT TO WORK
+    </td>
+  </tr>
+  <tr>
+    <td style="border:0.5px solid #999;padding:5px 8px;font-size:10px" colspan="2"><b>Project:</b> ${orgName}</td>
+    <td style="border:0.5px solid #999;padding:5px 8px;text-align:right;vertical-align:top;width:22%">
+      <div style="font-size:9px;font-weight:700">Permit No:</div>
+      <div style="font-size:11px;font-weight:700;color:${secColor}">${permit.permit_number}</div>
+      <div style="font-size:7px;color:#888;margin-top:2px">Managed by CONTROLIT</div>
+    </td>
   </tr>
 </table>
 <div class="note">This permit-to-work (PTW) is to be retained by the Work In-charge / Work Performer while work is in progress and must be displayed in the working area. A copy of this PTW must be retained by the Issuing Authority. After completion/cancellation of the work this PTW must be returned to the Issuing Authority / OSH Department for the hand-back procedure.</div>
