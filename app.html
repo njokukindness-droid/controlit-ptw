@@ -1210,8 +1210,6 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     lifting:        "TAS/PTW/OSH-011 Rev 00",
   };
   const docRef=TASETI_REFS[permit.type]||"TAS/PTW Rev 00";
-  const secTextColor=permit.type==="electrical"?"#000":"#fff";
-
   const css=`
     @page{size:A4;margin:15mm}
     body{font-family:Arial,sans-serif;font-size:10px;color:#000;margin:0;padding:0}
@@ -1323,7 +1321,7 @@ ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"
 <table>
   <tr>
     <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
-      I ${dotline(oshEntry?oshEntry.user_name:"",160)} the OSH professional have personally viewed the area, verified the implementation of required precautions. I found no objection to execute the activity in accordance with this PTW.
+      I ${dotline("",160)} the OSH professional have personally viewed the area, verified the implementation of required precautions. I found no objection to execute the activity in accordance with this PTW.
       ${fd.osh_additional_controls?`<br/><br/><b>Additional Controls / Recommendations:</b><br/><span style="white-space:pre-wrap">${fd.osh_additional_controls}</span>`:""}
     </td>
   </tr>
@@ -1333,7 +1331,7 @@ ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"
       Signature - ${dotline("",120)}
     </td>
     <td style="width:50%;padding:8px;font-size:10px">
-      <b>TAS OSH Name:</b> ${dotline(oshEntry?oshEntry.user_name:"",120)}<br/><br/>
+      <b>TAS OSH Name:</b> ${dotline("",120)}<br/><br/>
       Signature - ${dotline("",120)}
     </td>
   </tr>
