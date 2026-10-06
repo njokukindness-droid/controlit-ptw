@@ -2383,6 +2383,17 @@ function App(){
   },[session,fetchPermits]);
   useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
 
+  // QR code scan — auto-open permit from URL param
+  useEffect(()=>{
+    if(!session||permits.length===0)return;
+    const params=new URLSearchParams(window.location.search);
+    const pNum=params.get("permit");
+    if(pNum&&screen==="dashboard"){
+      const found=permits.find(p=>p.permit_number===pNum);
+      if(found){setSelected(found);setScreen("detail");}
+    }
+  },[session,permits]);
+
   // Refresh when tab becomes visible — no continuous polling
   useEffect(()=>{
     function onVisible(){
