@@ -1290,23 +1290,23 @@ ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"
   </tr>
 </table>
 
-<!-- SECTION 4: PTW AUTHORISATION -->
+<!-- SECTION 4: PTW AUTHORISATION — Issuing Authority = Area Authority in CONTROLIT -->
 <div class="sec-head" style="margin-top:8px">Section-4 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Authorisation / Issuance</div>
 <table>
   <tr>
     <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
-      I ${dotline(issuerEntry?issuerEntry.user_name:"",160)} the Issuing Authority declare that the above work has been discussed with the person(s) in charge of the work, the risk assessment / method statement has been reviewed and all safety precautions / actions required are in place have been inspected by myself in accordance with this PTW requirements.
+      I ${dotline(aaEntry?aaEntry.user_name:"",160)} the Issuing Authority / Authorised Person declare that the above work has been discussed with the person(s) in charge of the work, the risk assessment / method statement has been reviewed and all safety precautions / actions required are in place and have been inspected by myself in accordance with this PTW requirements.
     </td>
   </tr>
   <tr class="sig-row">
-    <td style="width:45%">Signature (IA) ${dotline("",120)} (Engineer)</td>
-    <td style="width:30%">Date: <b>${issuerEntry?new Date(issuerEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
-    <td style="width:25%">Time: <b>${issuerEntry?new Date(issuerEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+    <td style="width:45%">Signature (IA) ${dotline("",120)}</td>
+    <td style="width:30%">Date: <b>${aaEntry?new Date(aaEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
+    <td style="width:25%">Time: <b>${aaEntry?new Date(aaEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
   </tr>
 </table>
 
-<!-- SECTION 5: OSH COMPLIANCE -->
-<div class="sec-head" style="margin-top:8px">Section-5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Compliance Verification (OSH Department)</div>
+<!-- SECTION 5: OSH COMPLIANCE — OSH Manager + Issuer combined -->
+<div class="sec-head" style="margin-top:8px">Section-5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OSH Team Review / Comments / Recommendations (if any)</div>
 <table>
   <tr>
     <td colspan="3" style="padding:8px;line-height:1.8;font-size:10px">
@@ -1314,10 +1314,18 @@ ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"
       ${fd.osh_additional_controls?`<br/><br/><b>Additional Controls / Recommendations:</b><br/><span style="white-space:pre-wrap">${fd.osh_additional_controls}</span>`:""}
     </td>
   </tr>
+  <tr>
+    <td style="width:50%;padding:8px;font-size:10px">
+      <b>Sub-con OSH Name:</b> ${dotline("",120)}<br/><br/>
+      Signature - ${dotline("",120)}
+    </td>
+    <td style="width:50%;padding:8px;font-size:10px">
+      <b>TAS OSH Name:</b> ${dotline(oshEntry?oshEntry.user_name:"",120)}<br/><br/>
+      Signature - ${dotline("",120)}
+    </td>
+  </tr>
   <tr class="sig-row">
-    <td style="width:45%">Signature (OSH) ${dotline("",120)}</td>
-    <td style="width:30%">Date: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b></td>
-    <td style="width:25%">Time: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
+    <td colspan="3">Date: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b> &nbsp;&nbsp; Time: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
   </tr>
 </table>
 
