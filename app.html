@@ -744,7 +744,14 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
 
 // ── New Permit ────────────────────────────────────────────────────────────────
 function NewPermit({session,onBack,onSuccess}){
-  const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
+  const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");
+  // Gas test readings — confined space only
+  const[gasO2,setGasO2]=useState("");
+  const[gasLEL,setGasLEL]=useState("");
+  const[gasCO,setGasCO]=useState("");
+  const[gasH2S,setGasH2S]=useState("");
+  const[gasTested,setGasTested]=useState(false);
+  const[gasTestedBy,setGasTestedBy]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
   const[simopsWarnings,setSimopsWarnings]=useState([]);
 
   // Check SIMOPS conflicts whenever type or area changes
@@ -778,7 +785,8 @@ function NewPermit({session,onBack,onSuccess}){
     if(isRARequired){if(!raMode){setErr("RA Required is checked — upload or generate a risk assessment.");return;}if(raMode==="upload"&&!raFileData){setErr("Upload the RA document.");return;}if(raMode==="generate"&&!raGenerated){setErr("Generate the RA first.");return;}}
     setBusy(true);setErr("");
     const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
-    const fd={tools_equipment:tools,selected_controls:sel,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
+    const fd={tools_equipment:tools,selected_controls:sel,
+      gas_test:type==="confined_space"?{o2:gasO2,lel:gasLEL,co:gasCO,h2s:gasH2S,tested:gasTested,tested_by:gasTestedBy}:null,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
     const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
     if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
     setBusy(false);
@@ -862,6 +870,48 @@ function NewPermit({session,onBack,onSuccess}){
           })}
         </Card>
       )}
+      {/* Gas Test Section — Confined Space only */}
+      {type==="confined_space"&&(
+        <div style={{background:B.neutral,borderRadius:10,padding:"14px",border:`0.5px solid ${B.neutralBorder}`,marginBottom:8}}>
+          <p style={{fontSize:12,fontWeight:700,color:B.text,marginBottom:6}}>⚗️ Gas Test Records</p>
+          <p style={{fontSize:11,color:B.textSub,marginBottom:10}}>To be completed by Safety Officer before entry.</p>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:B.primary,color:"#fff"}}>
+                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Test</th>
+                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Actual Level</th>
+                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11,opacity:0.7}}>Safe Limit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Oxygen (O₂)",gasO2,setGasO2,"19.5%–23.5%"],
+                  ["LEL (Flammable)",gasLEL,setGasLEL,"Below 10%"],
+                  ["Carbon Monoxide",gasCO,setGasCO,"Below 35 PPM"],
+                  ["Hydrogen Sulphide",gasH2S,setGasH2S,"Below 10 PPM"],
+                ].map(([label,val,setter,limit])=>(
+                  <tr key={label} style={{borderBottom:`0.5px solid ${B.neutralBorder}`}}>
+                    <td style={{padding:"6px 8px",fontWeight:500,color:B.text,fontSize:11}}>{label}</td>
+                    <td style={{padding:"4px 6px"}}>
+                      <input value={val} onChange={e=>setter(e.target.value)} placeholder="Enter reading" style={{width:"100%",padding:"5px 8px",borderRadius:6,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
+                    </td>
+                    <td style={{padding:"6px 8px",color:B.textSub,fontSize:11}}>{limit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,cursor:"pointer"}}>
+              <input type="checkbox" checked={gasTested} onChange={e=>setGasTested(e.target.checked)} style={{accentColor:B.accent,width:16,height:16}}/>
+              <span>Gas test completed — results within safe limits</span>
+            </label>
+            <input value={gasTestedBy} onChange={e=>setGasTestedBy(e.target.value)} placeholder="Tested by (name & role)" style={{padding:"8px 12px",borderRadius:8,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
+          </div>
+        </div>
+      )}
+
       <button onClick={submit} disabled={busy||!type} style={{width:"100%",background:(busy||!type)?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"12px",fontSize:13,fontWeight:700,cursor:(busy||!type)?"not-allowed":"pointer"}}>{busy?"Submitting…":"Submit permit request"}</button>
     </div></div>
   );
@@ -1010,7 +1060,41 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
           {fd.ra_mode==="upload"&&fd.ra_file_name&&(<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>📄</span><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{fd.ra_file_name}</p><p style={{fontSize:11,color:B.textSub}}>Uploaded risk assessment</p></div>{fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{marginLeft:"auto",background:B.accent,color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:600,textDecoration:"none"}}>Download</a>}</div>)}
           {fd.ra_mode==="generate"&&fd.ra_generated&&(<div><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>AI-Generated 5×5 Risk Assessment</p><div style={{fontSize:11,lineHeight:1.6,maxHeight:280,overflowY:"auto"}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/></div>)}
         </Card>)}
-        {(permit.stage>=2||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
+        {permit.type==="confined_space"&&fd.gas_test&&(<Card title="⚗️ Gas Test Records">
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead>
+                  <tr style={{background:B.primary,color:"#fff"}}>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Test</th>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Actual Level</th>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11,opacity:0.8}}>Safe Limit</th>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11,opacity:0.8}}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["O₂ (Oxygen)",fd.gas_test.o2,"19.5%–23.5%"],
+                    ["LEL (Flammable)",fd.gas_test.lel,"Below 10%"],
+                    ["CO (Carbon Monoxide)",fd.gas_test.co,"Below 35 PPM"],
+                    ["H₂S (Hydrogen Sulphide)",fd.gas_test.h2s,"Below 10 PPM"],
+                  ].map(([label,val,limit])=>(
+                    <tr key={label} style={{borderBottom:`0.5px solid ${B.neutralBorder}`}}>
+                      <td style={{padding:"6px 8px",fontWeight:500,fontSize:11}}>{label}</td>
+                      <td style={{padding:"6px 8px",color:val?B.text:B.textSub,fontWeight:val?600:400}}>{val||"—"}</td>
+                      <td style={{padding:"6px 8px",color:B.textSub,fontSize:11}}>{limit}</td>
+                      <td style={{padding:"6px 8px"}}>
+                        {val?<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:"rgba(14,158,110,0.1)",color:B.accent,fontWeight:600}}>✓ Recorded</span>
+                            :<span style={{fontSize:10,color:B.textSub}}>Pending</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {fd.gas_test.tested&&<p style={{fontSize:12,color:B.accent,marginTop:8,fontWeight:600}}>✓ Gas test completed — results within safe limits</p>}
+            {fd.gas_test.tested_by&&<p style={{fontSize:12,color:B.textSub,marginTop:4}}>Tested by: <b>{fd.gas_test.tested_by}</b></p>}
+          </Card>)}
+          {(permit.stage>=2||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
           {isOSH?(<><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>Add additional controls. Use AI for suggestions specific to this permit.</p><textarea value={oshControls} onChange={e=>setOshControls(e.target.value)} placeholder={"Additional controls (one per line)…"} rows={5} style={{resize:"vertical",marginBottom:8}}/>{session.apiKey?<button onClick={getAI} disabled={aiSuggesting} style={{width:"100%",background:aiSuggesting?"#999":B.primary,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:aiSuggesting?"not-allowed":"pointer",marginBottom:4}}>{aiSuggesting?"🤖 Getting recommendations…":"🤖 Get AI-recommended additional controls"}</button>:<p style={{fontSize:11,color:B.warn}}>⚠ AI not configured.</p>}</>):(fd.osh_additional_controls?<p style={{fontSize:13,color:B.text,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{fd.osh_additional_controls}</p>:<p style={{fontSize:12,color:B.textSub}}>No additional controls added yet.</p>)}
         </Card>)}
 
@@ -1285,6 +1369,44 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
 <div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be filled by Permit requestor): Tick the required precautions taken. Write N/A to the precautions not applicable.</div>
 ${precautionTable(precautions)}
 ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"><b>Risk Assessment:</b> ${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated (see digital record)"}</div>`:""}
+
+${permit.type==="confined_space"?`
+<!-- GAS TEST RECORDS -->
+<div style="margin-top:6px">
+  <table style="width:100%;border-collapse:collapse">
+    <tr>
+      <td colspan="3" style="background:#f0f0f0;font-weight:700;font-size:10px;padding:4px 8px;border:0.5px solid #999">
+        Gas Test Records — To be done by Safety Officer before starting activity in confined space
+      </td>
+    </tr>
+    <tr style="background:#1A3A5C;color:#fff">
+      <th style="padding:4px 8px;font-size:9px;width:40%">Test(s)</th>
+      <th style="padding:4px 8px;font-size:9px;width:30%">Actual Level</th>
+      <th style="padding:4px 8px;font-size:9px;width:30%">Permissible Entry Level</th>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Percent of Oxygen (O2)</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.o2||"_______________"}</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">19.5% TO 23.5%</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Lower Flammable Limit</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.lel||"_______________"}</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Under 10%</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Carbon Monoxide (CO)</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.co||"_______________"}</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Below 35 PPM</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Hydrogen Sulphide (H2s)</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.h2s||"_______________"}</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Below 10 PPM</td>
+    </tr>
+    ${fd.gas_test?.tested_by?`<tr><td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #999"><b>Tested by:</b> ${fd.gas_test.tested_by} &nbsp;·&nbsp; <b>Status:</b> ${fd.gas_test?.tested?"✓ Safe for entry":"Pending verification"}</td></tr>`:""}
+  </table>
+</div>`:""}
 
 <!-- SECTION 3: PTW REQUEST -->
 <div class="sec-head" style="margin-top:8px">Section-3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PTW Request</div>
