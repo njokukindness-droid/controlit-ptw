@@ -1199,6 +1199,19 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
   const secColor=TASETI_COLORS[permit.type]||"#1A3A5C";
   const secTextColor=permit.type==="electrical"?"#000":"#fff";
 
+  // Verified document reference numbers from approved HSMP forms
+  const TASETI_REFS={
+    hot_work:       "TAS/PTW/OSH-007 Rev 00",
+    cold_work:      "TAS/PTW/OSH-007 Rev 00",
+    confined_space: "TAS/PTW/OSH-013 Rev 00",
+    electrical:     "TAS/PTW/OSH-009 Rev 00",
+    height:         "TAS/PTW/OSH-010 Rev 00",
+    excavation:     "TAS/PTW/OSH-014 Rev 00",
+    lifting:        "TAS/PTW/OSH-011 Rev 00",
+  };
+  const docRef=TASETI_REFS[permit.type]||"TAS/PTW Rev 00";
+  const secTextColor=permit.type==="electrical"?"#000":"#fff";
+
   const css=`
     @page{size:A4;margin:15mm}
     body{font-family:Arial,sans-serif;font-size:10px;color:#000;margin:0;padding:0}
@@ -1356,9 +1369,10 @@ ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"
 
 ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;padding:8px;margin-top:8px;font-size:9px"><b style="color:#c00">Rejection Record:</b> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():""}</div>`:""}
 
-<div style="font-size:8px;color:#555;text-align:center;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px">
-  (Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Department)<br/>
-  ${permit.permit_number} &nbsp;·&nbsp; ${t.id?`TAS/PTW/OSH-${permit.permit_number.slice(-4)}`:"TAS/PTW"} Rev 00 &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px;font-size:8px;color:#555">
+  <div><b>${docRef}</b> &nbsp;·&nbsp; Page 1</div>
+  <div style="text-align:center">(Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Dept.)</div>
+  <div style="text-align:right">Managed digitally by CONTROLIT</div>
 </div>`;
 }
 
