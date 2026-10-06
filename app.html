@@ -1496,21 +1496,10 @@ ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;pa
     <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <div id="qrcode-tas" style="width:70px;height:70px"></div>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=${secColor.replace('#','')}&bgcolor=ffffff&data=https://getcontrolit.com/app.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
     <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify</div>
   </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-  try {
-    new QRCode(document.getElementById("qrcode-tas"), {
-      text: "https://getcontrolit.com/app.html?permit=${permit.permit_number}",
-      width: 70, height: 70,
-      colorDark: "${secColor}", colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  } catch(e) {}
-</script>`;
+</div>`;
 }
 
 function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
@@ -1772,21 +1761,10 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
     <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <div id="qrcode-std" style="width:70px;height:70px"></div>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=1A3A5C&bgcolor=ffffff&data=https://getcontrolit.com/app.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
     <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
   </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-  try {
-    new QRCode(document.getElementById("qrcode-std"), {
-      text: "https://getcontrolit.com/app.html?permit=${permit.permit_number}",
-      width: 70, height: 70,
-      colorDark: "#1A3A5C", colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  } catch(e) {}
-</script>`;
+</div>`;
 
   return(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
