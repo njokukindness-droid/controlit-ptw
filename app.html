@@ -345,6 +345,103 @@ const MARINE_PERMIT_CONTROLS={
   ],
 };
 
+// ── CONTROLIT Events — Permit Types ──────────────────────────────────────────
+const EVENTS_PERMIT_TYPES=[
+  {id:"stage_structures",label:"Stage & Structures",color:"#E74C3C"},
+  {id:"rigging_flying",label:"Rigging & Flying",color:"#8E44AD"},
+  {id:"events_height",label:"Working at Height (Events)",color:"#2980B9"},
+  {id:"events_hot_work",label:"Hot Work (Events)",color:"#D35400"},
+  {id:"events_electrical",label:"Electrical (Events)",color:"#F39C12"},
+  {id:"events_lifting",label:"Lifting Operations (Events)",color:"#27AE60"},
+];
+
+// ── CONTROLIT Events — Permit Controls ───────────────────────────────────────
+const EVENTS_PERMIT_CONTROLS={
+  stage_structures:[
+    "Structural design drawings approved by competent structural engineer",
+    "Method statement for erection/dismantling reviewed and approved",
+    "Ground bearing pressure assessment completed — soft ground identified and addressed",
+    "Weather forecast reviewed — wind speed limits defined and monitored",
+    "Exclusion zone established during erection/dismantling — no public access",
+    "Scaffold/structure tagged fit for use by competent person before load",
+    "All structural connections inspected and signed off before loading",
+    "Dynamic load calculations completed for stage with audience movement",
+    "Emergency dismantling procedure briefed to all crew",
+    "Venue/site structural survey completed — no damage to existing structure",
+    "Stage/structure registered in structural register with inspection record",
+    "Local authority temporary structure permit obtained where required",
+  ],
+  rigging_flying:[
+    "Rigging plot/plan drawn and approved by Head Rigger",
+    "All rigging equipment (hoists, slings, shackles) inspected and within test date",
+    "SWL of each hoist/point confirmed and not exceeded",
+    "Load cells fitted to critical points where required",
+    "Truss walk/pre-rig inspection completed before raising",
+    "Exclusion zone established directly below flying rig during movement",
+    "Automation moves programmed and tested before show",
+    "Hoist controller designated and stationed during all rig movements",
+    "Flying performer/artist medical fitness confirmed where applicable",
+    "Communication protocol (radio) established between fly floor and stage",
+    "Emergency lowering procedure tested and briefed to all crew",
+    "All attachments to truss inspected — safety bonds on every item",
+  ],
+  events_height:[
+    "MEWP/scissor lift pre-use inspection completed and recorded",
+    "MEWP operator trained and authorised for equipment type",
+    "Safety harness and lanyard worn when working in MEWP basket",
+    "Ground conditions assessed — firm and level surface confirmed",
+    "Overhead hazards identified — cables, trusses, structures",
+    "Exclusion zone established below elevated work area",
+    "Ladder secured at top and bottom — three points of contact maintained",
+    "Scaffold erected by trained scaffolders and tagged fit for use",
+    "Tool lanyards used for all hand tools at height",
+    "Weather conditions assessed — work suspended in wind above defined limit",
+    "Spotter/banksman stationed at base during MEWP operations",
+  ],
+  events_hot_work:[
+    "Hot work area cleared of all combustible materials within 10m",
+    "Fire extinguisher (min 9kg dry powder) within 5m of work area",
+    "Fire watch assigned and stationed throughout work and 30 mins after",
+    "Welding/grinding equipment inspected and certified",
+    "Flash-back arrestors fitted to fuel and oxygen lines",
+    "Venue fire detection system — area isolated or fire watch confirmed with venue",
+    "Venue fire suppression system — isolation procedure followed where required",
+    "All adjacent structures/drapes identified and protected or removed",
+    "Hot work blanket/spark containment screen erected",
+    "Gas test completed if working near fuel sources",
+    "Venue hot work notification submitted and approved",
+    "Hot surfaces marked after completion — cooling period enforced",
+  ],
+  events_electrical:[
+    "Temporary electrical installation designed by qualified electrical engineer",
+    "Distribution boards inspected and RCD protected",
+    "All cables routed safely — no trip hazards, no crush points",
+    "Cable crossing points protected with cable ramps",
+    "Generator earthing/bonding completed and tested",
+    "Isolation confirmed before any work on live distribution",
+    "LOTO applied to all isolated circuits",
+    "Qualified electrician performing all electrical connections",
+    "Cable ratings confirmed adequate for load",
+    "IP rating of equipment confirmed suitable for outdoor/wet conditions",
+    "Emergency power-off location known to all crew",
+    "Electrical installation tested (PAT/insulation) before energising",
+  ],
+  events_lifting:[
+    "Lifting plan prepared and approved by competent person",
+    "All lifting equipment (crane, forklift, HIAB) inspected and certified",
+    "SWL of equipment confirmed adequate for load including dynamic factors",
+    "Ground bearing pressure confirmed — plates/spreaders used where required",
+    "Rigger/slinger designated and briefed on lift plan",
+    "Exclusion zone established — no personnel under suspended load",
+    "Tag lines used for load control",
+    "Crane operator holds valid certification for equipment type",
+    "Overhead hazards identified — power lines, trusses, structures",
+    "Communication protocol established between operator and slinger",
+    "Weather conditions assessed — lift suspended above defined wind speed",
+    "Venue/site access route confirmed adequate for equipment",
+  ],
+};
+
 const PERMIT_CONTROLS={
   hot_work:["Fire extinguisher (min 9kg dry powder) within 5m of work area","Hot work blanket / spark containment screen erected","Fire watch assigned, briefed and stationed throughout work","All combustibles removed or shielded within 10m radius","Gas test completed — LEL confirmed below 10% before commencing","Continuous gas monitoring for duration of work","Welding / cutting equipment inspected and certified","Flash-back arrestors fitted to fuel and oxygen lines","Work area barricaded and signage posted","Hot surfaces marked and cooling period enforced after completion","Adjacent drains and openings sealed against spark entry","Fire watch to remain 30 minutes after work completion","RA Required"],
   cold_work:["Work area isolated and barricaded","All stored energy identified and controlled","PPE worn: hard hat, safety glasses, gloves, safety boots","Tools inspected and certified for use","No overhead hazards confirmed within work area","Housekeeping maintained throughout task","Supervisor on site or contactable at all times","Emergency contact numbers posted at work site","RA Required"],
@@ -373,9 +470,9 @@ const ROLE_STAGE={area_authority:1,safety_officer:2,issuer:3};
 
 function roleLabel(r){if(r==="safety_officer")return"OSH Manager";return(r||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());}
 const {useState,useEffect,useCallback,useRef}=React;
-const pt=(id)=>PERMIT_TYPES.find(t=>t.id===id)||MARINE_PERMIT_TYPES.find(t=>t.id===id)||{id,label:id,color:"#888"};
-const getPermitTypes=(sector)=>sector==="marine"?MARINE_PERMIT_TYPES:PERMIT_TYPES;
-const getPermitControls=(sector)=>sector==="marine"?MARINE_PERMIT_CONTROLS:PERMIT_CONTROLS;
+const pt=(id)=>PERMIT_TYPES.find(t=>t.id===id)||MARINE_PERMIT_TYPES.find(t=>t.id===id)||EVENTS_PERMIT_TYPES.find(t=>t.id===id)||{id,label:id,color:"#888"};
+const getPermitTypes=(sector)=>sector==="marine"?MARINE_PERMIT_TYPES:sector==="events"?EVENTS_PERMIT_TYPES:PERMIT_TYPES;
+const getPermitControls=(sector)=>sector==="marine"?MARINE_PERMIT_CONTROLS:sector==="events"?EVENTS_PERMIT_CONTROLS:PERMIT_CONTROLS;
 const nowStr=()=>new Date().toISOString();
 const fmtDate=(s)=>s?new Date(s).toLocaleString():"—";
 
@@ -698,7 +795,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <div style={{color:"rgba(255,255,255,0.88)",fontSize:12,fontWeight:500}}>
               Welcome, <strong style={{color:"#fff"}}>{session.profile.full_name}</strong>
             </div>
-            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)} · <span style={{color:"rgba(100,180,255,0.85)",fontWeight:600}}>{session.org.sector==="marine"?"CONTROLIT Marine":"CONTROLIT Construction"}</span></div>
+            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)} · <span style={{color:"rgba(100,180,255,0.85)",fontWeight:600}}>{session.org.sector==="marine"?"🚢 CONTROLIT Marine":session.org.sector==="events"?"🎪 CONTROLIT Events":session.org.sector==="oil_gas"?"⛽ CONTROLIT Oil & Gas":session.org.sector==="aviation"?"✈️ CONTROLIT Aviation":"🏗️ CONTROLIT Construction"}</span></div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span><span className="cp-livedot"/><span style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>Live · {now}</span></span>
