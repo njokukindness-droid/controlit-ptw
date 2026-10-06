@@ -172,6 +172,179 @@ const PERMIT_TYPES=[
   {id:"lifting",label:"Critical Lifting Operation",color:"#7F77DD"},
 ];
 
+// ── CONTROLIT Marine — Permit Types ───────────────────────────────────────────
+const MARINE_PERMIT_TYPES=[
+  {id:"marine_hot_work",label:"Hot Work on Vessel",color:"#C0392B"},
+  {id:"marine_confined_space",label:"Confined Space Entry (Vessel)",color:"#1E8449"},
+  {id:"gas_free_certificate",label:"Gas Free Certificate",color:"#8E44AD"},
+  {id:"marine_cold_work",label:"Cold Work (Marine)",color:"#1A5276"},
+  {id:"marine_height",label:"Working at Height (Marine)",color:"#1F618D"},
+  {id:"marine_electrical",label:"Electrical Isolation (Marine)",color:"#B7950B"},
+  {id:"diving_operations",label:"Diving Operations",color:"#0E6655"},
+  {id:"marine_lifting",label:"Lifting Operations (Marine)",color:"#4472C4"},
+  {id:"scaffold_permit",label:"Scaffold Erection/Dismantling",color:"#784212"},
+  {id:"pressure_testing",label:"Pressure Testing",color:"#922B21"},
+  {id:"abrasive_blasting",label:"Abrasive Blasting",color:"#5D6D7E"},
+  {id:"painting_operations",label:"Painting Operations",color:"#117A65"},
+];
+
+// ── CONTROLIT Marine — Permit Controls ────────────────────────────────────────
+const MARINE_PERMIT_CONTROLS={
+  marine_hot_work:[
+    "Gas free certificate obtained and valid for this work area",
+    "Continuous gas monitoring throughout duration of hot work",
+    "Fire watch assigned, briefed and stationed — minimum 30 mins after completion",
+    "Fire extinguisher (min 9kg dry powder) within 5m of work area",
+    "Hot work blanket / spark containment screen erected",
+    "All combustible materials removed or shielded within 10m",
+    "Welding/cutting equipment inspected and certified",
+    "Flash-back arrestors fitted to fuel and oxygen lines",
+    "Adjacent tanks/spaces confirmed gas free or inerted",
+    "Ship's fire detection system operational and not inhibited",
+    "Vessel's fire main pressurised and hose ready",
+    "Work area ventilated — natural or forced ventilation confirmed",
+    "Hot surfaces marked and cooling period enforced after completion",
+    "RA and method statement available and briefed to all involved",
+  ],
+  marine_confined_space:[
+    "Gas free certificate obtained prior to entry",
+    "Continuous gas monitoring (O₂, LEL, CO, H₂S) throughout entry",
+    "Attendant stationed at entry point throughout operation",
+    "Rescue/retrieval equipment (tripod, harness, lifeline) in place",
+    "Forced ventilation provided and confirmed operational",
+    "Entry/exit log sheet maintained at point of entry",
+    "Only trained and authorised personnel to enter",
+    "Low-voltage or intrinsically safe lighting provided",
+    "Communication system (radio/signal) established between entrant and attendant",
+    "Emergency response plan briefed to all involved",
+    "All sources of energy isolated and locked out/tagged out",
+    "Vessel movement restricted for duration of confined space operation",
+  ],
+  gas_free_certificate:[
+    "All venting/purging completed prior to testing",
+    "Calibrated gas detector used — within calibration date",
+    "Testing performed by qualified/certified gas tester",
+    "O₂ reading confirmed 19.5%–23.5%",
+    "LEL confirmed below 1% (gas free) or below 10% (hot work)",
+    "CO reading confirmed below 35 PPM",
+    "H₂S reading confirmed below 10 PPM",
+    "All tank openings and manholes inspected",
+    "Adjacent spaces and cofferdams also tested",
+    "Certificate valid for specified duration only — re-test required if breached",
+    "Certificate displayed at entry point",
+  ],
+  marine_cold_work:[
+    "Work area confirmed gas free or adequately ventilated",
+    "No ignition sources within 10m of work area",
+    "Tools confirmed non-sparking where required",
+    "Appropriate PPE provided and worn by all personnel",
+    "Work area barricaded and warning signs posted",
+    "RA and method statement available",
+    "Adjacent hot work permits confirmed suspended for duration",
+    "Communication established with vessel duty officer",
+  ],
+  marine_height:[
+    "Staging/scaffold erected, inspected and tagged fit for use",
+    "Safety harness and lanyard worn by all personnel working at height",
+    "Lifeline anchored to structural member rated for the load",
+    "Safety netting or toe boards fitted to prevent falling objects",
+    "Area below barricaded — exclusion zone enforced",
+    "Scaffold/staging inspected by competent person before use",
+    "Weather conditions assessed — work suspended in high winds",
+    "Tool lanyards used for all hand tools",
+    "Access/egress route clearly defined and unobstructed",
+  ],
+  marine_electrical:[
+    "Isolation confirmed at source — circuit breaker locked out",
+    "Lockout/tagout devices applied and keys retained by authorised person",
+    "Absence of voltage confirmed with approved test equipment",
+    "Earth/ground applied where required",
+    "All phases confirmed dead before work commences",
+    "Adjacent live equipment identified and guarded",
+    "Qualified electrician performing all electrical work",
+    "Vessel's chief engineer or electrical officer informed",
+    "Work area adequately illuminated",
+    "Insulated tools and PPE (gloves, mat) provided and used",
+  ],
+  diving_operations:[
+    "Diving supervisor designated and present throughout operation",
+    "Diver medically fit — valid medical certificate",
+    "Dive plan prepared, reviewed and approved",
+    "Standby diver ready and equipped for immediate deployment",
+    "Dive support vessel / diving bell in position",
+    "Communication system (umbilical/radio) tested and operational",
+    "Vessel propulsion and thrusters confirmed isolated and locked out",
+    "Anchor/mooring operations suspended for duration of dive",
+    "Decompression tables/dive computer available and used",
+    "Emergency oxygen and first aid kit at dive station",
+    "Coast Guard/harbour authority notified where required",
+    "Weather and tidal conditions assessed and acceptable",
+    "Underwater visibility assessed before entry",
+  ],
+  marine_lifting:[
+    "Lifting plan prepared and approved by competent person",
+    "All lifting equipment certified and within test date",
+    "SWL of crane/derrick confirmed adequate for load",
+    "Rigging inspected — slings, shackles, hooks certified",
+    "Slinger/rigger certified and briefed on lift plan",
+    "Crane operator certified and familiar with vessel deck layout",
+    "Exclusion zone established — no personnel under suspended load",
+    "Tag lines used for load control",
+    "Deck load-bearing capacity confirmed adequate",
+    "Weather conditions assessed — lift suspended in high winds",
+    "Communication protocol established between all involved parties",
+    "Vessel stability assessed for heavy lifts",
+  ],
+  scaffold_permit:[
+    "Scaffold design prepared or approved by competent person",
+    "Scaffold erected by trained and certified scaffolders",
+    "Scaffold inspected before use and after any alteration",
+    "Scaffold tag system in place — colour coded for status",
+    "Ties and anchorages adequate for the structure",
+    "Working platform fully boarded — no gaps",
+    "Guard rails and toe boards fitted at all open edges",
+    "Safe access and egress provided",
+    "Maximum load clearly marked and not exceeded",
+    "Scaffold registered in scaffold register",
+  ],
+  pressure_testing:[
+    "Test procedure/method statement approved before commencement",
+    "All personnel cleared from test area during pressurisation",
+    "Pressure relief valve set and tested",
+    "Test medium confirmed — water (hydrostatic) preferred over air/gas",
+    "Test pressure confirmed — not to exceed design pressure × test factor",
+    "All joints/connections inspected prior to test",
+    "Calibrated pressure gauge used — within calibration date",
+    "Pressure chart recorder connected where required",
+    "Isolation of adjacent systems confirmed",
+    "Emergency depressurisation procedure briefed to all involved",
+  ],
+  abrasive_blasting:[
+    "Blast area fully enclosed or shielded to contain media and dust",
+    "Air-fed hood/helmet or suitable respiratory protection provided",
+    "Hearing protection worn by all personnel in blast zone",
+    "Blast hose, nozzle and couplings inspected and certified",
+    "Dead-man's handle (blast control) operational",
+    "Compressed air supply pressure within rated limits",
+    "Gas free certificate obtained if blasting in enclosed spaces",
+    "Adjacent work areas protected from dust and media",
+    "Environmental controls in place — media collection/disposal plan",
+    "Personnel downwind of blast area evacuated",
+  ],
+  painting_operations:[
+    "Area adequately ventilated — forced ventilation if enclosed",
+    "No ignition sources within 10m — hot work suspended",
+    "Suitable respiratory protection provided for solvent-based paints",
+    "Fire extinguisher within 5m of painting operation",
+    "SDS (Safety Data Sheets) reviewed and available on site",
+    "Paint mixing conducted in ventilated area only",
+    "Solvent and paint containers closed when not in use",
+    "Painter protected — coverall, gloves, eye protection worn",
+    "Flammable waste (rags, brushes) stored in sealed metal containers",
+    "Continuous gas monitoring if painting in enclosed or semi-enclosed spaces",
+  ],
+};
+
 const PERMIT_CONTROLS={
   hot_work:["Fire extinguisher (min 9kg dry powder) within 5m of work area","Hot work blanket / spark containment screen erected","Fire watch assigned, briefed and stationed throughout work","All combustibles removed or shielded within 10m radius","Gas test completed — LEL confirmed below 10% before commencing","Continuous gas monitoring for duration of work","Welding / cutting equipment inspected and certified","Flash-back arrestors fitted to fuel and oxygen lines","Work area barricaded and signage posted","Hot surfaces marked and cooling period enforced after completion","Adjacent drains and openings sealed against spark entry","Fire watch to remain 30 minutes after work completion","RA Required"],
   cold_work:["Work area isolated and barricaded","All stored energy identified and controlled","PPE worn: hard hat, safety glasses, gloves, safety boots","Tools inspected and certified for use","No overhead hazards confirmed within work area","Housekeeping maintained throughout task","Supervisor on site or contactable at all times","Emergency contact numbers posted at work site","RA Required"],
@@ -200,7 +373,9 @@ const ROLE_STAGE={area_authority:1,safety_officer:2,issuer:3};
 
 function roleLabel(r){if(r==="safety_officer")return"OSH Manager";return(r||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());}
 const {useState,useEffect,useCallback,useRef}=React;
-const pt=(id)=>PERMIT_TYPES.find(t=>t.id===id)||{};
+const pt=(id)=>PERMIT_TYPES.find(t=>t.id===id)||MARINE_PERMIT_TYPES.find(t=>t.id===id)||{id,label:id,color:"#888"};
+const getPermitTypes=(sector)=>sector==="marine"?MARINE_PERMIT_TYPES:PERMIT_TYPES;
+const getPermitControls=(sector)=>sector==="marine"?MARINE_PERMIT_CONTROLS:PERMIT_CONTROLS;
 const nowStr=()=>new Date().toISOString();
 const fmtDate=(s)=>s?new Date(s).toLocaleString():"—";
 
@@ -523,7 +698,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <div style={{color:"rgba(255,255,255,0.88)",fontSize:12,fontWeight:500}}>
               Welcome, <strong style={{color:"#fff"}}>{session.profile.full_name}</strong>
             </div>
-            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)}</div>
+            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)} · <span style={{color:"rgba(100,180,255,0.85)",fontWeight:600}}>{session.org.sector==="marine"?"CONTROLIT Marine":"CONTROLIT Construction"}</span></div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span><span className="cp-livedot"/><span style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>Live · {now}</span></span>
@@ -766,7 +941,7 @@ function NewPermit({session,onBack,onSuccess}){
     );
     setSimopsWarnings(warnings);
   }const[controls,setControls]=useState({});const[raMode,setRaMode]=useState(null);const[raFile,setRaFile]=useState(null);const[raFileData,setRaFileData]=useState(null);const[raGenerated,setRaGenerated]=useState("");const[raGenerating,setRaGenerating]=useState(false);const[busy,setBusy]=useState(false);const[err,setErr]=useState("");
-  const typeControls=type?(PERMIT_CONTROLS[type]||[]):[];
+  const typeControls=type?(getPermitControls(session.org.sector)[type]||[]):[];
   const isRARequired=controls["RA Required"];
 
   function handleFile(e){const f=e.target.files?.[0];if(!f)return;setRaFile(f);const rd=new FileReader();rd.onload=ev=>setRaFileData(ev.target.result);rd.readAsDataURL(f);}
@@ -817,7 +992,7 @@ function NewPermit({session,onBack,onSuccess}){
 
       <Card title="Permit Details">
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{const v=e.target.value;setType(v);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);checkSimops(v,area);}}><option value="">Select permit type…</option>{PERMIT_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
+          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{const v=e.target.value;setType(v);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);checkSimops(v,area);}}><option value="">Select permit type…</option>{getPermitTypes(session.org.sector).map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work to be performed"/></div>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>{setArea(e.target.value);checkSimops(type,e.target.value);}} placeholder="e.g. Zone A — Process Unit 3, ICAD II"/></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
