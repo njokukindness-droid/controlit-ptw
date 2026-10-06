@@ -125,7 +125,7 @@ function GateScreen({onUnlock}){
 
 function OnboardModal({token,onClose,onSuccess}){
   var [step,setStep]=useState(1);
-  var [orgName,setOrgName]=useState(""); var [industry,setIndustry]=useState("Oil & Gas"); var [country,setCountry]=useState("UAE");
+  var [orgName,setOrgName]=useState(""); var [industry,setIndustry]=useState("Construction"); var [country,setCountry]=useState("UAE"); var [sector,setSector]=useState("construction");
   var [adminName,setAdminName]=useState(""); var [adminEmail,setAdminEmail]=useState(""); var [tempPass,setTempPass]=useState("Controlit@2024!");
   var [kp1,setKp1]=useState(""); var [kp2,setKp2]=useState(""); var [kp3,setKp3]=useState("");
   var [showKey,setShowKey]=useState(false);
@@ -146,7 +146,7 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 2: Insert org — use silent insert (no return=representation) then fetch back by slug
-      await sb.insertSilent(SUPABASE_SECRET,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey});
+      await sb.insertSilent(SUPABASE_SECRET,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey,sector:sector,pdf_template:sector==="marine"?"standard":"standard"});
 
       // Step 3: Always fetch the org back by slug (works regardless of RLS response)
       var fetched = await sb.select(SUPABASE_SECRET,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
@@ -208,6 +208,15 @@ function OnboardModal({token,onClose,onSuccess}){
                     </select>
                   </div>
                 </div>
+                <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>CONTROLIT Sector *</label>
+                  <select value={sector} onChange={function(e){setSector(e.target.value);}} style={{fontWeight:600}}>
+                    <option value="construction">🏗️ CONTROLIT Construction</option>
+                    <option value="marine">🚢 CONTROLIT Marine</option>
+                    <option value="oil_gas">⛽ CONTROLIT Oil & Gas (coming soon)</option>
+                    <option value="aviation">✈️ CONTROLIT Aviation (coming soon)</option>
+                    <option value="events">🎪 CONTROLIT Events (coming soon)</option>
+                  </select>
+                </div>
               </div>
 
               <p style={{fontSize:12,fontWeight:600,color:B.accent,marginBottom:10,letterSpacing:"0.04em"}}>ADMIN ACCOUNT</p>
@@ -224,7 +233,7 @@ function OnboardModal({token,onClose,onSuccess}){
                   <button onClick={function(){setShowKey(!showKey);}} style={{background:"none",border:"0.5px solid "+B.border,color:B.textSub,borderRadius:6,padding:"3px 10px",fontSize:11,cursor:"pointer"}}>{showKey?"Hide":"Show"} fields</button>
                 </div>
                 <p style={{fontSize:11,color:B.textSub,lineHeight:1.6,marginBottom:showKey?10:0}}>
-                  Paste the Anthropic API key split at its two dots — Part 1, Part 2, Part 3. Leave blank to disable AI features for this org. This can be updated later.
+                  Paste the full Anthropic API key (starts with sk-ant-api03-). Leave blank to disable AI features for this org. This can be updated later from the org card.
                 </p>
                 {showKey&&(
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:10}}>
@@ -466,6 +475,7 @@ function OwnerDashboard({token,onLogout}){
                   <div>
                     <p style={{fontSize:14,fontWeight:700,color:B.text}}>{o.name}</p>
                     <p style={{fontSize:11,color:B.textSub}}>{o.industry} · {o.country}</p>
+                    <p style={{fontSize:11,color:"rgba(100,180,255,0.85)",fontWeight:600,marginTop:2}}>{o.sector==="marine"?"🚢 CONTROLIT Marine":o.sector==="oil_gas"?"⛽ CONTROLIT Oil & Gas":o.sector==="aviation"?"✈️ CONTROLIT Aviation":o.sector==="events"?"🎪 CONTROLIT Events":"🏗️ CONTROLIT Construction"}</p>
                     <p style={{fontSize:10,color:o.anthropic_key?B.accent:"#3A5060",marginTop:2}}>{o.anthropic_key?"🤖 AI enabled":"🤖 AI not configured"}</p>
                     {!o.active&&<p style={{fontSize:11,color:B.danger,fontWeight:600,marginTop:4}}>⚠ Suspended</p>}
                   </div>
