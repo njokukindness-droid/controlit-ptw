@@ -1489,11 +1489,28 @@ ${permit.type==="confined_space"?`
 
 ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;padding:8px;margin-top:8px;font-size:9px"><b style="color:#c00">Rejection Record:</b> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():""}</div>`:""}
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px;font-size:8px;color:#555">
-  <div><b>${docRef}</b> &nbsp;·&nbsp; Page 1</div>
-  <div style="text-align:center">(Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Dept.)</div>
-  <div style="text-align:right">Managed digitally by CONTROLIT</div>
-</div>`;
+<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px;font-size:8px;color:#555">
+  <div>
+    <div><b>${docRef}</b> &nbsp;·&nbsp; Page 1</div>
+    <div style="margin-top:3px">(Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Dept.)</div>
+    <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
+  </div>
+  <div style="text-align:center;flex-shrink:0;margin-left:16px">
+    <div id="qrcode-tas" style="width:70px;height:70px"></div>
+    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify</div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  try {
+    new QRCode(document.getElementById("qrcode-tas"), {
+      text: "https://getcontrolit.com/app.html?permit=${permit.permit_number}",
+      width: 70, height: 70,
+      colorDark: "${secColor}", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {}
+</script>`;
 }
 
 function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
@@ -1749,10 +1766,27 @@ ${fd.issuer_checklist
 ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B;padding:8px;margin-top:8px;font-size:10px"><strong style="color:#C0392B">Rejection Record:</strong> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</div>`:""}
 
 <!-- FOOTER -->
-<div class="ft">
-  <p>(Original Permit: At work location with Work Performer) &nbsp;|&nbsp; (Copy: With Issuing Authority / OSH Department)</p>
-  <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
-</div>`;
+<div class="ft" style="display:flex;justify-content:space-between;align-items:flex-end">
+  <div>
+    <p>(Original Permit: At work location with Work Performer) &nbsp;|&nbsp; (Copy: With Issuing Authority / OSH Department)</p>
+    <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
+  </div>
+  <div style="text-align:center;flex-shrink:0;margin-left:16px">
+    <div id="qrcode-std" style="width:70px;height:70px"></div>
+    <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  try {
+    new QRCode(document.getElementById("qrcode-std"), {
+      text: "https://getcontrolit.com/app.html?permit=${permit.permit_number}",
+      width: 70, height: 70,
+      colorDark: "#1A3A5C", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {}
+</script>`;
 
   return(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
