@@ -658,63 +658,308 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
   const now=new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
 
   const cockpitStyles=`
-    .cockpit-wrap{position:relative;min-height:100vh;background:#0a1a2e;font-family:inherit;overflow:hidden;}
-    .cockpit-scene{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#0a1520 0%,#0d2035 35%,#1a3a5c 60%,#1e4a30 78%,#152e1e 100%);}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+    /* ── Base ── */
+    .cockpit-wrap{position:relative;min-height:100vh;background:#07111d;font-family:inherit;overflow:hidden;}
+
+    /* ── Background scene ── */
+    .cockpit-scene{position:fixed;inset:0;z-index:0;background:linear-gradient(175deg,#060f1a 0%,#0a1828 45%,#091520 100%);}
     .cockpit-stars{position:absolute;inset:0;}
-    .cockpit-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(14,158,110,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(14,158,110,0.04) 1px,transparent 1px);background-size:40px 40px;}
-    .cockpit-site{position:absolute;bottom:0;left:0;right:0;}
-    .cockpit-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.55) 100%);}
-    .cockpit-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(14,158,110,0.12),transparent);animation:cscan 5s linear infinite;}
+    .cockpit-grid{position:absolute;inset:0;
+      background-image:linear-gradient(rgba(0,255,178,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,178,0.025) 1px,transparent 1px);
+      background-size:52px 52px;
+      mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 30%,transparent 85%);}
+    .cockpit-site{position:absolute;bottom:0;left:0;right:0;opacity:0.7;}
+    .cockpit-vignette{position:absolute;inset:0;background:radial-gradient(ellipse 120% 80% at 50% 100%,transparent 30%,rgba(0,0,0,0.7) 100%);}
+    .cockpit-scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(0,255,178,0.08) 30%,rgba(0,255,178,0.18) 50%,rgba(0,255,178,0.08) 70%,transparent 100%);animation:cscan 8s linear infinite;pointer-events:none;}
     @keyframes cscan{0%{top:0%}100%{top:100%}}
-    .cockpit-hud{position:relative;z-index:10;}
-    .cp-topbar{background:rgba(10,20,40,0.88);border-bottom:1px solid rgba(14,158,110,0.3);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(8px);}
-    .cp-logo-box{width:30px;height:30px;background:#0E9E6E;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-    .cp-orgbar{background:rgba(14,158,110,0.07);border-bottom:1px solid rgba(14,158,110,0.15);padding:7px 18px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(4px);}
-    .cp-content{padding:14px 16px 16px;}
-    .cp-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;}
-    .cp-kpi{background:rgba(10,20,40,0.72);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);}
-    .cp-mid{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px;margin-bottom:12px;}
-    .cp-panel{background:rgba(10,20,40,0.72);border:1px solid rgba(14,158,110,0.2);border-radius:12px;padding:13px;backdrop-filter:blur(8px);}
-    .cp-panel-title{font-size:9px;color:rgba(14,158,110,0.85);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px;display:flex;align-items:center;gap:6px;}
-    .cp-panel-title::before{content:'';display:block;width:3px;height:10px;background:#0E9E6E;border-radius:2px;}
-    .cp-permit{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;margin-bottom:7px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:4px;border-left:3px solid #444;transition:background 0.15s;}
-    .cp-permit:hover{background:rgba(255,255,255,0.07);}
-    .cp-bottom{background:rgba(10,20,40,0.88);border-top:1px solid rgba(14,158,110,0.2);padding:7px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;backdrop-filter:blur(8px);}
-    .cp-navbtn{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.75);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;}
-    .cp-navbtn:hover{background:rgba(255,255,255,0.12);}
-    .cp-livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#0E9E6E;margin-right:5px;animation:cpulse 2s infinite;}
-    @keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.25}}
-    .cp-filter{border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.55);border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;}
-    .cp-filter.on{background:#1A3A5C;color:#fff;border-color:#1A3A5C;}
-    .cp-notif-badge{position:absolute;top:-4px;right:-4px;background:#E24B4A;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-    .cp-permit-grid{display:grid;grid-template-columns:1fr;gap:7px;padding-bottom:6rem;}
-    @media(min-width:900px){
-      .cp-content{padding:20px 28px 20px;}
-      .cp-topbar{padding:12px 28px;}
-      .cp-orgbar{padding:9px 28px;}
-      .cp-bottom{padding:9px 28px;gap:24px;}
-      .cp-kpi-row{gap:14px;margin-bottom:16px;}
-      .cp-kpi{padding:16px 20px;border-radius:14px;}
-      .cp-mid{gap:16px;margin-bottom:16px;}
-      .cp-panel{padding:18px 20px;border-radius:16px;}
-      .cp-panel-title{font-size:10px;margin-bottom:14px;}
-      .cp-permit{padding:14px 18px;border-radius:10px;margin-bottom:0;}
-      .cp-permit-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+    @media(prefers-reduced-motion:reduce){.cockpit-scan{animation:none;}}
+
+    /* ── HUD shell ── */
+    .cockpit-hud{position:relative;z-index:10;display:flex;flex-direction:column;min-height:100vh;}
+
+    /* ── Top bar ── */
+    .cp-topbar{
+      background:rgba(6,14,26,0.92);
+      border-bottom:1px solid rgba(0,255,178,0.12);
+      padding:0 20px;
+      height:52px;
+      display:flex;align-items:center;justify-content:space-between;
+      backdrop-filter:blur(12px);
+      flex-shrink:0;
     }
-    @media(min-width:1300px){
-      .cp-content{padding:24px 36px 24px;}
-      .cp-topbar{padding:14px 36px;}
-      .cp-orgbar{padding:10px 36px;}
-      .cp-bottom{padding:10px 36px;gap:32px;}
-      .cp-kpi-row{gap:18px;margin-bottom:20px;}
-      .cp-kpi{padding:20px 24px;border-radius:16px;}
-      .cp-mid{gap:20px;margin-bottom:20px;grid-template-columns:1.1fr 1.1fr 1.4fr;}
-      .cp-panel{padding:22px 24px;}
-      .cp-panel-title{font-size:11px;letter-spacing:1.5px;}
-      .cp-permit{padding:16px 20px;}
+    .cp-logo-box{width:28px;height:28px;background:#0E9E6E;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .cp-navbtn{
+      background:transparent;
+      color:rgba(255,255,255,0.5);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:5px;
+      padding:5px 12px;
+      font-size:11px;
+      font-family:inherit;
+      cursor:pointer;
+      transition:color 0.15s,border-color 0.15s;
+      letter-spacing:0.3px;
+    }
+    .cp-navbtn:hover{color:rgba(255,255,255,0.9);border-color:rgba(255,255,255,0.25);}
+    .cp-notif-badge{position:absolute;top:-3px;right:-3px;background:#E24B4A;color:#fff;border-radius:50%;width:15px;height:15px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+    /* ── Org bar ── */
+    .cp-orgbar{
+      background:rgba(0,255,178,0.035);
+      border-bottom:1px solid rgba(0,255,178,0.08);
+      padding:6px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      backdrop-filter:blur(4px);
+      flex-shrink:0;
+    }
+
+    /* ── Desktop layout: sidebar + main ── */
+    .cp-body{
+      display:flex;
+      flex:1;
+      overflow:hidden;
+    }
+
+    /* ── Left sidebar ── */
+    .cp-sidebar{
+      display:none;
+    }
+    .cp-sidebar-logo{
+      width:100%;
+      aspect-ratio:1;
+      max-width:52px;
+      border-radius:10px;
+      object-fit:contain;
+      background:rgba(14,158,110,0.08);
+      border:1px solid rgba(14,158,110,0.2);
+      padding:6px;
+      margin-bottom:20px;
+    }
+    .cp-sidebar-stat{
+      width:100%;
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px;
+      padding:12px;
+      margin-bottom:8px;
+      background:rgba(10,20,36,0.6);
+      backdrop-filter:blur(6px);
+    }
+
+    /* ── Main scroll area ── */
+    .cp-main{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+    .cp-content{padding:14px 16px 120px;}
+
+    /* ── Instrument row (KPIs) ── */
+    .cp-instruments{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
+      margin-bottom:12px;
+    }
+    .cp-inst{
+      position:relative;
+      background:rgba(8,18,32,0.8);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px;
+      padding:14px 14px 12px;
+      backdrop-filter:blur(8px);
+      overflow:hidden;
+      cursor:default;
+      transition:border-color 0.2s;
+    }
+    .cp-inst:hover{border-color:rgba(255,255,255,0.16);}
+    .cp-inst-glow{
+      position:absolute;
+      bottom:0;left:0;right:0;
+      height:60%;
+      border-radius:0 0 12px 12px;
+      pointer-events:none;
+      opacity:0.18;
+    }
+    .cp-inst-label{
+      font-size:10px;
+      color:rgba(255,255,255,0.38);
+      letter-spacing:0.4px;
+      margin-bottom:8px;
+      font-weight:500;
+    }
+    .cp-inst-num{
+      font-family:'DM Mono',monospace;
+      font-size:38px;
+      font-weight:500;
+      line-height:1;
+      margin-bottom:6px;
+      letter-spacing:-1px;
+    }
+    .cp-inst-sub{
+      font-size:9.5px;
+      color:rgba(255,255,255,0.28);
+      letter-spacing:0.2px;
+    }
+    .cp-inst-arc{
+      position:absolute;
+      top:10px;right:10px;
+      opacity:0.35;
+    }
+
+    /* ── Mid row ── */
+    .cp-mid{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:12px;}
+
+    /* ── Panels ── */
+    .cp-panel{
+      background:rgba(8,18,32,0.75);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px;
+      padding:14px 16px;
+      backdrop-filter:blur(8px);
+    }
+    .cp-panel-title{
+      font-size:10px;
+      color:rgba(255,255,255,0.35);
+      letter-spacing:0.5px;
+      margin-bottom:14px;
+      font-weight:500;
+      display:flex;align-items:center;gap:7px;
+    }
+    .cp-panel-title-dot{
+      width:5px;height:5px;border-radius:50%;
+      background:#00FFB2;
+      flex-shrink:0;
+      box-shadow:0 0 6px rgba(0,255,178,0.7);
+    }
+
+    /* ── Permit register ── */
+    .cp-register-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:8px;
+      padding:0 2px;
+    }
+    .cp-register-title{font-size:10px;color:rgba(255,255,255,0.35);font-weight:500;letter-spacing:0.5px;}
+    .cp-filters{display:flex;gap:4px;flex-wrap:wrap;}
+    .cp-filter{
+      border:1px solid rgba(255,255,255,0.1);
+      background:transparent;
+      color:rgba(255,255,255,0.4);
+      border-radius:4px;
+      padding:4px 10px;
+      font-size:10px;
+      font-family:inherit;
+      cursor:pointer;
+      transition:all 0.15s;
+      letter-spacing:0.2px;
+    }
+    .cp-filter:hover{color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.22);}
+    .cp-filter.on{background:rgba(0,255,178,0.1);color:#00FFB2;border-color:rgba(0,255,178,0.3);}
+
+    /* ── Permit cards ── */
+    .cp-permit-grid{display:grid;grid-template-columns:1fr;gap:6px;}
+    .cp-permit{
+      background:rgba(10,22,38,0.7);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:8px;
+      padding:11px 14px;
+      cursor:pointer;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:4px;
+      border-left:2px solid transparent;
+      transition:background 0.12s,border-left-color 0.12s;
+    }
+    .cp-permit:hover{background:rgba(255,255,255,0.04);}
+
+    /* ── Live dot ── */
+    .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;margin-right:5px;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
+    @keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.2}}
+
+    /* ── Bottom status bar ── */
+    .cp-bottom{
+      background:rgba(6,14,26,0.94);
+      border-top:1px solid rgba(255,255,255,0.07);
+      padding:7px 20px;
+      display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+      backdrop-filter:blur(8px);
+      position:fixed;bottom:0;left:0;right:0;z-index:20;
+    }
+    .cp-bottom-item{display:flex;align-items:center;gap:6px;}
+    .cp-bottom-label{font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:0.3px;}
+    .cp-bottom-val{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;}
+    .cp-divider{width:1px;height:16px;background:rgba(255,255,255,0.08);}
+
+    /* ── Desktop overrides ── */
+    @media(min-width:860px){
+      .cp-topbar{padding:0 28px;height:56px;}
+      .cp-orgbar{padding:7px 28px;}
+      .cp-bottom{padding:8px 28px;gap:20px;}
+      .cp-content{padding:20px 24px 100px;}
+      .cp-instruments{gap:12px;margin-bottom:16px;}
+      .cp-inst{padding:18px 18px 14px;border-radius:14px;}
+      .cp-inst-num{font-size:44px;}
+      .cp-mid{gap:12px;margin-bottom:16px;}
+      .cp-panel{padding:18px 20px;border-radius:14px;}
+      .cp-permit-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+      .cp-permit{padding:13px 16px;border-radius:10px;}
+    }
+
+    @media(min-width:1100px){
+      .cp-body{overflow:hidden;}
+      .cp-sidebar{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        width:72px;
+        flex-shrink:0;
+        background:rgba(6,13,24,0.9);
+        border-right:1px solid rgba(255,255,255,0.06);
+        padding:16px 10px;
+        gap:4px;
+        backdrop-filter:blur(12px);
+        overflow-y:auto;
+      }
+      .cp-main{overflow-y:auto;}
+      .cp-content{padding:24px 28px 100px;}
+      .cp-instruments{gap:14px;margin-bottom:18px;}
+      .cp-inst{padding:20px 20px 16px;border-radius:16px;}
+      .cp-inst-num{font-size:52px;}
+      .cp-inst-label{font-size:10.5px;}
+      .cp-mid{gap:14px;margin-bottom:18px;grid-template-columns:1fr 1fr 1.5fr;}
+      .cp-panel{padding:20px 22px;border-radius:16px;}
+      .cp-panel-title{font-size:10.5px;}
+      .cp-permit-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+      .cp-permit{padding:14px 18px;}
+    }
+
+    @media(min-width:1400px){
+      .cp-sidebar{width:80px;padding:18px 12px;}
+      .cp-content{padding:28px 36px 100px;}
+      .cp-instruments{gap:18px;margin-bottom:22px;}
+      .cp-inst{padding:24px 22px 18px;border-radius:18px;}
+      .cp-inst-num{font-size:60px;letter-spacing:-2px;}
+      .cp-mid{gap:18px;margin-bottom:22px;}
+      .cp-panel{padding:24px 26px;border-radius:18px;}
       .cp-permit-grid{grid-template-columns:repeat(3,1fr);gap:12px;}
     }
   `;
+
+  // Arc SVG for instrument panels
+  function InstArc({value,max,color}){
+    const pct=max>0?Math.min(value/max,1):0;
+    const r=20,cx=24,cy=24,stroke=3;
+    const circ=Math.PI*r; // half circle
+    const dash=pct*circ;
+    return(
+      <svg width="48" height="28" viewBox="0 0 48 28" className="cp-inst-arc" aria-hidden="true">
+        <path d={`M4,24 A${r},${r} 0 0,1 44,24`} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke} strokeLinecap="round"/>
+        <path d={`M4,24 A${r},${r} 0 0,1 44,24`} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`} style={{transition:"stroke-dasharray 0.6s ease"}}/>
+      </svg>
+    );
+  }
 
   return(
     <div className="cockpit-wrap">
@@ -725,38 +970,38 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
         <div className="cockpit-stars" id="cockpit-stars"/>
         <div className="cockpit-grid"/>
         <svg className="cockpit-site" viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="90" width="800" height="110" fill="#0d1e10" opacity="0.97"/>
-          <rect x="20" y="55" width="65" height="85" fill="#0f2218" rx="2"/>
-          <rect x="40" y="44" width="22" height="16" fill="#0f2218"/>
-          <rect x="110" y="68" width="85" height="62" fill="#0d1e10" rx="2"/>
-          <rect x="125" y="57" width="16" height="15" fill="#0d2015"/>
-          <rect x="152" y="57" width="16" height="15" fill="#0d2015"/>
-          <rect x="220" y="28" width="3" height="95" fill="#112b17"/>
-          <line x1="221" y1="28" x2="255" y2="56" stroke="#112b17" strokeWidth="1.5"/>
-          <line x1="221" y1="28" x2="187" y2="56" stroke="#112b17" strokeWidth="1.5"/>
-          <rect x="218" y="56" width="38" height="3" fill="#112b17"/>
-          <rect x="270" y="62" width="55" height="68" fill="#0e2214" rx="2"/>
-          <rect x="283" y="51" width="28" height="15" fill="#0e2214"/>
-          <rect x="345" y="42" width="3" height="80" fill="#122a18"/>
-          <line x1="346" y1="42" x2="380" y2="66" stroke="#122a18" strokeWidth="1.5"/>
-          <rect x="343" y="66" width="38" height="3" fill="#122a18"/>
-          <rect x="390" y="68" width="95" height="62" fill="#0c1d10" rx="2"/>
-          <rect x="408" y="56" width="22" height="16" fill="#0c1d10"/>
-          <rect x="440" y="56" width="22" height="16" fill="#0c1d10"/>
-          <rect x="510" y="52" width="3" height="70" fill="#112b17"/>
-          <line x1="511" y1="52" x2="548" y2="76" stroke="#112b17" strokeWidth="1.5"/>
-          <rect x="508" y="76" width="42" height="3" fill="#112b17"/>
-          <rect x="558" y="70" width="75" height="60" fill="#0d2012" rx="2"/>
-          <rect x="655" y="36" width="3" height="86" fill="#122a18"/>
-          <line x1="656" y1="36" x2="692" y2="60" stroke="#122a18" strokeWidth="1.5"/>
-          <rect x="652" y="60" width="42" height="3" fill="#122a18"/>
-          <rect x="704" y="62" width="90" height="68" fill="#0e2114" rx="2"/>
-          <rect x="0" y="162" width="800" height="38" fill="#091708" opacity="0.92"/>
-          <rect x="0" y="190" width="800" height="10" fill="#071208"/>
-          <circle cx="221" cy="29" r="3.5" fill="#0E9E6E" opacity="0.7"/>
-          <circle cx="346" cy="43" r="3.5" fill="#0E9E6E" opacity="0.7"/>
-          <circle cx="511" cy="53" r="3.5" fill="#EDA100" opacity="0.6"/>
-          <circle cx="656" cy="37" r="3.5" fill="#0E9E6E" opacity="0.7"/>
+          <rect x="0" y="90" width="800" height="110" fill="#060e14" opacity="0.98"/>
+          <rect x="20" y="55" width="65" height="85" fill="#081218" rx="2"/>
+          <rect x="40" y="44" width="22" height="16" fill="#081218"/>
+          <rect x="110" y="68" width="85" height="62" fill="#070f16" rx="2"/>
+          <rect x="125" y="57" width="16" height="15" fill="#091520"/>
+          <rect x="152" y="57" width="16" height="15" fill="#091520"/>
+          <rect x="220" y="28" width="3" height="95" fill="#0a1c28"/>
+          <line x1="221" y1="28" x2="255" y2="56" stroke="#0a1c28" strokeWidth="1.5"/>
+          <line x1="221" y1="28" x2="187" y2="56" stroke="#0a1c28" strokeWidth="1.5"/>
+          <rect x="218" y="56" width="38" height="3" fill="#0a1c28"/>
+          <rect x="270" y="62" width="55" height="68" fill="#081420" rx="2"/>
+          <rect x="283" y="51" width="28" height="15" fill="#081420"/>
+          <rect x="345" y="42" width="3" height="80" fill="#0a1e2c"/>
+          <line x1="346" y1="42" x2="380" y2="66" stroke="#0a1e2c" strokeWidth="1.5"/>
+          <rect x="343" y="66" width="38" height="3" fill="#0a1e2c"/>
+          <rect x="390" y="68" width="95" height="62" fill="#071018" rx="2"/>
+          <rect x="408" y="56" width="22" height="16" fill="#071018"/>
+          <rect x="440" y="56" width="22" height="16" fill="#071018"/>
+          <rect x="510" y="52" width="3" height="70" fill="#091a26"/>
+          <line x1="511" y1="52" x2="548" y2="76" stroke="#091a26" strokeWidth="1.5"/>
+          <rect x="508" y="76" width="42" height="3" fill="#091a26"/>
+          <rect x="558" y="70" width="75" height="60" fill="#07101a" rx="2"/>
+          <rect x="655" y="36" width="3" height="86" fill="#0a1e2c"/>
+          <line x1="656" y1="36" x2="692" y2="60" stroke="#0a1e2c" strokeWidth="1.5"/>
+          <rect x="652" y="60" width="42" height="3" fill="#0a1e2c"/>
+          <rect x="704" y="62" width="90" height="68" fill="#08121c" rx="2"/>
+          <rect x="0" y="162" width="800" height="38" fill="#040c10" opacity="0.95"/>
+          <rect x="0" y="190" width="800" height="10" fill="#030a0e"/>
+          <circle cx="221" cy="29" r="3" fill="#00FFB2" opacity="0.5"/>
+          <circle cx="346" cy="43" r="3" fill="#00FFB2" opacity="0.5"/>
+          <circle cx="511" cy="53" r="3" fill="#EDA100" opacity="0.45"/>
+          <circle cx="656" cy="37" r="3" fill="#00FFB2" opacity="0.5"/>
         </svg>
         <div className="cockpit-vignette"/>
         <div className="cockpit-scan"/>
@@ -769,246 +1014,295 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
         <div className="cp-topbar">
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div className="cp-logo-box">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2,8 7,13 14,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><polyline points="2,8 7,13 14,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
             <div>
-              <div style={{color:"#fff",fontSize:15,fontWeight:500,letterSpacing:"1.5px"}}>CONTROLIT</div>
-              <div style={{color:"rgba(14,158,110,0.8)",fontSize:10,letterSpacing:"0.5px"}}>PERMIT TO WORK PLATFORM</div>
+              <div style={{color:"#fff",fontSize:14,fontWeight:600,letterSpacing:"2px"}}>CONTROLIT</div>
+              <div style={{color:"rgba(0,255,178,0.55)",fontSize:9,letterSpacing:"1px",marginTop:1}}>PERMIT TO WORK PLATFORM</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:6}}>
+          <div style={{display:"flex",gap:5,alignItems:"center"}}>
             <button onClick={onNotifs} className="cp-navbtn" style={{position:"relative"}}>
               🔔{unread>0&&<span className="cp-notif-badge">{unread}</span>}
             </button>
             {session.profile.role==="admin"&&<button onClick={onAdmin} className="cp-navbtn">Admin</button>}
             <button onClick={onWorkflow} className="cp-navbtn">Workflow</button>
-            <button onClick={onRegister} className="cp-navbtn">📋 Register</button>
+            <button onClick={onRegister} className="cp-navbtn">Register</button>
             <button onClick={onChangePass} className="cp-navbtn">🔑</button>
-            <button onClick={onLogout} className="cp-navbtn">Sign out</button>
+            <div style={{width:1,height:20,background:"rgba(255,255,255,0.08)",margin:"0 2px"}}/>
+            <button onClick={onLogout} className="cp-navbtn" style={{color:"rgba(255,100,100,0.6)"}}>Sign out</button>
           </div>
-
         </div>
 
         {/* Org bar */}
         <div className="cp-orgbar">
-          <div>
-            <div style={{color:"rgba(255,255,255,0.88)",fontSize:12,fontWeight:500}}>
-              Welcome, <strong style={{color:"#fff"}}>{session.profile.full_name}</strong>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:1,height:24,background:"rgba(0,255,178,0.2)"}}/>
+            <div>
+              <div style={{color:"rgba(255,255,255,0.75)",fontSize:11,fontWeight:500,letterSpacing:"0.2px"}}>
+                {session.profile.full_name}
+                <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400,margin:"0 6px"}}>·</span>
+                <span style={{color:"rgba(0,255,178,0.65)",fontSize:10}}>{roleLabel(session.profile.role)}</span>
+              </div>
+              <div style={{color:"rgba(255,255,255,0.3)",fontSize:10,marginTop:1}}>{session.org.name}</div>
             </div>
-            <div style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>{session.org.name} · {roleLabel(session.profile.role)} · <span style={{color:"rgba(100,180,255,0.85)",fontWeight:600}}>{session.org.sector==="marine"?"🚢 CONTROLIT Marine":session.org.sector==="events"?"🎪 CONTROLIT Events":session.org.sector==="oil_gas"?"⛽ CONTROLIT Oil & Gas":session.org.sector==="aviation"?"✈️ CONTROLIT Aviation":"🏗️ CONTROLIT Construction"}</span></div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span><span className="cp-livedot"/><span style={{color:"rgba(14,158,110,0.85)",fontSize:10}}>Live · {now}</span></span>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",letterSpacing:"0.3px"}}>
+                {session.org.sector==="marine"?"🚢 Marine":session.org.sector==="events"?"🎪 Events":session.org.sector==="oil_gas"?"⛽ Oil & Gas":session.org.sector==="aviation"?"✈️ Aviation":"🏗️ Construction"}
+              </div>
+            </div>
+            <span style={{display:"flex",alignItems:"center",gap:4}}>
+              <span className="cp-livedot"/>
+              <span style={{color:"rgba(0,255,178,0.6)",fontSize:10,fontFamily:"'DM Mono',monospace"}}>{now}</span>
+            </span>
           </div>
         </div>
 
-        <div className="cp-content">
+        {/* Body: sidebar + main */}
+        <div className="cp-body">
 
-          {/* Push notification banner */}
-          {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
-            <div style={{background:"rgba(14,158,110,0.1)",border:"1px solid rgba(14,158,110,0.3)",borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <p style={{fontSize:12,fontWeight:600,color:"#4DDBAB"}}>🔔 Enable push notifications</p>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.55)"}}>Get notified when permits reach your stage — even when the app is closed.</p>
-                {/iPhone|iPad|iPod/.test(navigator.userAgent)&&(
-                  <p style={{fontSize:10,color:"#EDA100",marginTop:4}}>📱 iOS: Add to Home Screen first via Safari Share → "Add to Home Screen"</p>
-                )}
-              </div>
-              <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:"#0E9E6E",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:10}}>Enable</button>
-            </div>
-          )}
-
-          {/* KPI row */}
-          <div className="cp-kpi-row">
+          {/* Left sidebar (desktop only) */}
+          <div className="cp-sidebar">
+            {session.org.logo&&<img src={session.org.logo} alt="logo" className="cp-sidebar-logo"/>}
             {[
-              ["Active",counts.active,"#0E9E6E","live permits"],
-              ["Pending",counts.pending,"#EDA100","awaiting approval"],
-              ["Revoked",counts.revoked,"#E24B4A","this month"],
-              ["Closed",counts.closed,"#378ADD","completed"],
-              ["Expired",counts.expired,"#888","past deadline"]
-            ].map(([l,v,c,sub])=>(
-              <div key={l} className="cp-kpi" style={{borderTop:`2px solid ${c}`}}>
-                <p style={{fontSize:9,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>{l}</p>
-                <p style={{fontSize:26,fontWeight:500,color:c,lineHeight:1}}>{v}</p>
-                <p style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:3}}>{sub}</p>
+              {label:"Active",val:counts.active,color:"#00FFB2"},
+              {label:"Pending",val:counts.pending,color:"#EDA100"},
+              {label:"Closed",val:counts.closed,color:"#4A9EFF"},
+            ].map(({label,val,color})=>(
+              <div key={label} className="cp-sidebar-stat">
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:500,color,lineHeight:1,marginBottom:4}}>{val}</div>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:"0.3px"}}>{label}</div>
               </div>
             ))}
+            <div style={{flex:1}}/>
+            <div style={{width:32,height:1,background:"rgba(255,255,255,0.07)",margin:"8px 0"}}/>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,178,0.4)",writingMode:"vertical-rl",letterSpacing:"2px",opacity:0.6,paddingBottom:4}}>HSE</div>
           </div>
 
-          {/* Mid row */}
-          <div className="cp-mid">
+          {/* Main content */}
+          <div className="cp-main">
+            <div className="cp-content">
 
-            {/* Donut */}
-            <div className="cp-panel">
-              <div className="cp-panel-title">Permit breakdown</div>
-              <div style={{position:"relative",width:110,height:110,margin:"0 auto 12px"}}>
-                <canvas id="cockpit-donut" width="110" height="110" role="img" aria-label="Donut chart of permit types"/>
-                <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-                  <span style={{fontSize:22,fontWeight:500,color:"#fff",lineHeight:1}}>{total}</span>
-                  <span style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>total</span>
-                </div>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                {typeBreakdown.slice(0,5).map(([label,count],i)=>(
-                  <div key={label} style={{display:"flex",alignItems:"center",gap:6}}>
-                    <div style={{width:8,height:8,borderRadius:2,background:palette[i],flexShrink:0}}/>
-                    <span style={{fontSize:10,color:"rgba(255,255,255,0.6)",flex:1}}>{label}</span>
-                    <span style={{fontSize:10,color:"rgba(255,255,255,0.9)",fontWeight:500}}>{count}</span>
-                  </div>
-                ))}
-                {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>No permits yet</p>}
-              </div>
-            </div>
-
-            {/* Bar chart */}
-            <div className="cp-panel">
-              <div className="cp-panel-title">Types this month</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {typeBreakdown.slice(0,6).map(([label,count],i)=>(
-                  <div key={label} style={{display:"flex",alignItems:"center",gap:7}}>
-                    <span style={{fontSize:10,color:"rgba(255,255,255,0.5)",width:80,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
-                    <div style={{flex:1,height:5,background:"rgba(255,255,255,0.07)",borderRadius:3,overflow:"hidden"}}>
-                      <div style={{height:"100%",borderRadius:3,background:palette[i],width:`${Math.round((count/maxType)*100)}%`}}/>
-                    </div>
-                    <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",width:14,textAlign:"right"}}>{count}</span>
-                  </div>
-                ))}
-                {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>No data yet</p>}
-              </div>
-              <div style={{marginTop:14,paddingTop:10,borderTop:"1px solid rgba(255,255,255,0.07)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Approval rate</span>
-                <span style={{fontSize:12,color:"#0E9E6E",fontWeight:500}}>
-                  {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
-                </span>
-              </div>
-            </div>
-
-            {/* Alerts */}
-            <div className="cp-panel">
-              <div className="cp-panel-title">Alerts &amp; activity</div>
-              {alerts.length===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>No recent activity</p>}
-              {alerts.map((p,i)=>{
-                const t=pt(p.type);
-                return(
-                  <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"7px 0",borderBottom:i<alerts.length-1?"1px solid rgba(255,255,255,0.05)":"none",cursor:"pointer"}}>
-                    <div style={{width:6,height:6,borderRadius:"50%",background:alertColor(p.status),marginTop:4,flexShrink:0}}/>
-                    <div style={{flex:1,fontSize:11,color:"rgba(255,255,255,0.75)",lineHeight:1.3}}>
-                      <span style={{color:"rgba(14,158,110,0.85)",fontWeight:500}}>{p.permit_number}</span> {alertLabel(p.status)} — {t.label||p.type} · {p.area}
-                    </div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",whiteSpace:"nowrap"}}>{timeAgo(p.updated_at||p.created_at)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Permit register */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.7)"}}>Permit register</div>
-            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-              {["all","active","pending","revoked","closed","expired"].map(s=>(
-                <button key={s} onClick={()=>setFilter(s)} className={`cp-filter${filter===s?" on":""}`}>
-                  {s==="all"?"All":s.charAt(0).toUpperCase()+s.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {loading&&<Spinner/>}
-          {error&&<ErrBox msg={error}/>}
-          {!loading&&!error&&filtered.length===0&&(
-            <div style={{textAlign:"center",padding:"3rem 1rem"}}>
-              <p style={{fontSize:32}}>📋</p>
-              <p style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.7)",marginTop:8}}>No permits yet</p>
-              <p style={{fontSize:13,color:"rgba(255,255,255,0.4)"}}>Create your first permit to get started.</p>
-            </div>
-          )}
-
-          <div className="cp-permit-grid">
-            {filtered.map(p=>{
-              const t=pt(p.type);
-              const bs=badgeStyle(p.status);
-              return(
-                <div key={p.id} onClick={()=>onSelect(p)} className="cp-permit" style={{borderLeftColor:borderLeft(p.status)}}>
+              {/* Push notification banner */}
+              {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
+                <div style={{background:"rgba(0,255,178,0.04)",border:"1px solid rgba(0,255,178,0.15)",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
-                    <div style={{fontSize:9,color:"#0E9E6E",fontWeight:500,marginBottom:2}}>{p.permit_number}</div>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,0.85)",marginBottom:3,lineHeight:1.35}}>{p.title}</div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>{p.area}</div>
-                    {p.status==="rejected"&&<p style={{fontSize:10,color:"#E24B4A",marginTop:4}}>Rejected — see permit for reason</p>}
+                    <p style={{fontSize:11,fontWeight:600,color:"rgba(0,255,178,0.8)"}}>Enable push notifications</p>
+                    <p style={{fontSize:10,color:"rgba(255,255,255,0.4)",marginTop:2}}>Get notified when permits reach your stage — even when the app is closed.</p>
+                    {/iPhone|iPad|iPod/.test(navigator.userAgent)&&(
+                      <p style={{fontSize:10,color:"#EDA100",marginTop:3}}>iOS: Add to Home Screen first via Safari Share → "Add to Home Screen"</p>
+                    )}
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5}}>
-                    <span style={{fontSize:9,padding:"2px 8px",borderRadius:20,fontWeight:500,background:bs.bg,color:bs.color,border:`1px solid ${bs.border}`,whiteSpace:"nowrap",textTransform:"capitalize"}}>
-                      {(p.status||"").replace("_"," ")}
-                    </span>
-                    <span style={{fontSize:9,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",padding:"2px 7px",borderRadius:20,whiteSpace:"nowrap"}}>
-                      {t.label||p.type}
-                    </span>
-                    <div style={{display:"flex",gap:2}}>
-                      {[0,1,2,3].map(i=>(
-                        <div key={i} style={{width:12,height:3,borderRadius:2,background:i<p.stage?"#0E9E6E":i===p.stage?"#EDA100":"rgba(255,255,255,0.12)"}}/>
-                      ))}
+                  <button onClick={async function(){await subscribeToPush(session.token,session.userId,session.profile.org_id);}} style={{background:"rgba(0,255,178,0.12)",color:"#00FFB2",border:"1px solid rgba(0,255,178,0.25)",borderRadius:7,padding:"7px 14px",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0,marginLeft:12,fontFamily:"inherit"}}>Enable</button>
+                </div>
+              )}
+
+              {/* ── Instrument row ── */}
+              <div className="cp-instruments">
+                {[
+                  {label:"Active permits",val:counts.active,color:"#00FFB2",sub:"live on site",glow:"rgba(0,255,178,0.15)"},
+                  {label:"Awaiting approval",val:counts.pending,color:"#EDA100",sub:"in queue",glow:"rgba(237,161,0,0.12)"},
+                  {label:"Revoked",val:counts.revoked,color:"#E24B4A",sub:"this period",glow:"rgba(226,75,74,0.1)"},
+                  {label:"Closed",val:counts.closed,color:"#4A9EFF",sub:"completed",glow:"rgba(74,158,255,0.1)"},
+                  {label:"Expired",val:counts.expired,color:"rgba(255,255,255,0.3)",sub:"past deadline",glow:"transparent"},
+                ].map(({label,val,color,sub,glow})=>(
+                  <div key={label} className="cp-inst" style={{borderTopColor:`${color}22`}}>
+                    <div className="cp-inst-glow" style={{background:`radial-gradient(ellipse at 50% 100%,${glow},transparent)`}}/>
+                    <InstArc value={val} max={Math.max(total,1)} color={color}/>
+                    <div className="cp-inst-label">{label}</div>
+                    <div className="cp-inst-num" style={{color}}>{val}</div>
+                    <div className="cp-inst-sub">{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Mid row ── */}
+              <div className="cp-mid">
+
+                {/* Permit breakdown donut */}
+                <div className="cp-panel">
+                  <div className="cp-panel-title"><span className="cp-panel-title-dot"/>Permit breakdown</div>
+                  <div style={{position:"relative",width:120,height:120,margin:"0 auto 16px"}}>
+                    <canvas id="cockpit-donut" width="120" height="120" role="img" aria-label="Donut chart of permit types"/>
+                    <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:500,color:"#fff",lineHeight:1}}>{total}</span>
+                      <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:3,letterSpacing:"0.5px"}}>total</span>
                     </div>
                   </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                    {typeBreakdown.slice(0,5).map(([label,count],i)=>(
+                      <div key={label} style={{display:"flex",alignItems:"center",gap:7}}>
+                        <div style={{width:3,height:14,borderRadius:2,background:palette[i],flexShrink:0}}/>
+                        <span style={{fontSize:10,color:"rgba(255,255,255,0.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:"rgba(255,255,255,0.8)",fontWeight:500}}>{count}</span>
+                      </div>
+                    ))}
+                    {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.25)",textAlign:"center"}}>No permits yet</p>}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Floating Action Button — New Permit */}
+                {/* Types bar chart */}
+                <div className="cp-panel">
+                  <div className="cp-panel-title"><span className="cp-panel-title-dot" style={{background:"#4A9EFF",boxShadow:"0 0 6px rgba(74,158,255,0.7)"}}/>Types this month</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {typeBreakdown.slice(0,6).map(([label,count],i)=>(
+                      <div key={label}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.45)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"75%"}}>{label}</span>
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(255,255,255,0.6)"}}>{count}</span>
+                        </div>
+                        <div style={{height:3,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden"}}>
+                          <div style={{height:"100%",borderRadius:2,background:palette[i],width:`${Math.round((count/Math.max(maxType,1))*100)}%`,transition:"width 0.5s ease"}}/>
+                        </div>
+                      </div>
+                    ))}
+                    {total===0&&<p style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>No data yet</p>}
+                  </div>
+                  <div style={{marginTop:16,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Approval rate</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:"#00FFB2",fontWeight:500}}>
+                      {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Activity feed */}
+                <div className="cp-panel">
+                  <div className="cp-panel-title"><span className="cp-panel-title-dot" style={{background:"#EDA100",boxShadow:"0 0 6px rgba(237,161,0,0.7)"}}/>Live activity</div>
+                  {alerts.length===0&&<p style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>No recent activity</p>}
+                  {alerts.map((p,i)=>{
+                    const t=pt(p.type);
+                    const ac=alertColor(p.status);
+                    return(
+                      <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 0",borderBottom:i<alerts.length-1?"1px solid rgba(255,255,255,0.04)":"none",cursor:"pointer"}}>
+                        <div style={{width:2,alignSelf:"stretch",background:ac,borderRadius:2,flexShrink:0,marginTop:2,minHeight:32}}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                            <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(0,255,178,0.7)",fontWeight:500}}>{p.permit_number}</span>
+                            <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",whiteSpace:"nowrap",marginLeft:8}}>{timeAgo(p.updated_at||p.created_at)}</span>
+                          </div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",lineHeight:1.4}}>
+                            {alertLabel(p.status)} · {t.label||p.type}
+                          </div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.28)",marginTop:1}}>{p.area}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Permit register ── */}
+              <div className="cp-register-header">
+                <div className="cp-register-title">Permit register</div>
+                <div className="cp-filters">
+                  {["all","active","pending","revoked","closed","expired"].map(s=>(
+                    <button key={s} onClick={()=>setFilter(s)} className={`cp-filter${filter===s?" on":""}`}>
+                      {s==="all"?"All":s.charAt(0).toUpperCase()+s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {loading&&<Spinner/>}
+              {error&&<ErrBox msg={error}/>}
+              {!loading&&!error&&filtered.length===0&&(
+                <div style={{textAlign:"center",padding:"3rem 1rem"}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:40,color:"rgba(255,255,255,0.08)",marginBottom:12}}>[ ]</div>
+                  <p style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.45)"}}>No permits yet</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:4}}>Create your first permit to get started.</p>
+                </div>
+              )}
+
+              <div className="cp-permit-grid">
+                {filtered.map(p=>{
+                  const t=pt(p.type);
+                  const bs=badgeStyle(p.status);
+                  const bl=borderLeft(p.status);
+                  return(
+                    <div key={p.id} onClick={()=>onSelect(p)} className="cp-permit" style={{borderLeftColor:bl}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,178,0.65)",fontWeight:500,marginBottom:3,letterSpacing:"0.3px"}}>{p.permit_number}</div>
+                        <div style={{fontSize:12,color:"rgba(255,255,255,0.82)",marginBottom:3,lineHeight:1.4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title}</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>{p.area}</div>
+                        {p.status==="rejected"&&<div style={{fontSize:9,color:"#E24B4A",marginTop:4}}>Rejected — open for reason</div>}
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0,paddingLeft:8}}>
+                        <span style={{fontSize:9,padding:"3px 8px",borderRadius:3,fontWeight:600,background:bs.bg,color:bs.color,border:`1px solid ${bs.border}`,whiteSpace:"nowrap",textTransform:"capitalize",letterSpacing:"0.2px"}}>
+                          {(p.status||"").replace("_"," ")}
+                        </span>
+                        <span style={{fontSize:9,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.35)",padding:"2px 7px",borderRadius:3,whiteSpace:"nowrap"}}>
+                          {t.label||p.type}
+                        </span>
+                        <div style={{display:"flex",gap:3}}>
+                          {[0,1,2,3].map(i=>(
+                            <div key={i} style={{width:14,height:2,borderRadius:1,background:i<p.stage?"#00FFB2":i===p.stage?"#EDA100":"rgba(255,255,255,0.1)"}}/>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>{/* end cp-main */}
+        </div>{/* end cp-body */}
+
+        {/* Floating Action Button */}
         {onNew&&(
           <button onClick={onNew} style={{
             position:"fixed",
-            bottom:"calc(60px + env(safe-area-inset-bottom, 0px))",
+            bottom:"calc(44px + env(safe-area-inset-bottom, 0px) + 10px)",
             right:20,
-            width:58,
-            height:58,
+            width:52,
+            height:52,
             borderRadius:"50%",
-            background:"#0E9E6E",
-            color:"#fff",
+            background:"#00FFB2",
+            color:"#07111d",
             border:"none",
-            fontSize:28,
-            fontWeight:300,
+            fontSize:26,
+            fontWeight:400,
             cursor:"pointer",
             zIndex:30,
-            boxShadow:"0 4px 20px rgba(14,158,110,0.5)",
-            display:"flex",
-            alignItems:"center",
-            justifyContent:"center",
+            boxShadow:"0 0 24px rgba(0,255,178,0.4),0 4px 12px rgba(0,0,0,0.4)",
+            display:"flex",alignItems:"center",justifyContent:"center",
             lineHeight:1,
+            transition:"transform 0.15s,box-shadow 0.15s",
           }} title="New Permit">+</button>
         )}
 
-        {/* Bottom bar */}
-        <div className="cp-bottom" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20}}>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Platform</span>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>CONTROLIT v1.0</span>
-          </div>
-          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Org</span>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>{session.org.name}</span>
-          </div>
-          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Total permits</span>
-            <span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:500}}>{total}</span>
-          </div>
-          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Approval rate</span>
-            <span style={{fontSize:11,color:"#0E9E6E",fontWeight:500}}>
-              {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
-            </span>
-          </div>
-          <div style={{width:1,height:20,background:"rgba(255,255,255,0.1)"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
+        {/* Bottom status bar */}
+        <div className="cp-bottom">
+          <div className="cp-bottom-item">
             <span className="cp-livedot"/>
-            <span style={{fontSize:11,color:"rgba(14,158,110,0.85)",fontWeight:500}}>Operational</span>
+            <span className="cp-bottom-val" style={{color:"rgba(0,255,178,0.7)"}}>Operational</span>
+          </div>
+          <div className="cp-divider"/>
+          <div className="cp-bottom-item">
+            <span className="cp-bottom-label">Platform</span>
+            <span className="cp-bottom-val">CONTROLIT v1.0</span>
+          </div>
+          <div className="cp-divider"/>
+          <div className="cp-bottom-item">
+            <span className="cp-bottom-label">Org</span>
+            <span className="cp-bottom-val">{session.org.name}</span>
+          </div>
+          <div className="cp-divider"/>
+          <div className="cp-bottom-item">
+            <span className="cp-bottom-label">Total</span>
+            <span className="cp-bottom-val">{total} permits</span>
+          </div>
+          <div className="cp-divider"/>
+          <div className="cp-bottom-item">
+            <span className="cp-bottom-label">Approval</span>
+            <span className="cp-bottom-val" style={{color:"#00FFB2"}}>{total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}</span>
           </div>
         </div>
-      </div>
+
+      </div>{/* end cockpit-hud */}
     </div>
   );
 }
