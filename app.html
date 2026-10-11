@@ -830,8 +830,8 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     /* ── Mobile (<760px): no side panels ── */
     .cp-leftnav{ display:none; }
     .cp-rightrail{ display:none; }
-    .cp-topbar-nav{ display:flex; }
-    .cp-orgbar-meta{ display:flex; }
+    .cp-topbar-nav{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+    .cp-orgbar-meta{ display:flex; align-items:center; gap:14px; }
     .cp-mid-activity{ display:block; }
 
     /* ── Tablet (680–799px): slim icon nav, no right rail ── */
@@ -1117,7 +1117,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
               <div style={{color:"rgba(0,255,178,0.55)",fontSize:9,letterSpacing:"1px",marginTop:1}}>PERMIT TO WORK PLATFORM</div>
             </div>
           </div>
-          <div className="cp-topbar-nav" style={{display:"flex",gap:5,alignItems:"center"}}>
+          <div className="cp-topbar-nav" style={{gap:5,alignItems:"center"}}>
             <button onClick={onNotifs} className="cp-navbtn" style={{position:"relative"}}>
               🔔{unread>0&&<span className="cp-notif-badge">{unread}</span>}
             </button>
@@ -1149,7 +1149,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 {session.org.sector==="marine"?"🚢 Marine":session.org.sector==="events"?"🎪 Events":session.org.sector==="oil_gas"?"⛽ Oil & Gas":session.org.sector==="aviation"?"✈️ Aviation":"🏗️ Construction"}
               </div>
             </div>
-            <div className="cp-orgbar-meta" style={{display:"flex",alignItems:"center",gap:14}}>
+            <div className="cp-orgbar-meta" style={{alignItems:"center",gap:14}}>
               {weather&&(
                 <div className="cp-weather">
                   <span className="cp-weather-icon">{weather.icon}</span>
@@ -1307,7 +1307,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 </div>
 
                 {/* Recent activity (shown in center on mobile/tablet; right rail on desktop) */}
-                <div className="cp-panel cp-mid-activity" style={{display:"block"}}>
+                <div className="cp-panel cp-mid-activity">
                   <div className="cp-panel-title">
                     <div style={{display:"flex",alignItems:"center",gap:7}}><span className="cp-panel-title-dot" style={{background:"#EDA100",boxShadow:"0 0 6px rgba(237,161,0,0.7)"}}/>Recent activity</div>
                   </div>
