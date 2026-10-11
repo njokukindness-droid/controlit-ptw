@@ -1241,8 +1241,8 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     if(act==="suspend"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can suspend a permit.");return;}
     // Extension request: only requester or admin
     if(act==="ext_request"&&!isAdmin&&role!=="requester"){setErrMsg("Only the Work In-charge can request an extension.");return;}
-    // Extension approve/reject: only issuer or admin
-    if((act==="ext_approve"||act==="ext_reject")&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can approve or reject extensions.");return;}
+    // Extension approve/reject: only admin or HSE (safety_officer) — never the requester who raised it
+    if((act==="ext_approve"||act==="ext_reject")&&!isAdmin&&role!=="safety_officer"){setErrMsg("Only Admin or HSE can approve or reject extensions.");return;}
     // ─────────────────────────────────────────────────────────────────
     setBusy(true);
     let ns=permit.status,st=permit.stage,ex=permit.extensions||0;const extra={};
@@ -1435,7 +1435,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     )}
   </div>
 )}
-        {permit.status==="extension_pending"&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
+        {permit.status==="extension_pending"&&(session.profile.role==="admin"||session.profile.role==="safety_officer")&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
       {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} orgLogo={session.org.logo||null} orgTemplate={session.org.pdf_template||"standard"} onClose={()=>setShowPDF(false)}/>}
