@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -810,10 +811,16 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     .cp-main{
       flex:1;
       min-height:0;
+      min-width:0;
       overflow-y:auto;
       overflow-x:hidden;
     }
     .cp-content{padding:12px 14px 20px;}
+    /* On desktop with left nav + right rail, hide redundant top-bar nav and org-bar weather/clock */
+    @media(min-width:1100px){
+      .cp-topbar-nav{display:none;}
+      .cp-orgbar-meta{display:none;}
+    }
 
     /* ── Right rail (desktop only) ── */
     .cp-rightrail{
@@ -970,7 +977,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     }
     .cp-mid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;}
     @media(min-width:700px){.cp-mid{grid-template-columns:1fr 1fr;}}
-    @media(min-width:1100px){.cp-mid{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}}
+    @media(min-width:1100px){.cp-mid{grid-template-columns:1fr;gap:12px;margin-bottom:14px;}}
+    /* Hide center-column recent activity on desktop — right rail has it */
+    @media(min-width:1100px){.cp-mid-activity{display:none;}}
 
     /* ── Live dot ── */
     .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
@@ -1086,7 +1095,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
               <div style={{color:"rgba(0,255,178,0.55)",fontSize:9,letterSpacing:"1px",marginTop:1}}>PERMIT TO WORK PLATFORM</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:5,alignItems:"center"}}>
+          <div className="cp-topbar-nav" style={{display:"flex",gap:5,alignItems:"center"}}>
             <button onClick={onNotifs} className="cp-navbtn" style={{position:"relative"}}>
               🔔{unread>0&&<span className="cp-notif-badge">{unread}</span>}
             </button>
@@ -1118,20 +1127,22 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 {session.org.sector==="marine"?"🚢 Marine":session.org.sector==="events"?"🎪 Events":session.org.sector==="oil_gas"?"⛽ Oil & Gas":session.org.sector==="aviation"?"✈️ Aviation":"🏗️ Construction"}
               </div>
             </div>
-            {weather&&(
-              <div className="cp-weather">
-                <span className="cp-weather-icon">{weather.icon}</span>
-                <div>
-                  <div className="cp-weather-temp">{weather.temp}°C</div>
-                  <div className="cp-weather-wind">{weather.wind} km/h</div>
+            <div className="cp-orgbar-meta" style={{display:"flex",alignItems:"center",gap:14}}>
+              {weather&&(
+                <div className="cp-weather">
+                  <span className="cp-weather-icon">{weather.icon}</span>
+                  <div>
+                    <div className="cp-weather-temp">{weather.temp}°C</div>
+                    <div className="cp-weather-wind">{weather.wind} km/h</div>
+                  </div>
                 </div>
-              </div>
-            )}
-            <div className="cp-clock">
-              <span className="cp-livedot"/>
-              <div>
-                <div className="cp-clock-time">{nowTime}</div>
-                <div className="cp-clock-date">{nowDate}</div>
+              )}
+              <div className="cp-clock">
+                <span className="cp-livedot"/>
+                <div>
+                  <div className="cp-clock-time">{nowTime}</div>
+                  <div className="cp-clock-date">{nowDate}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1274,7 +1285,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 </div>
 
                 {/* Recent activity (shown in center on mobile/tablet; right rail on desktop) */}
-                <div className="cp-panel" style={{display:"block"}}>
+                <div className="cp-panel cp-mid-activity" style={{display:"block"}}>
                   <div className="cp-panel-title">
                     <div style={{display:"flex",alignItems:"center",gap:7}}><span className="cp-panel-title-dot" style={{background:"#EDA100",boxShadow:"0 0 6px rgba(237,161,0,0.7)"}}/>Recent activity</div>
                   </div>
