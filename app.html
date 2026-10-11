@@ -834,12 +834,12 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     .cp-orgbar-meta{ display:flex; }
     .cp-mid-activity{ display:block; }
 
-    /* ── Tablet (760–959px): slim icon nav only ── */
-    @media(min-width:760px){
+    /* ── Tablet (680–799px): slim icon nav, no right rail ── */
+    @media(min-width:680px){
       .cp-leftnav{
         display:flex;
         flex-direction:column;
-        width:48px;
+        width:44px;
         flex-shrink:0;
         background:rgba(5,11,22,0.97);
         border-right:1px solid rgba(255,255,255,0.06);
@@ -847,31 +847,31 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       }
       .cp-leftnav-logo{ padding:12px 0; display:flex; justify-content:center; }
       .cp-leftnav-section{ display:none; }
-      .cp-navitem{ padding:10px 0; justify-content:center; border-left-width:2px; }
+      .cp-navitem{ padding:9px 0; justify-content:center; border-left-width:2px; }
       .cp-navitem span:not(.cp-navitem-icon){ display:none; }
-      .cp-navitem-icon{ width:auto; font-size:16px; }
+      .cp-navitem-icon{ width:auto; font-size:15px; }
       .cp-leftnav-weather{ display:none; }
       .cp-topbar-nav{ display:none; }
       .cp-orgbar-meta{ display:flex; }
     }
 
-    /* ── Desktop (≥960px): full three columns ── */
-    @media(min-width:960px){
+    /* ── Desktop (≥800px): full three columns, fluid widths ── */
+    @media(min-width:800px){
       .cp-leftnav{
-        width:clamp(160px,15vw,200px);
+        width:clamp(140px,14vw,190px);
         overflow-y:auto;
         overflow-x:hidden;
       }
-      .cp-leftnav-logo{ padding:14px 14px 10px; justify-content:flex-start; }
+      .cp-leftnav-logo{ padding:12px 12px 8px; justify-content:flex-start; }
       .cp-leftnav-section{ display:block; }
-      .cp-navitem{ padding:8px 14px; justify-content:flex-start; }
+      .cp-navitem{ padding:7px 12px; justify-content:flex-start; }
       .cp-navitem span:not(.cp-navitem-icon){ display:inline; }
-      .cp-navitem-icon{ font-size:14px; width:18px; }
+      .cp-navitem-icon{ font-size:13px; width:16px; }
       .cp-leftnav-weather{ display:block; }
       .cp-rightrail{
         display:flex;
         flex-direction:column;
-        width:clamp(220px,22vw,270px);
+        width:clamp(200px,24vw,270px);
         flex-shrink:0;
         background:rgba(5,11,22,0.95);
         border-left:1px solid rgba(255,255,255,0.06);
@@ -882,9 +882,13 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       .cp-orgbar-meta{ display:none; }
       .cp-mid-activity{ display:none; }
     }
-    @media(min-width:1400px){
-      .cp-leftnav{ width:clamp(200px,16vw,240px); }
-      .cp-rightrail{ width:clamp(260px,20vw,300px); }
+    @media(min-width:1200px){
+      .cp-leftnav{ width:clamp(170px,14vw,210px); }
+      .cp-rightrail{ width:clamp(230px,20vw,280px); }
+    }
+    @media(min-width:1600px){
+      .cp-leftnav{ width:clamp(200px,13vw,240px); }
+      .cp-rightrail{ width:clamp(260px,18vw,310px); }
     }
 
     /* ── Center: scrollable main content ── */
@@ -929,10 +933,10 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     }
     .cp-tile-label{font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .cp-tile-sub{font-size:8px;color:rgba(255,255,255,0.2);margin-top:1px;}
-    @media(min-width:960px){
-      .cp-content{padding:14px 18px 20px;}
+    @media(min-width:800px){
+      .cp-content{padding:12px 16px 20px;}
       .cp-tiles{gap:8px;margin-bottom:12px;}
-      .cp-tile{padding:12px 14px;}
+      .cp-tile{padding:11px 13px;}
     }
 
     /* ── Permit register section ── */
@@ -995,9 +999,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       box-shadow:0 0 6px rgba(0,255,178,0.7);
     }
     .cp-mid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;}
-    @media(min-width:600px) and (max-width:959px){.cp-mid{grid-template-columns:1fr 1fr;}}
+    @media(min-width:600px) and (max-width:799px){.cp-mid{grid-template-columns:1fr 1fr;}}
     /* Hide center-column recent activity on desktop — right rail has it */
-    @media(min-width:960px){.cp-mid-activity{display:none;}}
+    @media(min-width:800px){.cp-mid-activity{display:none;}}
 
     /* ── Live dot ── */
     .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
