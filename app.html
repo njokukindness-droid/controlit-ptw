@@ -691,9 +691,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
   const cockpitStyles=`
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
-    /* ── Base: full viewport ── */
-    html,body,#root{height:100%;margin:0;}
-    .cockpit-wrap{position:relative;height:100vh;background:#07111d;font-family:inherit;overflow:hidden;display:flex;flex-direction:column;}
+    /* ── Base: full viewport — override global #root max-width ── */
+    html,body,#root{height:100%;margin:0;max-width:100% !important;width:100% !important;padding:0 !important;}
+    .cockpit-wrap{position:relative;height:100vh;width:100%;background:#07111d;font-family:inherit;overflow:hidden;display:flex;flex-direction:column;}
 
     /* ── Background scene ── */
     .cockpit-scene{position:fixed;inset:0;z-index:0;background:linear-gradient(175deg,#060f1a 0%,#0a1828 45%,#091520 100%);}
