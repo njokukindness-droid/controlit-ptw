@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -749,62 +748,143 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     }
 
     /* ── Three-column command layout ── */
-    /* Mobile: single col stack. ≥1100px: left nav + center + right rail */
+    /* Breakpoints:
+       <760px  → mobile: single column, no left nav, no right rail
+       760–959px → tablet: left nav icon-strip (48px) + center only
+       ≥960px  → desktop: full three columns, all fluid with clamp()
+    */
     .cp-body{
       display:flex;
       flex:1;
       min-height:0;
       overflow:hidden;
+      width:100%;
     }
 
-    /* ── Left nav (desktop only) ── */
-    .cp-leftnav{
-      display:none;
+    /* ── Shared nav item styles (always defined) ── */
+    .cp-navitem{
+      display:flex;align-items:center;gap:10px;
+      padding:8px 14px;
+      font-size:12px;color:rgba(255,255,255,0.45);
+      cursor:pointer;
+      border-left:2px solid transparent;
+      transition:all 0.12s;
+      background:transparent;border-top:none;border-right:none;border-bottom:none;
+      width:100%;text-align:left;font-family:inherit;
+      letter-spacing:0.2px;
+      white-space:nowrap;
     }
-    @media(min-width:1100px){
+    .cp-navitem:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.03);}
+    .cp-navitem.active{color:#00FFB2;border-left-color:#00FFB2;background:rgba(0,255,178,0.05);}
+    .cp-navitem-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+    .cp-leftnav-section{
+      font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:1.2px;
+      padding:10px 14px 4px;font-weight:600;
+    }
+    .cp-leftnav-logo{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      margin-bottom:6px;
+    }
+    .cp-leftnav-weather{
+      margin-top:auto;
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,0.05);
+    }
+    .cp-weather-big{display:flex;align-items:center;gap:8px;}
+    .cp-weather-bigicon{font-size:22px;line-height:1;}
+    .cp-weather-bigtemp{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:#fff;line-height:1;}
+    .cp-weather-bigmeta{font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;}
+
+    /* Rail styles (always defined) */
+    .cp-rail-section{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      flex-shrink:0;
+    }
+    .cp-rail-title{
+      font-size:10px;color:rgba(255,255,255,0.35);
+      letter-spacing:0.6px;font-weight:600;
+      margin-bottom:10px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .cp-rail-viewall{font-size:9px;color:rgba(0,255,178,0.5);cursor:pointer;}
+    .cp-rail-viewall:hover{color:#00FFB2;}
+    .cp-alerts-list{display:flex;flex-direction:column;gap:6px;}
+    .cp-alert-item{
+      display:flex;align-items:flex-start;gap:8px;
+      padding:7px 9px;
+      border-radius:6px;
+      background:rgba(255,255,255,0.025);
+      border:1px solid rgba(255,255,255,0.05);
+      cursor:pointer;
+      transition:background 0.12s;
+    }
+    .cp-alert-item:hover{background:rgba(255,255,255,0.05);}
+    .cp-alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+    .cp-rail-ring-wrap{display:flex;align-items:center;gap:10px;}
+    .cp-rail-legend{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;}
+    .cp-rail-legend-item{display:flex;align-items:center;gap:6px;}
+    .cp-rail-legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+    /* ── Mobile (<760px): no side panels ── */
+    .cp-leftnav{ display:none; }
+    .cp-rightrail{ display:none; }
+    .cp-topbar-nav{ display:flex; }
+    .cp-orgbar-meta{ display:flex; }
+    .cp-mid-activity{ display:block; }
+
+    /* ── Tablet (760–959px): slim icon nav only ── */
+    @media(min-width:760px){
       .cp-leftnav{
         display:flex;
         flex-direction:column;
-        width:200px;
+        width:48px;
         flex-shrink:0;
         background:rgba(5,11,22,0.97);
         border-right:1px solid rgba(255,255,255,0.06);
+        overflow:hidden;
+      }
+      .cp-leftnav-logo{ padding:12px 0; display:flex; justify-content:center; }
+      .cp-leftnav-section{ display:none; }
+      .cp-navitem{ padding:10px 0; justify-content:center; border-left-width:2px; }
+      .cp-navitem span:not(.cp-navitem-icon){ display:none; }
+      .cp-navitem-icon{ width:auto; font-size:16px; }
+      .cp-leftnav-weather{ display:none; }
+      .cp-topbar-nav{ display:none; }
+      .cp-orgbar-meta{ display:flex; }
+    }
+
+    /* ── Desktop (≥960px): full three columns ── */
+    @media(min-width:960px){
+      .cp-leftnav{
+        width:clamp(160px,15vw,200px);
         overflow-y:auto;
         overflow-x:hidden;
       }
-      .cp-leftnav-logo{
-        padding:16px 18px 12px;
-        border-bottom:1px solid rgba(255,255,255,0.05);
-        margin-bottom:8px;
+      .cp-leftnav-logo{ padding:14px 14px 10px; justify-content:flex-start; }
+      .cp-leftnav-section{ display:block; }
+      .cp-navitem{ padding:8px 14px; justify-content:flex-start; }
+      .cp-navitem span:not(.cp-navitem-icon){ display:inline; }
+      .cp-navitem-icon{ font-size:14px; width:18px; }
+      .cp-leftnav-weather{ display:block; }
+      .cp-rightrail{
+        display:flex;
+        flex-direction:column;
+        width:clamp(220px,22vw,270px);
+        flex-shrink:0;
+        background:rgba(5,11,22,0.95);
+        border-left:1px solid rgba(255,255,255,0.06);
+        overflow-y:auto;
+        overflow-x:hidden;
       }
-      .cp-leftnav-section{
-        font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:1.2px;
-        padding:10px 18px 4px;
-        font-weight:600;
-      }
-      .cp-navitem{
-        display:flex;align-items:center;gap:10px;
-        padding:8px 18px;
-        font-size:12px;color:rgba(255,255,255,0.45);
-        cursor:pointer;
-        border-left:2px solid transparent;
-        transition:all 0.12s;
-        background:transparent;border-top:none;border-right:none;border-bottom:none;
-        width:100%;text-align:left;font-family:inherit;
-        letter-spacing:0.2px;
-      }
-      .cp-navitem:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.03);}
-      .cp-navitem.active{color:#00FFB2;border-left-color:#00FFB2;background:rgba(0,255,178,0.05);}
-      .cp-navitem-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
-      .cp-leftnav-weather{
-        margin-top:auto;
-        padding:14px 18px;
-        border-top:1px solid rgba(255,255,255,0.05);
-      }
-      .cp-weather-big{display:flex;align-items:center;gap:10px;}
-      .cp-weather-bigicon{font-size:28px;line-height:1;}
-      .cp-weather-bigtemp{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:#fff;line-height:1;}
-      .cp-weather-bigmeta{font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;}
+      .cp-topbar-nav{ display:none; }
+      .cp-orgbar-meta{ display:none; }
+      .cp-mid-activity{ display:none; }
+    }
+    @media(min-width:1400px){
+      .cp-leftnav{ width:clamp(200px,16vw,240px); }
+      .cp-rightrail{ width:clamp(260px,20vw,300px); }
     }
 
     /* ── Center: scrollable main content ── */
@@ -815,107 +895,44 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       overflow-y:auto;
       overflow-x:hidden;
     }
-    .cp-content{padding:12px 14px 20px;}
-    /* On desktop with left nav + right rail, hide redundant top-bar nav and org-bar weather/clock */
-    @media(min-width:1100px){
-      .cp-topbar-nav{display:none;}
-      .cp-orgbar-meta{display:none;}
-    }
+    .cp-content{padding:10px 12px 20px;}
 
-    /* ── Right rail (desktop only) ── */
-    .cp-rightrail{
-      display:none;
-    }
-    @media(min-width:1100px){
-      .cp-rightrail{
-        display:flex;
-        flex-direction:column;
-        width:260px;
-        flex-shrink:0;
-        background:rgba(5,11,22,0.95);
-        border-left:1px solid rgba(255,255,255,0.06);
-        overflow-y:auto;
-        overflow-x:hidden;
-        gap:0;
-      }
-      .cp-rail-section{
-        padding:14px 16px;
-        border-bottom:1px solid rgba(255,255,255,0.05);
-        flex-shrink:0;
-      }
-      .cp-rail-title{
-        font-size:10px;color:rgba(255,255,255,0.35);
-        letter-spacing:0.6px;font-weight:600;
-        margin-bottom:12px;
-        display:flex;align-items:center;justify-content:space-between;
-      }
-      .cp-rail-viewall{font-size:9px;color:rgba(0,255,178,0.5);cursor:pointer;}
-      .cp-rail-viewall:hover{color:#00FFB2;}
-      .cp-alerts-list{display:flex;flex-direction:column;gap:8px;}
-      .cp-alert-item{
-        display:flex;align-items:flex-start;gap:8px;
-        padding:8px 10px;
-        border-radius:7px;
-        background:rgba(255,255,255,0.025);
-        border:1px solid rgba(255,255,255,0.05);
-        cursor:pointer;
-        transition:background 0.12s;
-      }
-      .cp-alert-item:hover{background:rgba(255,255,255,0.05);}
-      .cp-alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;}
-      .cp-rail-ring-wrap{display:flex;align-items:center;gap:14px;}
-      .cp-rail-legend{display:flex;flex-direction:column;gap:6px;flex:1;}
-      .cp-rail-legend-item{display:flex;align-items:center;gap:6px;}
-      .cp-rail-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-    }
-    @media(min-width:1400px){
-      .cp-leftnav{width:220px;}
-      .cp-rightrail{width:290px;}
-    }
-
-    /* ── Stat tiles (top KPI row) ── */
+    /* ── Stat tiles (top KPI row) — always 5 across using auto-fit ── */
     .cp-tiles{
       display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:8px;
+      grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+      gap:6px;
       margin-bottom:10px;
     }
     .cp-tile{
       background:rgba(8,18,32,0.8);
       border:1px solid rgba(255,255,255,0.07);
-      border-radius:10px;
-      padding:12px 14px;
-      display:flex;align-items:center;gap:12px;
+      border-radius:9px;
+      padding:10px 12px;
+      display:flex;align-items:center;gap:10px;
       backdrop-filter:blur(8px);
       cursor:default;
+      min-width:0;
       transition:border-color 0.15s,background 0.15s;
     }
     .cp-tile:hover{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.13);}
     .cp-tile-icon{
-      width:36px;height:36px;border-radius:9px;
+      width:32px;height:32px;border-radius:8px;
       display:flex;align-items:center;justify-content:center;
-      font-size:16px;
+      font-size:14px;
       flex-shrink:0;
     }
     .cp-tile-num{
       font-family:'DM Mono',monospace;
-      font-size:26px;font-weight:500;line-height:1;
+      font-size:clamp(20px,2.5vw,30px);font-weight:500;line-height:1;
       letter-spacing:-0.5px;
     }
-    .cp-tile-label{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.2px;}
-    .cp-tile-sub{font-size:9px;color:rgba(255,255,255,0.2);margin-top:1px;}
-
-    @media(min-width:600px){.cp-tiles{grid-template-columns:repeat(3,1fr);}}
-    @media(min-width:900px){.cp-tiles{grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}}
-    @media(min-width:1100px){
-      .cp-content{padding:16px 20px 20px;}
-      .cp-tile{padding:14px 16px;}
-      .cp-tile-num{font-size:30px;}
-    }
-    @media(min-width:1400px){
-      .cp-content{padding:18px 24px 24px;}
-      .cp-tile{gap:14px;}
-      .cp-tile-num{font-size:34px;}
+    .cp-tile-label{font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cp-tile-sub{font-size:8px;color:rgba(255,255,255,0.2);margin-top:1px;}
+    @media(min-width:960px){
+      .cp-content{padding:14px 18px 20px;}
+      .cp-tiles{gap:8px;margin-bottom:12px;}
+      .cp-tile{padding:12px 14px;}
     }
 
     /* ── Permit register section ── */
@@ -939,10 +956,12 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     .cp-filter:hover{color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.22);}
     .cp-filter.on{background:rgba(0,255,178,0.1);color:#00FFB2;border-color:rgba(0,255,178,0.3);}
 
-    /* ── Permit cards ── */
-    .cp-permit-grid{display:grid;grid-template-columns:1fr;gap:6px;}
-    @media(min-width:700px){.cp-permit-grid{grid-template-columns:repeat(2,1fr);}}
-    @media(min-width:1400px){.cp-permit-grid{grid-template-columns:repeat(3,1fr);}}
+    /* ── Permit cards — fluid, adapt to container width ── */
+    .cp-permit-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:6px;
+    }
     .cp-permit{
       background:rgba(10,22,38,0.7);
       border:1px solid rgba(255,255,255,0.06);
@@ -976,10 +995,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       box-shadow:0 0 6px rgba(0,255,178,0.7);
     }
     .cp-mid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;}
-    @media(min-width:700px){.cp-mid{grid-template-columns:1fr 1fr;}}
-    @media(min-width:1100px){.cp-mid{grid-template-columns:1fr;gap:12px;margin-bottom:14px;}}
+    @media(min-width:600px) and (max-width:959px){.cp-mid{grid-template-columns:1fr 1fr;}}
     /* Hide center-column recent activity on desktop — right rail has it */
-    @media(min-width:1100px){.cp-mid-activity{display:none;}}
+    @media(min-width:960px){.cp-mid-activity{display:none;}}
 
     /* ── Live dot ── */
     .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
