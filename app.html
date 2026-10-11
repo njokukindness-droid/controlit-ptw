@@ -655,13 +655,45 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     return map[status]||"#444";
   };
 
-  const now=new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  // ── Live clock ──
+  const[clockTick,setClockTick]=useState(()=>new Date());
+  React.useEffect(()=>{
+    const id=setInterval(()=>setClockTick(new Date()),1000);
+    return()=>clearInterval(id);
+  },[]);
+  const nowDate=clockTick.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  const nowTime=clockTick.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+
+  // ── Live weather (Open-Meteo, no API key) ──
+  // Default: Abu Dhabi / UAE. lat/lon can be org-specific if desired.
+  const[weather,setWeather]=useState(null);
+  React.useEffect(()=>{
+    const lat=24.4539,lon=54.3773; // Abu Dhabi
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m&wind_speed_unit=kmh&temperature_unit=celsius`)
+      .then(r=>r.json())
+      .then(d=>{
+        const c=d.current;
+        const wmo=c.weathercode;
+        const icon=wmo===0?"☀️":wmo<=2?"🌤️":wmo<=48?"☁️":wmo<=67?"🌧️":wmo<=77?"❄️":wmo<=82?"🌦️":"⛈️";
+        setWeather({temp:Math.round(c.temperature_2m),wind:Math.round(c.windspeed_10m),icon});
+      })
+      .catch(()=>{});
+  },[]);
+
+  // ── Permit countdown (hours remaining from end_date) ──
+  const hoursLeft=p=>{
+    if(!p.end_date)return null;
+    const ms=new Date(p.end_date)-clockTick;
+    if(ms<=0)return 0;
+    return Math.round(ms/36e5);
+  };
 
   const cockpitStyles=`
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
-    /* ── Base ── */
-    .cockpit-wrap{position:relative;min-height:100vh;background:#07111d;font-family:inherit;overflow:hidden;}
+    /* ── Base: full viewport ── */
+    html,body,#root{height:100%;margin:0;}
+    .cockpit-wrap{position:relative;height:100vh;background:#07111d;font-family:inherit;overflow:hidden;display:flex;flex-direction:column;}
 
     /* ── Background scene ── */
     .cockpit-scene{position:fixed;inset:0;z-index:0;background:linear-gradient(175deg,#060f1a 0%,#0a1828 45%,#091520 100%);}
@@ -677,7 +709,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     @media(prefers-reduced-motion:reduce){.cockpit-scan{animation:none;}}
 
     /* ── HUD shell ── */
-    .cockpit-hud{position:relative;z-index:10;display:flex;flex-direction:column;min-height:100vh;}
+    .cockpit-hud{position:relative;z-index:10;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
     /* ── Top bar ── */
     .cp-topbar{
@@ -715,150 +747,195 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
       flex-shrink:0;
     }
 
-    /* ── Desktop layout: sidebar + main ── */
+    /* ── Three-column command layout ── */
+    /* Mobile: single col stack. ≥1100px: left nav + center + right rail */
     .cp-body{
       display:flex;
       flex:1;
+      min-height:0;
       overflow:hidden;
     }
 
-    /* ── Left sidebar ── */
-    .cp-sidebar{
+    /* ── Left nav (desktop only) ── */
+    .cp-leftnav{
       display:none;
     }
-    .cp-sidebar-logo{
-      width:100%;
-      aspect-ratio:1;
-      max-width:52px;
-      border-radius:10px;
-      object-fit:contain;
-      background:rgba(14,158,110,0.08);
-      border:1px solid rgba(14,158,110,0.2);
-      padding:6px;
-      margin-bottom:20px;
-    }
-    .cp-sidebar-stat{
-      width:100%;
-      border:1px solid rgba(255,255,255,0.07);
-      border-radius:10px;
-      padding:12px;
-      margin-bottom:8px;
-      background:rgba(10,20,36,0.6);
-      backdrop-filter:blur(6px);
+    @media(min-width:1100px){
+      .cp-leftnav{
+        display:flex;
+        flex-direction:column;
+        width:200px;
+        flex-shrink:0;
+        background:rgba(5,11,22,0.97);
+        border-right:1px solid rgba(255,255,255,0.06);
+        overflow-y:auto;
+        overflow-x:hidden;
+      }
+      .cp-leftnav-logo{
+        padding:16px 18px 12px;
+        border-bottom:1px solid rgba(255,255,255,0.05);
+        margin-bottom:8px;
+      }
+      .cp-leftnav-section{
+        font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:1.2px;
+        padding:10px 18px 4px;
+        font-weight:600;
+      }
+      .cp-navitem{
+        display:flex;align-items:center;gap:10px;
+        padding:8px 18px;
+        font-size:12px;color:rgba(255,255,255,0.45);
+        cursor:pointer;
+        border-left:2px solid transparent;
+        transition:all 0.12s;
+        background:transparent;border-top:none;border-right:none;border-bottom:none;
+        width:100%;text-align:left;font-family:inherit;
+        letter-spacing:0.2px;
+      }
+      .cp-navitem:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.03);}
+      .cp-navitem.active{color:#00FFB2;border-left-color:#00FFB2;background:rgba(0,255,178,0.05);}
+      .cp-navitem-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+      .cp-leftnav-weather{
+        margin-top:auto;
+        padding:14px 18px;
+        border-top:1px solid rgba(255,255,255,0.05);
+      }
+      .cp-weather-big{display:flex;align-items:center;gap:10px;}
+      .cp-weather-bigicon{font-size:28px;line-height:1;}
+      .cp-weather-bigtemp{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:#fff;line-height:1;}
+      .cp-weather-bigmeta{font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;}
     }
 
-    /* ── Main scroll area ── */
+    /* ── Center: scrollable main content ── */
     .cp-main{
       flex:1;
+      min-height:0;
       overflow-y:auto;
       overflow-x:hidden;
     }
-    .cp-content{padding:14px 16px 120px;}
+    .cp-content{padding:12px 14px 20px;}
 
-    /* ── Instrument row (KPIs) ── */
-    .cp-instruments{
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:8px;
-      margin-bottom:12px;
+    /* ── Right rail (desktop only) ── */
+    .cp-rightrail{
+      display:none;
     }
-    .cp-inst{
-      position:relative;
+    @media(min-width:1100px){
+      .cp-rightrail{
+        display:flex;
+        flex-direction:column;
+        width:260px;
+        flex-shrink:0;
+        background:rgba(5,11,22,0.95);
+        border-left:1px solid rgba(255,255,255,0.06);
+        overflow-y:auto;
+        overflow-x:hidden;
+        gap:0;
+      }
+      .cp-rail-section{
+        padding:14px 16px;
+        border-bottom:1px solid rgba(255,255,255,0.05);
+        flex-shrink:0;
+      }
+      .cp-rail-title{
+        font-size:10px;color:rgba(255,255,255,0.35);
+        letter-spacing:0.6px;font-weight:600;
+        margin-bottom:12px;
+        display:flex;align-items:center;justify-content:space-between;
+      }
+      .cp-rail-viewall{font-size:9px;color:rgba(0,255,178,0.5);cursor:pointer;}
+      .cp-rail-viewall:hover{color:#00FFB2;}
+      .cp-alerts-list{display:flex;flex-direction:column;gap:8px;}
+      .cp-alert-item{
+        display:flex;align-items:flex-start;gap:8px;
+        padding:8px 10px;
+        border-radius:7px;
+        background:rgba(255,255,255,0.025);
+        border:1px solid rgba(255,255,255,0.05);
+        cursor:pointer;
+        transition:background 0.12s;
+      }
+      .cp-alert-item:hover{background:rgba(255,255,255,0.05);}
+      .cp-alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+      .cp-rail-ring-wrap{display:flex;align-items:center;gap:14px;}
+      .cp-rail-legend{display:flex;flex-direction:column;gap:6px;flex:1;}
+      .cp-rail-legend-item{display:flex;align-items:center;gap:6px;}
+      .cp-rail-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    }
+    @media(min-width:1400px){
+      .cp-leftnav{width:220px;}
+      .cp-rightrail{width:290px;}
+    }
+
+    /* ── Stat tiles (top KPI row) ── */
+    .cp-tiles{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .cp-tile{
       background:rgba(8,18,32,0.8);
       border:1px solid rgba(255,255,255,0.07);
-      border-radius:12px;
-      padding:14px 14px 12px;
+      border-radius:10px;
+      padding:12px 14px;
+      display:flex;align-items:center;gap:12px;
       backdrop-filter:blur(8px);
-      overflow:hidden;
       cursor:default;
-      transition:border-color 0.2s;
+      transition:border-color 0.15s,background 0.15s;
     }
-    .cp-inst:hover{border-color:rgba(255,255,255,0.16);}
-    .cp-inst-glow{
-      position:absolute;
-      bottom:0;left:0;right:0;
-      height:60%;
-      border-radius:0 0 12px 12px;
-      pointer-events:none;
-      opacity:0.18;
-    }
-    .cp-inst-label{
-      font-size:10px;
-      color:rgba(255,255,255,0.38);
-      letter-spacing:0.4px;
-      margin-bottom:8px;
-      font-weight:500;
-    }
-    .cp-inst-num{
-      font-family:'DM Mono',monospace;
-      font-size:38px;
-      font-weight:500;
-      line-height:1;
-      margin-bottom:6px;
-      letter-spacing:-1px;
-    }
-    .cp-inst-sub{
-      font-size:9.5px;
-      color:rgba(255,255,255,0.28);
-      letter-spacing:0.2px;
-    }
-    .cp-inst-arc{
-      position:absolute;
-      top:10px;right:10px;
-      opacity:0.35;
-    }
-
-    /* ── Mid row ── */
-    .cp-mid{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-bottom:12px;}
-
-    /* ── Panels ── */
-    .cp-panel{
-      background:rgba(8,18,32,0.75);
-      border:1px solid rgba(255,255,255,0.07);
-      border-radius:12px;
-      padding:14px 16px;
-      backdrop-filter:blur(8px);
-    }
-    .cp-panel-title{
-      font-size:10px;
-      color:rgba(255,255,255,0.35);
-      letter-spacing:0.5px;
-      margin-bottom:14px;
-      font-weight:500;
-      display:flex;align-items:center;gap:7px;
-    }
-    .cp-panel-title-dot{
-      width:5px;height:5px;border-radius:50%;
-      background:#00FFB2;
+    .cp-tile:hover{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.13);}
+    .cp-tile-icon{
+      width:36px;height:36px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;
       flex-shrink:0;
-      box-shadow:0 0 6px rgba(0,255,178,0.7);
+    }
+    .cp-tile-num{
+      font-family:'DM Mono',monospace;
+      font-size:26px;font-weight:500;line-height:1;
+      letter-spacing:-0.5px;
+    }
+    .cp-tile-label{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;letter-spacing:0.2px;}
+    .cp-tile-sub{font-size:9px;color:rgba(255,255,255,0.2);margin-top:1px;}
+
+    @media(min-width:600px){.cp-tiles{grid-template-columns:repeat(3,1fr);}}
+    @media(min-width:900px){.cp-tiles{grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}}
+    @media(min-width:1100px){
+      .cp-content{padding:16px 20px 20px;}
+      .cp-tile{padding:14px 16px;}
+      .cp-tile-num{font-size:30px;}
+    }
+    @media(min-width:1400px){
+      .cp-content{padding:18px 24px 24px;}
+      .cp-tile{gap:14px;}
+      .cp-tile-num{font-size:34px;}
     }
 
-    /* ── Permit register ── */
-    .cp-register-header{
+    /* ── Permit register section ── */
+    .cp-reg-header{
       display:flex;align-items:center;justify-content:space-between;
       margin-bottom:8px;
-      padding:0 2px;
     }
-    .cp-register-title{font-size:10px;color:rgba(255,255,255,0.35);font-weight:500;letter-spacing:0.5px;}
+    .cp-reg-title{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.4px;}
     .cp-filters{display:flex;gap:4px;flex-wrap:wrap;}
     .cp-filter{
       border:1px solid rgba(255,255,255,0.1);
       background:transparent;
-      color:rgba(255,255,255,0.4);
+      color:rgba(255,255,255,0.35);
       border-radius:4px;
       padding:4px 10px;
       font-size:10px;
       font-family:inherit;
       cursor:pointer;
       transition:all 0.15s;
-      letter-spacing:0.2px;
     }
     .cp-filter:hover{color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.22);}
     .cp-filter.on{background:rgba(0,255,178,0.1);color:#00FFB2;border-color:rgba(0,255,178,0.3);}
 
     /* ── Permit cards ── */
     .cp-permit-grid{display:grid;grid-template-columns:1fr;gap:6px;}
+    @media(min-width:700px){.cp-permit-grid{grid-template-columns:repeat(2,1fr);}}
+    @media(min-width:1400px){.cp-permit-grid{grid-template-columns:repeat(3,1fr);}}
     .cp-permit{
       background:rgba(10,22,38,0.7);
       border:1px solid rgba(255,255,255,0.06);
@@ -873,77 +950,65 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
     }
     .cp-permit:hover{background:rgba(255,255,255,0.04);}
 
+    /* ── Panels ── */
+    .cp-panel{
+      background:rgba(8,18,32,0.75);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px;
+      padding:14px 16px;
+      backdrop-filter:blur(8px);
+    }
+    .cp-panel-title{
+      font-size:10px;color:rgba(255,255,255,0.35);
+      letter-spacing:0.5px;margin-bottom:12px;font-weight:600;
+      display:flex;align-items:center;gap:7px;justify-content:space-between;
+    }
+    .cp-panel-title-dot{
+      width:5px;height:5px;border-radius:50%;
+      background:#00FFB2;flex-shrink:0;
+      box-shadow:0 0 6px rgba(0,255,178,0.7);
+    }
+    .cp-mid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;}
+    @media(min-width:700px){.cp-mid{grid-template-columns:1fr 1fr;}}
+    @media(min-width:1100px){.cp-mid{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}}
+
     /* ── Live dot ── */
-    .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;margin-right:5px;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
+    .cp-livedot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00FFB2;animation:cpulse 2.5s infinite;box-shadow:0 0 5px rgba(0,255,178,0.6);}
     @keyframes cpulse{0%,100%{opacity:1}50%{opacity:0.2}}
 
-    /* ── Bottom status bar ── */
-    .cp-bottom{
-      background:rgba(6,14,26,0.94);
-      border-top:1px solid rgba(255,255,255,0.07);
-      padding:7px 20px;
-      display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-      backdrop-filter:blur(8px);
-      position:fixed;bottom:0;left:0;right:0;z-index:20;
-    }
-    .cp-bottom-item{display:flex;align-items:center;gap:6px;}
-    .cp-bottom-label{font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:0.3px;}
-    .cp-bottom-val{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;}
-    .cp-divider{width:1px;height:16px;background:rgba(255,255,255,0.08);}
+    /* ── Countdown badge ── */
+    .cp-countdown{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;white-space:nowrap;font-weight:500;letter-spacing:0.3px;}
+    .cp-countdown.urgent{background:rgba(226,75,74,0.15);color:#F88;border:1px solid rgba(226,75,74,0.3);}
+    .cp-countdown.warn{background:rgba(237,161,0,0.15);color:#FFCC55;border:1px solid rgba(237,161,0,0.3);}
+    .cp-countdown.ok{background:rgba(0,255,178,0.08);color:#00FFB2;border:1px solid rgba(0,255,178,0.2);}
+    .cp-countdown.expired{background:rgba(128,128,128,0.1);color:#888;border:1px solid rgba(128,128,128,0.2);}
 
-    /* ── Desktop overrides ── */
-    @media(min-width:860px){
-      .cp-topbar{padding:0 28px;height:56px;}
-      .cp-orgbar{padding:7px 28px;}
-      .cp-bottom{padding:8px 28px;gap:20px;}
-      .cp-content{padding:20px 24px 100px;}
-      .cp-instruments{gap:12px;margin-bottom:16px;}
-      .cp-inst{padding:18px 18px 14px;border-radius:14px;}
-      .cp-inst-num{font-size:44px;}
-      .cp-mid{gap:12px;margin-bottom:16px;}
-      .cp-panel{padding:18px 20px;border-radius:14px;}
-      .cp-permit-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
-      .cp-permit{padding:13px 16px;border-radius:10px;}
-    }
+    /* ── Weather & clock (topbar) ── */
+    .cp-weather{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);}
+    .cp-weather-icon{font-size:14px;line-height:1;}
+    .cp-weather-temp{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);}
+    .cp-weather-wind{font-size:9px;color:rgba(255,255,255,0.3);margin-top:1px;}
+    .cp-clock{display:flex;align-items:center;gap:6px;}
+    .cp-clock-time{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:rgba(0,255,178,0.8);letter-spacing:0.5px;}
+    .cp-clock-date{font-size:9px;color:rgba(255,255,255,0.28);letter-spacing:0.2px;}
 
-    @media(min-width:1100px){
-      .cp-body{overflow:hidden;}
-      .cp-sidebar{
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        width:72px;
-        flex-shrink:0;
-        background:rgba(6,13,24,0.9);
-        border-right:1px solid rgba(255,255,255,0.06);
-        padding:16px 10px;
-        gap:4px;
-        backdrop-filter:blur(12px);
-        overflow-y:auto;
-      }
-      .cp-main{overflow-y:auto;}
-      .cp-content{padding:24px 28px 100px;}
-      .cp-instruments{gap:14px;margin-bottom:18px;}
-      .cp-inst{padding:20px 20px 16px;border-radius:16px;}
-      .cp-inst-num{font-size:52px;}
-      .cp-inst-label{font-size:10.5px;}
-      .cp-mid{gap:14px;margin-bottom:18px;grid-template-columns:1fr 1fr 1.5fr;}
-      .cp-panel{padding:20px 22px;border-radius:16px;}
-      .cp-panel-title{font-size:10.5px;}
-      .cp-permit-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-      .cp-permit{padding:14px 18px;}
+    /* ── Live feed bar ── */
+    .cp-livefeed{
+      background:rgba(4,10,20,0.98);
+      border-top:1px solid rgba(0,255,178,0.1);
+      padding:0 16px;
+      height:30px;
+      display:flex;align-items:center;gap:12px;
+      flex-shrink:0;
+      overflow:hidden;
     }
-
-    @media(min-width:1400px){
-      .cp-sidebar{width:80px;padding:18px 12px;}
-      .cp-content{padding:28px 36px 100px;}
-      .cp-instruments{gap:18px;margin-bottom:22px;}
-      .cp-inst{padding:24px 22px 18px;border-radius:18px;}
-      .cp-inst-num{font-size:60px;letter-spacing:-2px;}
-      .cp-mid{gap:18px;margin-bottom:22px;}
-      .cp-panel{padding:24px 26px;border-radius:18px;}
-      .cp-permit-grid{grid-template-columns:repeat(3,1fr);gap:12px;}
-    }
+    .cp-livefeed-label{font-size:9px;color:#00FFB2;font-weight:700;letter-spacing:1px;white-space:nowrap;flex-shrink:0;}
+    .cp-livefeed-scroll{flex:1;overflow:hidden;position:relative;}
+    .cp-livefeed-inner{display:flex;gap:28px;animation:lfscroll 30s linear infinite;white-space:nowrap;}
+    @keyframes lfscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    @media(prefers-reduced-motion:reduce){.cp-livefeed-inner{animation:none;}}
+    .cp-livefeed-item{font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;}
+    .cp-livefeed-time{font-family:'DM Mono',monospace;font-size:9px;color:rgba(0,255,178,0.4);margin-right:6px;}
   `;
 
   // Arc SVG for instrument panels
@@ -1053,41 +1118,104 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 {session.org.sector==="marine"?"🚢 Marine":session.org.sector==="events"?"🎪 Events":session.org.sector==="oil_gas"?"⛽ Oil & Gas":session.org.sector==="aviation"?"✈️ Aviation":"🏗️ Construction"}
               </div>
             </div>
-            <span style={{display:"flex",alignItems:"center",gap:4}}>
+            {weather&&(
+              <div className="cp-weather">
+                <span className="cp-weather-icon">{weather.icon}</span>
+                <div>
+                  <div className="cp-weather-temp">{weather.temp}°C</div>
+                  <div className="cp-weather-wind">{weather.wind} km/h</div>
+                </div>
+              </div>
+            )}
+            <div className="cp-clock">
               <span className="cp-livedot"/>
-              <span style={{color:"rgba(0,255,178,0.6)",fontSize:10,fontFamily:"'DM Mono',monospace"}}>{now}</span>
-            </span>
+              <div>
+                <div className="cp-clock-time">{nowTime}</div>
+                <div className="cp-clock-date">{nowDate}</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Body: sidebar + main */}
+        {/* ── Three-column body ── */}
         <div className="cp-body">
 
-          {/* Left sidebar (desktop only) */}
-          <div className="cp-sidebar">
-            {session.org.logo&&<img src={session.org.logo} alt="logo" className="cp-sidebar-logo"/>}
-            {[
-              {label:"Active",val:counts.active,color:"#00FFB2"},
-              {label:"Pending",val:counts.pending,color:"#EDA100"},
-              {label:"Closed",val:counts.closed,color:"#4A9EFF"},
-            ].map(({label,val,color})=>(
-              <div key={label} className="cp-sidebar-stat">
-                <div style={{fontFamily:"'DM Mono',monospace",fontSize:22,fontWeight:500,color,lineHeight:1,marginBottom:4}}>{val}</div>
-                <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:"0.3px"}}>{label}</div>
+          {/* LEFT NAV */}
+          <div className="cp-leftnav">
+            <div className="cp-leftnav-logo">
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{width:28,height:28,background:"#0E9E6E",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><polyline points="2,8 7,13 14,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div>
+                  <div style={{color:"#fff",fontSize:12,fontWeight:700,letterSpacing:"1.5px"}}>CONTROLIT</div>
+                  <div style={{color:"rgba(0,255,178,0.45)",fontSize:8,letterSpacing:"0.5px",marginTop:1}}>Permit to Work</div>
+                </div>
               </div>
-            ))}
-            <div style={{flex:1}}/>
-            <div style={{width:32,height:1,background:"rgba(255,255,255,0.07)",margin:"8px 0"}}/>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,178,0.4)",writingMode:"vertical-rl",letterSpacing:"2px",opacity:0.6,paddingBottom:4}}>HSE</div>
+            </div>
+
+            <div className="cp-leftnav-section">OPERATIONS</div>
+            <button className="cp-navitem active" onClick={()=>{}}>
+              <span className="cp-navitem-icon">📋</span>Dashboard
+            </button>
+            <button className="cp-navitem" onClick={onWorkflow}>
+              <span className="cp-navitem-icon">🔄</span>Workflow
+            </button>
+            <button className="cp-navitem" onClick={onRegister}>
+              <span className="cp-navitem-icon">📁</span>Register
+            </button>
+            {onNew&&<button className="cp-navitem" onClick={onNew}>
+              <span className="cp-navitem-icon">➕</span>New Permit
+            </button>}
+
+            <div className="cp-leftnav-section">MANAGE</div>
+            <button className="cp-navitem" onClick={onNotifs} style={{position:"relative"}}>
+              <span className="cp-navitem-icon">🔔</span>Notifications
+              {unread>0&&<span style={{marginLeft:"auto",background:"#E24B4A",color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:9,fontWeight:700}}>{unread}</span>}
+            </button>
+            {session.profile.role==="admin"&&<button className="cp-navitem" onClick={onAdmin}>
+              <span className="cp-navitem-icon">⚙️</span>Admin
+            </button>}
+
+            <div className="cp-leftnav-section">ACCOUNT</div>
+            <button className="cp-navitem" onClick={onChangePass}>
+              <span className="cp-navitem-icon">🔑</span>Change Password
+            </button>
+            <button className="cp-navitem" onClick={onLogout} style={{color:"rgba(226,100,100,0.6)"}}>
+              <span className="cp-navitem-icon">🚪</span>Sign Out
+            </button>
+
+            {/* Weather block bottom of nav */}
+            <div className="cp-leftnav-weather">
+              {weather?(
+                <div className="cp-weather-big">
+                  <span className="cp-weather-bigicon">{weather.icon}</span>
+                  <div>
+                    <div className="cp-weather-bigtemp">{weather.temp}°C</div>
+                    <div className="cp-weather-bigmeta">{weather.wind} km/h · Abu Dhabi</div>
+                  </div>
+                </div>
+              ):(
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.2)"}}>Loading weather…</div>
+              )}
+              <div style={{marginTop:10}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:16,fontWeight:500,color:"rgba(0,255,178,0.85)",letterSpacing:"0.5px"}}>{nowTime}</div>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.28)",marginTop:2}}>{nowDate}</div>
+              </div>
+              <div style={{marginTop:10,fontSize:9,color:"rgba(255,255,255,0.28)"}}>
+                {session.profile.full_name}
+                <span style={{display:"block",color:"rgba(0,255,178,0.4)",marginTop:2}}>{roleLabel(session.profile.role)}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Main content */}
+          {/* CENTER MAIN */}
           <div className="cp-main">
             <div className="cp-content">
 
               {/* Push notification banner */}
               {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
-                <div style={{background:"rgba(0,255,178,0.04)",border:"1px solid rgba(0,255,178,0.15)",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{background:"rgba(0,255,178,0.04)",border:"1px solid rgba(0,255,178,0.15)",borderRadius:8,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <p style={{fontSize:11,fontWeight:600,color:"rgba(0,255,178,0.8)"}}>Enable push notifications</p>
                     <p style={{fontSize:10,color:"rgba(255,255,255,0.4)",marginTop:2}}>Get notified when permits reach your stage — even when the app is closed.</p>
@@ -1099,94 +1227,71 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 </div>
               )}
 
-              {/* ── Instrument row ── */}
-              <div className="cp-instruments">
+              {/* ── KPI Tiles ── */}
+              <div className="cp-tiles">
                 {[
-                  {label:"Active permits",val:counts.active,color:"#00FFB2",sub:"live on site",glow:"rgba(0,255,178,0.15)"},
-                  {label:"Awaiting approval",val:counts.pending,color:"#EDA100",sub:"in queue",glow:"rgba(237,161,0,0.12)"},
-                  {label:"Revoked",val:counts.revoked,color:"#E24B4A",sub:"this period",glow:"rgba(226,75,74,0.1)"},
-                  {label:"Closed",val:counts.closed,color:"#4A9EFF",sub:"completed",glow:"rgba(74,158,255,0.1)"},
-                  {label:"Expired",val:counts.expired,color:"rgba(255,255,255,0.3)",sub:"past deadline",glow:"transparent"},
-                ].map(({label,val,color,sub,glow})=>(
-                  <div key={label} className="cp-inst" style={{borderTopColor:`${color}22`}}>
-                    <div className="cp-inst-glow" style={{background:`radial-gradient(ellipse at 50% 100%,${glow},transparent)`}}/>
-                    <InstArc value={val} max={Math.max(total,1)} color={color}/>
-                    <div className="cp-inst-label">{label}</div>
-                    <div className="cp-inst-num" style={{color}}>{val}</div>
-                    <div className="cp-inst-sub">{sub}</div>
+                  {label:"Active Permits",val:counts.active,icon:"✅",color:"#00FFB2",bg:"rgba(0,255,178,0.1)",sub:"live on site"},
+                  {label:"Awaiting Approval",val:counts.pending,icon:"⏳",color:"#EDA100",bg:"rgba(237,161,0,0.1)",sub:"in queue"},
+                  {label:"Revoked",val:counts.revoked,icon:"🚫",color:"#E24B4A",bg:"rgba(226,75,74,0.1)",sub:"this period"},
+                  {label:"Closed",val:counts.closed,icon:"📁",color:"#4A9EFF",bg:"rgba(74,158,255,0.1)",sub:"completed"},
+                  {label:"Expired",val:counts.expired,icon:"⌛",color:"rgba(255,255,255,0.35)",bg:"rgba(255,255,255,0.06)",sub:"past deadline"},
+                ].map(({label,val,icon,color,bg,sub})=>(
+                  <div key={label} className="cp-tile">
+                    <div className="cp-tile-icon" style={{background:bg}}>
+                      <span role="img" aria-hidden="true">{icon}</span>
+                    </div>
+                    <div>
+                      <div className="cp-tile-num" style={{color}}>{val}</div>
+                      <div className="cp-tile-label">{label}</div>
+                      <div className="cp-tile-sub">{sub}</div>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* ── Mid row ── */}
+              {/* ── Mid row: type bars + activity (hidden on desktop since right rail has it) ── */}
               <div className="cp-mid">
-
-                {/* Permit breakdown donut */}
+                {/* Permit types bar chart */}
                 <div className="cp-panel">
-                  <div className="cp-panel-title"><span className="cp-panel-title-dot"/>Permit breakdown</div>
-                  <div style={{position:"relative",width:120,height:120,margin:"0 auto 16px"}}>
-                    <canvas id="cockpit-donut" width="120" height="120" role="img" aria-label="Donut chart of permit types"/>
-                    <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:28,fontWeight:500,color:"#fff",lineHeight:1}}>{total}</span>
-                      <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginTop:3,letterSpacing:"0.5px"}}>total</span>
-                    </div>
+                  <div className="cp-panel-title">
+                    <div style={{display:"flex",alignItems:"center",gap:7}}><span className="cp-panel-title-dot" style={{background:"#4A9EFF",boxShadow:"0 0 6px rgba(74,158,255,0.7)"}}/>Permit types</div>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(0,255,178,0.6)"}}>{total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"% approved"}</span>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                    {typeBreakdown.slice(0,5).map(([label,count],i)=>(
-                      <div key={label} style={{display:"flex",alignItems:"center",gap:7}}>
-                        <div style={{width:3,height:14,borderRadius:2,background:palette[i],flexShrink:0}}/>
-                        <span style={{fontSize:10,color:"rgba(255,255,255,0.5)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
-                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:"rgba(255,255,255,0.8)",fontWeight:500}}>{count}</span>
-                      </div>
-                    ))}
-                    {total===0&&<p style={{fontSize:11,color:"rgba(255,255,255,0.25)",textAlign:"center"}}>No permits yet</p>}
-                  </div>
-                </div>
-
-                {/* Types bar chart */}
-                <div className="cp-panel">
-                  <div className="cp-panel-title"><span className="cp-panel-title-dot" style={{background:"#4A9EFF",boxShadow:"0 0 6px rgba(74,158,255,0.7)"}}/>Types this month</div>
                   <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {typeBreakdown.slice(0,6).map(([label,count],i)=>(
+                    {typeBreakdown.slice(0,7).map(([label,count],i)=>(
                       <div key={label}>
                         <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                          <span style={{fontSize:10,color:"rgba(255,255,255,0.45)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"75%"}}>{label}</span>
-                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(255,255,255,0.6)"}}>{count}</span>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.5)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"80%"}}>{label}</span>
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(255,255,255,0.7)"}}>{count}</span>
                         </div>
-                        <div style={{height:3,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden"}}>
-                          <div style={{height:"100%",borderRadius:2,background:palette[i],width:`${Math.round((count/Math.max(maxType,1))*100)}%`,transition:"width 0.5s ease"}}/>
+                        <div style={{height:4,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden"}}>
+                          <div style={{height:"100%",borderRadius:2,background:palette[i%palette.length],width:`${Math.round((count/Math.max(maxType,1))*100)}%`,transition:"width 0.6s ease"}}/>
                         </div>
                       </div>
                     ))}
-                    {total===0&&<p style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>No data yet</p>}
-                  </div>
-                  <div style={{marginTop:16,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Approval rate</span>
-                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:"#00FFB2",fontWeight:500}}>
-                      {total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}
-                    </span>
+                    {total===0&&<p style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>No permit data yet</p>}
                   </div>
                 </div>
 
-                {/* Activity feed */}
-                <div className="cp-panel">
-                  <div className="cp-panel-title"><span className="cp-panel-title-dot" style={{background:"#EDA100",boxShadow:"0 0 6px rgba(237,161,0,0.7)"}}/>Live activity</div>
+                {/* Recent activity (shown in center on mobile/tablet; right rail on desktop) */}
+                <div className="cp-panel" style={{display:"block"}}>
+                  <div className="cp-panel-title">
+                    <div style={{display:"flex",alignItems:"center",gap:7}}><span className="cp-panel-title-dot" style={{background:"#EDA100",boxShadow:"0 0 6px rgba(237,161,0,0.7)"}}/>Recent activity</div>
+                  </div>
                   {alerts.length===0&&<p style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>No recent activity</p>}
                   {alerts.map((p,i)=>{
                     const t=pt(p.type);
                     const ac=alertColor(p.status);
                     return(
-                      <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 0",borderBottom:i<alerts.length-1?"1px solid rgba(255,255,255,0.04)":"none",cursor:"pointer"}}>
-                        <div style={{width:2,alignSelf:"stretch",background:ac,borderRadius:2,flexShrink:0,marginTop:2,minHeight:32}}/>
+                      <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:9,padding:"8px 0",borderBottom:i<alerts.length-1?"1px solid rgba(255,255,255,0.04)":"none",cursor:"pointer"}}>
+                        <div style={{width:2,alignSelf:"stretch",background:ac,borderRadius:2,flexShrink:0,marginTop:2,minHeight:28}}/>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                            <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(0,255,178,0.7)",fontWeight:500}}>{p.permit_number}</span>
-                            <span style={{fontSize:9,color:"rgba(255,255,255,0.25)",whiteSpace:"nowrap",marginLeft:8}}>{timeAgo(p.updated_at||p.created_at)}</span>
+                            <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,178,0.7)",fontWeight:500}}>{p.permit_number}</span>
+                            <span style={{fontSize:9,color:"rgba(255,255,255,0.22)",whiteSpace:"nowrap",marginLeft:8}}>{timeAgo(p.updated_at||p.created_at)}</span>
                           </div>
-                          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",lineHeight:1.4}}>
-                            {alertLabel(p.status)} · {t.label||p.type}
-                          </div>
-                          <div style={{fontSize:9,color:"rgba(255,255,255,0.28)",marginTop:1}}>{p.area}</div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",lineHeight:1.3}}>{alertLabel(p.status)} · {t.label||p.type}</div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.25)",marginTop:1}}>{p.area}</div>
                         </div>
                       </div>
                     );
@@ -1194,9 +1299,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                 </div>
               </div>
 
-              {/* ── Permit register ── */}
-              <div className="cp-register-header">
-                <div className="cp-register-title">Permit register</div>
+              {/* ── Permit Register ── */}
+              <div className="cp-reg-header">
+                <div className="cp-reg-title">Permit Register</div>
                 <div className="cp-filters">
                   {["all","active","pending","revoked","closed","expired"].map(s=>(
                     <button key={s} onClick={()=>setFilter(s)} className={`cp-filter${filter===s?" on":""}`}>
@@ -1209,10 +1314,10 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
               {loading&&<Spinner/>}
               {error&&<ErrBox msg={error}/>}
               {!loading&&!error&&filtered.length===0&&(
-                <div style={{textAlign:"center",padding:"3rem 1rem"}}>
-                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:40,color:"rgba(255,255,255,0.08)",marginBottom:12}}>[ ]</div>
-                  <p style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.45)"}}>No permits yet</p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:4}}>Create your first permit to get started.</p>
+                <div style={{textAlign:"center",padding:"2.5rem 1rem"}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:36,color:"rgba(255,255,255,0.07)",marginBottom:10}}>[ ]</div>
+                  <p style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>No permits yet</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.22)",marginTop:4}}>Create your first permit to get started.</p>
                 </div>
               )}
 
@@ -1227,9 +1332,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                         <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:"rgba(0,255,178,0.65)",fontWeight:500,marginBottom:3,letterSpacing:"0.3px"}}>{p.permit_number}</div>
                         <div style={{fontSize:12,color:"rgba(255,255,255,0.82)",marginBottom:3,lineHeight:1.4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title}</div>
                         <div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>{p.area}</div>
-                        {p.status==="rejected"&&<div style={{fontSize:9,color:"#E24B4A",marginTop:4}}>Rejected — open for reason</div>}
+                        {p.status==="rejected"&&<div style={{fontSize:9,color:"#E24B4A",marginTop:3}}>Rejected — open for reason</div>}
                       </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0,paddingLeft:8}}>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0,paddingLeft:8}}>
                         <span style={{fontSize:9,padding:"3px 8px",borderRadius:3,fontWeight:600,background:bs.bg,color:bs.color,border:`1px solid ${bs.border}`,whiteSpace:"nowrap",textTransform:"capitalize",letterSpacing:"0.2px"}}>
                           {(p.status||"").replace("_"," ")}
                         </span>
@@ -1241,6 +1346,14 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
                             <div key={i} style={{width:14,height:2,borderRadius:1,background:i<p.stage?"#00FFB2":i===p.stage?"#EDA100":"rgba(255,255,255,0.1)"}}/>
                           ))}
                         </div>
+                        {(p.status==="active"||p.status==="extension_pending")&&(()=>{
+                          const h=hoursLeft(p);
+                          if(h===null)return null;
+                          if(h===0)return<span className="cp-countdown expired">EXPIRED</span>;
+                          const cls=h<4?"urgent":h<24?"warn":"ok";
+                          const label=h<48?`${h}h left`:`${Math.floor(h/24)}d ${h%24}h`;
+                          return<span className={`cp-countdown ${cls}`}>{label}</span>;
+                        })()}
                       </div>
                     </div>
                   );
@@ -1249,56 +1362,140 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
 
             </div>
           </div>{/* end cp-main */}
+
+          {/* RIGHT RAIL */}
+          <div className="cp-rightrail">
+            {/* Alerts */}
+            <div className="cp-rail-section">
+              <div className="cp-rail-title">
+                Alerts &amp; Notifications
+                <span className="cp-rail-viewall" onClick={onNotifs}>View all</span>
+              </div>
+              <div className="cp-alerts-list">
+                {permits.filter(p=>p.status==="revoked"||p.status==="rejected"||(p.status==="active"&&hoursLeft(p)!==null&&hoursLeft(p)<24)).slice(0,5).map((p,i)=>{
+                  const h=hoursLeft(p);
+                  const isExpiring=p.status==="active"&&h!==null&&h<24;
+                  const color=p.status==="revoked"?"#E24B4A":p.status==="rejected"?"#E24B4A":h<4?"#E24B4A":"#EDA100";
+                  const msg=p.status==="revoked"?`${p.permit_number} — Revoked`:p.status==="rejected"?`${p.permit_number} — Rejected`:h===0?`${p.permit_number} — EXPIRED`:`${p.permit_number} — ${h}h remaining`;
+                  return(
+                    <div key={p.id} className="cp-alert-item" onClick={()=>onSelect(p)}>
+                      <div className="cp-alert-dot" style={{background:color,boxShadow:`0 0 5px ${color}88`}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.75)",fontWeight:500,marginBottom:2}}>{msg}</div>
+                        <div style={{fontSize:9,color:"rgba(255,255,255,0.28)"}}>{p.area||p.title}</div>
+                      </div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",flexShrink:0}}>{timeAgo(p.updated_at||p.created_at)}</div>
+                    </div>
+                  );
+                })}
+                {permits.filter(p=>p.status==="revoked"||p.status==="rejected"||(p.status==="active"&&hoursLeft(p)!==null&&hoursLeft(p)<24)).length===0&&(
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.2)",textAlign:"center",padding:"12px 0"}}>No active alerts</div>
+                )}
+              </div>
+            </div>
+
+            {/* SVG Ring chart */}
+            <div className="cp-rail-section">
+              <div className="cp-rail-title">Permits by Status</div>
+              {(()=>{
+                const R=50,r=33,cx=62,cy=62;
+                const statusSlices=[
+                  {key:"active",label:"Active",val:counts.active,color:"#00FFB2"},
+                  {key:"pending",label:"Pending",val:counts.pending,color:"#EDA100"},
+                  {key:"closed",label:"Closed",val:counts.closed,color:"#4A9EFF"},
+                  {key:"revoked",label:"Revoked",val:counts.revoked,color:"#E24B4A"},
+                  {key:"expired",label:"Expired",val:counts.expired,color:"#555"},
+                ].filter(s=>s.val>0);
+                const totalSlice=statusSlices.reduce((a,s)=>a+s.val,0)||1;
+                const gap=totalSlice>1?0.04:0;
+                let angle=-Math.PI/2;
+                const paths=statusSlices.map(s=>{
+                  const sweep=(s.val/totalSlice)*2*Math.PI-gap;
+                  const a1=angle+gap/2,a2=a1+sweep;
+                  angle+=sweep+gap;
+                  const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+                  const x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+                  const x3=cx+r*Math.cos(a2),y3=cy+r*Math.sin(a2);
+                  const x4=cx+r*Math.cos(a1),y4=cy+r*Math.sin(a1);
+                  const lg=sweep>Math.PI?1:0;
+                  return{...s,d:`M${x1},${y1} A${R},${R} 0 ${lg},1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${lg},0 ${x4},${y4} Z`};
+                });
+                return(
+                  <div className="cp-rail-ring-wrap">
+                    <div style={{position:"relative",width:124,height:124,flexShrink:0}}>
+                      <svg width="124" height="124" viewBox="0 0 124 124">
+                        <circle cx={cx} cy={cy} r={(R+r)/2} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={R-r}/>
+                        {paths.length>0?paths.map((p,i)=>(
+                          <path key={i} d={p.d} fill={p.color} opacity="0.9"><title>{p.label}: {p.val}</title></path>
+                        )):(
+                          <circle cx={cx} cy={cy} r={(R+r)/2} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={R-r}/>
+                        )}
+                      </svg>
+                      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:24,fontWeight:500,color:"#fff",lineHeight:1}}>{total}</span>
+                        <span style={{fontSize:8,color:"rgba(255,255,255,0.3)",marginTop:3}}>Total</span>
+                      </div>
+                    </div>
+                    <div className="cp-rail-legend">
+                      {[
+                        {label:"Active",val:counts.active,color:"#00FFB2"},
+                        {label:"Pending",val:counts.pending,color:"#EDA100"},
+                        {label:"Closed",val:counts.closed,color:"#4A9EFF"},
+                        {label:"Revoked",val:counts.revoked,color:"#E24B4A"},
+                        {label:"Expired",val:counts.expired,color:"#555"},
+                      ].map(({label,val,color})=>(
+                        <div key={label} className="cp-rail-legend-item">
+                          <div className="cp-rail-legend-dot" style={{background:color}}/>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",flex:1}}>{label}</span>
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:500}}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Recent activities */}
+            <div className="cp-rail-section" style={{flex:1,overflowY:"auto"}}>
+              <div className="cp-rail-title">Recent Activities</div>
+              {[...permits].sort((a,b)=>new Date(b.updated_at||b.created_at)-new Date(a.updated_at||a.created_at)).slice(0,8).map((p,i,arr)=>{
+                const t=pt(p.type);
+                const ac=alertColor(p.status);
+                return(
+                  <div key={p.id} onClick={()=>onSelect(p)} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:i<arr.length-1?"1px solid rgba(255,255,255,0.04)":"none",cursor:"pointer"}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",background:ac,flexShrink:0,marginTop:4,boxShadow:`0 0 4px ${ac}88`}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginBottom:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.title}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>{p.permit_number} · {t.label||p.type}</div>
+                    </div>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",flexShrink:0,whiteSpace:"nowrap"}}>{timeAgo(p.updated_at||p.created_at)}</div>
+                  </div>
+                );
+              })}
+              {permits.length===0&&<div style={{fontSize:10,color:"rgba(255,255,255,0.2)",textAlign:"center",padding:"12px 0"}}>No permits yet</div>}
+            </div>
+          </div>
+
         </div>{/* end cp-body */}
 
-        {/* Floating Action Button */}
-        {onNew&&(
-          <button onClick={onNew} style={{
-            position:"fixed",
-            bottom:"calc(44px + env(safe-area-inset-bottom, 0px) + 10px)",
-            right:20,
-            width:52,
-            height:52,
-            borderRadius:"50%",
-            background:"#00FFB2",
-            color:"#07111d",
-            border:"none",
-            fontSize:26,
-            fontWeight:400,
-            cursor:"pointer",
-            zIndex:30,
-            boxShadow:"0 0 24px rgba(0,255,178,0.4),0 4px 12px rgba(0,0,0,0.4)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            lineHeight:1,
-            transition:"transform 0.15s,box-shadow 0.15s",
-          }} title="New Permit">+</button>
-        )}
-
-        {/* Bottom status bar */}
-        <div className="cp-bottom">
-          <div className="cp-bottom-item">
-            <span className="cp-livedot"/>
-            <span className="cp-bottom-val" style={{color:"rgba(0,255,178,0.7)"}}>Operational</span>
-          </div>
-          <div className="cp-divider"/>
-          <div className="cp-bottom-item">
-            <span className="cp-bottom-label">Platform</span>
-            <span className="cp-bottom-val">CONTROLIT v1.0</span>
-          </div>
-          <div className="cp-divider"/>
-          <div className="cp-bottom-item">
-            <span className="cp-bottom-label">Org</span>
-            <span className="cp-bottom-val">{session.org.name}</span>
-          </div>
-          <div className="cp-divider"/>
-          <div className="cp-bottom-item">
-            <span className="cp-bottom-label">Total</span>
-            <span className="cp-bottom-val">{total} permits</span>
-          </div>
-          <div className="cp-divider"/>
-          <div className="cp-bottom-item">
-            <span className="cp-bottom-label">Approval</span>
-            <span className="cp-bottom-val" style={{color:"#00FFB2"}}>{total===0?"—":Math.round(((counts.closed+counts.active)/total)*100)+"%"}</span>
+        {/* ── Live Feed Bar ── */}
+        <div className="cp-livefeed">
+          <span className="cp-livefeed-label">LIVE FEED</span>
+          <div className="cp-livefeed-scroll">
+            {permits.length>0?(
+              <div className="cp-livefeed-inner">
+                {[...permits,...permits].slice(0,20).map((p,i)=>(
+                  <span key={i} className="cp-livefeed-item">
+                    <span className="cp-livefeed-time">{timeAgo(p.updated_at||p.created_at)}</span>
+                    {p.permit_number} — {(p.status||"").replace("_"," ")} · {p.area||p.title}
+                    <span style={{color:"rgba(255,255,255,0.18)",margin:"0 6px"}}>·</span>
+                  </span>
+                ))}
+              </div>
+            ):(
+              <span className="cp-livefeed-item">No permit activity yet — create your first permit to get started.</span>
+            )}
           </div>
         </div>
 
