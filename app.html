@@ -9,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ── Push Notifications (regular JS, outside Babel) ────────────────
 var VAPID_PUBLIC_KEY = "BBYtNHnx4QtdMT5TaKAqpC_eRwZePbpTtXn3OEioBb2aBcqSB56Um6fuvoSG8EuFiHUYDUyCUt6lXe-lBjakvQI";
@@ -2959,12 +2960,129 @@ function Register({session,permits,onBack}){
   function statusBadgeColor(s){return{active:"#0E9E6E",pending:"#D97B00",closed:"#5A6A7A",revoked:"#C0392B",work_complete:"#185FA5",rejected:"#C0392B",extension_pending:"#7F77DD"}[s]||"#5A6A7A";}
 
   // Generate PDF — opens in new window preserving in-app look and feel
-  async function downloadExcel(){
+  function downloadXLSX(){
+    setDownloading(true);
+    try {
+      if(typeof XLSX==="undefined"){ alert("Excel library not loaded. Please check your internet connection and refresh."); setDownloading(false); return; }
+      const orgName = session.org.name;
+      const coordinator = session.profile.full_name;
+      const now = new Date().toLocaleString("en-GB");
+
+      const TYPES=allTypes.map(t=>({...t,code:PERMIT_CODES[t.id]||t.id.toUpperCase().slice(0,2)}));
+
+      function fmtD(s){return s?new Date(s).toLocaleDateString("en-GB"):"";}
+      function fmtT(s){return s?new Date(s).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"";}
+      function statusLabel(s){
+        if(s==="active")return"Open";
+        if(s==="closed")return"Closed";
+        if(s==="revoked")return"Revoked";
+        return(s||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+      }
+
+      const wb = XLSX.utils.book_new();
+      wb.Props = { Title: "PTW Log Register", Company: orgName, Author: coordinator };
+
+      // ── SUMMARY sheet ──────────────────────────────────────────────
+      const summaryRows=[
+        ["CONTROLIT — Permit to Work Log Register"],
+        ["Organisation:", orgName],
+        ["Coordinator:", coordinator],
+        ["Generated:", now],
+        ["Reference:", "HSE-PTW-002 Rev 00"],
+        [],
+        ["Permit Type","Code","Total","Open","Closed","Revoked","Extended"],
+      ];
+      TYPES.forEach(t=>{
+        const tp=permits.filter(p=>p.type===t.id);
+        summaryRows.push([
+          t.label, t.code,
+          tp.length,
+          tp.filter(p=>p.status==="active").length,
+          tp.filter(p=>p.status==="closed").length,
+          tp.filter(p=>p.status==="revoked").length,
+          tp.filter(p=>(p.extensions||0)>0).length,
+        ]);
+      });
+      summaryRows.push([]);
+      summaryRows.push(["TOTAL","",permits.length,
+        permits.filter(p=>p.status==="active").length,
+        permits.filter(p=>p.status==="closed").length,
+        permits.filter(p=>p.status==="revoked").length,
+        permits.filter(p=>(p.extensions||0)>0).length,
+      ]);
+      const wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
+      wsSummary["!cols"]=[{wch:35},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:10}];
+      XLSX.utils.book_append_sheet(wb,wsSummary,"Summary");
+
+      // ── One sheet per permit type ──────────────────────────────────
+      const HEADERS=["S/N","PTW Ref. No.","Permit Authority","Permit Issuer",
+        "Permit Holder / Job Performer","Activity / Work Description","Location / Zone",
+        "TRA Ref.","Method Statement Ref.","Date Issued","Start Time",
+        "Date Closed","Close-out Time","Extended? (Y/N)","Suspended? (Y/N)",
+        "Closure Status","Non-Compliance?","Remarks"];
+
+      TYPES.forEach(t=>{
+        const tp=permits.filter(p=>p.type===t.id);
+        const rows=[
+          [`${t.label} Permit Log — ${orgName}`],
+          [`Coordinator: ${coordinator}   |   Code: ${t.code}   |   ADOSH-SF: CoP 21.0   |   Generated: ${now}`],
+          [],
+          HEADERS,
+        ];
+        tp.forEach((p,idx)=>{
+          const fd=p.form_data||{};
+          const extended=(p.extensions||0)>0;
+          const suspended=p.status==="revoked";
+          rows.push([
+            idx+1,
+            p.permit_number||"",
+            fd.permit_authority||fd.area_authority||p.authority_name||"",
+            fd.permit_issuer||p.issuer_name||"",
+            p.requester_name||"",
+            p.title||"",
+            p.area||"",
+            fd.tra_ref||"",
+            fd.ms_ref||"",
+            fmtD(p.issued_at||p.created_at),
+            fd.work_time_from||"",
+            fmtD(p.closed_at),
+            p.closed_at?fmtT(p.closed_at):"",
+            extended?"Y":"N",
+            suspended?"Y":"N",
+            statusLabel(p.status),
+            fd.non_compliance?"Y":"N",
+            fd.remarks||"",
+          ]);
+        });
+        if(tp.length===0) rows.push(["(No permits recorded for this type)"]);
+
+        const ws=XLSX.utils.aoa_to_sheet(rows);
+        ws["!cols"]=[
+          {wch:5},{wch:14},{wch:18},{wch:18},{wch:22},{wch:30},{wch:16},
+          {wch:10},{wch:14},{wch:12},{wch:10},{wch:12},{wch:12},{wch:14},{wch:14},
+          {wch:14},{wch:14},{wch:22}
+        ];
+        // Freeze first 4 rows (title + header) and col A
+        ws["!freeze"]={xSplit:1,ySplit:4};
+        // Safe sheet name: max 31 chars, no special chars
+        const sheetName=(t.label.replace(/[\/\\*?\[\]]/g,"").slice(0,31));
+        XLSX.utils.book_append_sheet(wb,ws,sheetName);
+      });
+
+      // Download
+      const filename=`PTW_Register_${orgName.replace(/\s+/g,"_")}_${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb,filename);
+
+    } catch(e){ console.error("Excel export error:",e); alert("Export failed: "+e.message); }
+    setDownloading(false);
+  }
+
+  // ── PDF export kept as secondary option ───────────────────────────
+  async function downloadPDF(){
     setDownloading(true);
     try {
       const orgName = session.org.name;
       const coordinator = session.profile.full_name;
-      const today = new Date().toLocaleDateString("en-GB");
       const now = new Date().toLocaleString();
 
       const TYPES=allTypes.map(t=>({...t,code:PERMIT_CODES[t.id]||t.id.toUpperCase().slice(0,2)}));
@@ -3199,6 +3317,7 @@ ${typeSections}
   }
 
   // Columns matching PTW_LOG_DOC sample
+
   const COLS=[
     {key:"sn",       label:"S/N",                   w:36,  align:"center"},
     {key:"ref",      label:"PTW Ref. No.",           w:110, align:"left"},
@@ -3250,9 +3369,14 @@ ${typeSections}
   return(
     <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"#F0F2F5"}}>
       <Topbar title="PTW Register" onBack={onBack} right={
-        <button onClick={downloadExcel} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:600}}>
-          {downloading?"Generating…":"⬇ Export PDF"}
-        </button>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={downloadXLSX} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"#0E9E6E",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:700}}>
+            {downloading?"Generating…":"⬇ Excel (.xlsx)"}
+          </button>
+          <button onClick={downloadPDF} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:600}}>
+            🖨 PDF
+          </button>
+        </div>
       }/>
 
       {/* Org header bar */}
