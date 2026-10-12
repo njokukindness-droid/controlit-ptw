@@ -177,7 +177,9 @@ const PERMIT_TYPES=[
   {id:"electrical",label:"Electrical Isolation (LOTO)",color:"#7F77DD"},
   {id:"height",label:"Working at Height",color:"#0E9E6E"},
   {id:"excavation",label:"Excavation & Ground Disturbance",color:"#3B6D11"},
-  {id:"lifting",label:"Critical Lifting Operation",color:"#7F77DD"},
+  {id:"lifting",label:"Critical Lifting Operation",color:"#4472C4"},
+  {id:"dewatering",label:"Dewatering Works",color:"#0097A7"},
+  {id:"pressure_testing",label:"Pressure Testing",color:"#922B21"},
 ];
 
 // ── CONTROLIT Marine — Permit Types ───────────────────────────────────────────
@@ -458,6 +460,8 @@ const PERMIT_CONTROLS={
   height:["Fall protection plan reviewed and approved","Scaffolding inspected by competent person and green-tagged","Full body harness worn, inspected and within certification date","Anchor points rated minimum 15kN and inspected before use","Lanyard connected before leaving a secured position","Exclusion zone established at ground level below work area","Toe boards and guardrails fitted on all open edges","Tools tethered — dropped object prevention in place","Rescue / retrieval plan in place for fall-arrest scenarios","Work suspended if wind exceeds 12m/s or lightning risk","Ladder secured top and bottom, extending 1m above platform","RA Required"],
   excavation:["Underground utility survey — CAT scan and drawings reviewed","All underground services marked before excavation begins","Competent person inspects excavation at start of each shift","Shoring, benching or batter slopes applied per soil classification","Spoil kept minimum 1m from edge of excavation","Safe means of access/egress at maximum 8m intervals","Atmospheric testing if depth exceeds 1.2m","Exclusion zone — no vehicles within 2m of edge","Water accumulation monitored and pumped as required","Excavation protected and signed overnight or when unattended","RA Required"],
   lifting:["Lift plan reviewed and signed by lifting supervisor","Crane / lifting equipment inspected and within certification date","Rigging gear inspected and colour-coded current","SWL confirmed — load weight verified before lift","Exclusion zone below lift path — no personnel under load","Qualified rigger and banksman assigned to lift","Tag lines used to control load swing","Ground conditions assessed, crane outriggers on certified mats","Overhead power lines identified — minimum 6m clearance maintained","Wind speed checked — lift suspended if greater than 10m/s","Pre-lift toolbox talk conducted with all involved personnel","Radio communication confirmed between crane operator and banksman","RA Required"],
+  dewatering:["Dewatering plan reviewed and approved by competent engineer","Pump capacity verified against inflow rate and site conditions","Discharge point identified — no discharge to storm drains or waterways without approval","Silt trap / sedimentation control installed at discharge point","Monitoring of adjacent structures for settlement or movement","Excavation edges inspected after dewatering commences — shoring reviewed","Pump installation inspected — electrical connections protected from water","Backup pump on standby if primary dewatering is critical","Perimeter drainage channels free of obstruction","Personnel prohibited from entering dewatered excavation without confined space or excavation PTW","Water disposal documented and compliant with environmental requirements","Emergency shutdown procedure tested before commencing","RA Required"],
+  pressure_testing:["Pressure test plan reviewed and approved by competent engineer","System isolated from all live lines and sources of energy","Test medium confirmed — hydraulic preferred; pneumatic requires additional risk controls","All personnel evacuated from exclusion zone during pressurisation","Relief valve set to 1.5× design pressure maximum — verified and tagged","Test equipment calibrated and within certification date","Gradual pressurisation in increments — hold at each step for inspection","Joints and connections visually inspected at hold pressure","Pressure gauge readable from safe distance — remote gauge used if required","Depressurisation procedure clearly defined before test commences","Containment in place for test medium release or spill","Documentation: test date, medium, duration, result, witnessed by","RA Required"],
 };
 
 // ── SIMOPS conflict matrix ───────────────────────────────────────────────────
@@ -2217,6 +2221,24 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
       "Applicable Third party certificates attached with PTW","Crane is positioned on firm and compacted ground",
       "Risk Assessment available","Nearest excavation is at least 1.5 meters away from crane","Others:"
     ],
+    dewatering:[
+      "Dewatering plan reviewed and approved","Pump capacity verified against inflow rate",
+      "Discharge point identified and approved","Silt trap / sedimentation control installed",
+      "Adjacent structures monitored for settlement","Excavation edges inspected after dewatering",
+      "Pump electrical connections protected from water","Backup pump on standby",
+      "Perimeter drainage channels clear of obstruction","Personnel exclusion during dewatering",
+      "Water disposal documented and compliant","Emergency shutdown procedure tested",
+      "Risk Assessment available","TBT Conducted and recorded","Others:"
+    ],
+    pressure_testing:[
+      "Pressure test plan reviewed and approved","System isolated from all live energy sources",
+      "Test medium confirmed — hydraulic preferred","Exclusion zone established and enforced",
+      "Relief valve set and tagged — max 1.5× design pressure","Test equipment calibrated and certified",
+      "Gradual pressurisation in steps — hold for inspection","Joints inspected at hold pressure",
+      "Pressure gauge readable from safe distance","Depressurisation procedure defined before test",
+      "Spill containment in place","Test documentation: date, medium, duration, result",
+      "Risk Assessment available","TBT Conducted and recorded","Others:"
+    ],
   };
 
   const precautions=PRECAUTIONS[permit.type]||sel;
@@ -2242,6 +2264,8 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     height:"#70AD47",          // Lime green — Working at Height
     excavation:"#ED7D31",      // Orange — Excavation
     lifting:"#4472C4",         // Blue — Lifting
+    dewatering:"#0097A7",      // Teal — Dewatering
+    pressure_testing:"#922B21",// Dark Red — Pressure Testing
   };
   const secColor=TASETI_COLORS[permit.type]||"#1A3A5C";
   const secTextColor=permit.type==="electrical"?"#000":"#fff";
@@ -2255,6 +2279,8 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     height:         "TAS/PTW/OSH-010 Rev 00",
     excavation:     "TAS/PTW/OSH-014 Rev 00",
     lifting:        "TAS/PTW/OSH-011 Rev 00",
+    dewatering:     "TAS/PTW/OSH-015 Rev 00",
+    pressure_testing:"TAS/PTW/OSH-016 Rev 00",
   };
   const docRef=TASETI_REFS[permit.type]||"TAS/PTW Rev 00";
   const css=`
@@ -2894,23 +2920,31 @@ function Admin({session,onBack}){
 // ── PTW Register ──────────────────────────────────────────────────────────────
 const PERMIT_CODES = {
   hot_work:"HW", cold_work:"CW", confined_space:"CS",
-  electrical:"LO", height:"WH", excavation:"EX", lifting:"LF"
+  electrical:"LO", height:"WH", excavation:"EX", lifting:"LF",
+  dewatering:"DW", pressure_testing:"PT"
 };
 const PERMIT_ICONS = {
   hot_work:"🔥", cold_work:"📋", confined_space:"⚠️",
-  electrical:"🔒", height:"🏗️", excavation:"⛏️", lifting:"🏋️"
+  electrical:"🔒", height:"🏗️", excavation:"⛏️", lifting:"🏋️",
+  dewatering:"💧", pressure_testing:"🔴"
 };
 
 function Register({session,permits,onBack}){
-  const[typeFilter,setTypeFilter]=useState("all");
-  const[statusFilter,setStatusFilter]=useState("all");
+  const sector=session&&session.org&&session.org.sector;
+  const allTypes=getPermitTypes(sector);
+
+  // Active tab = first permit type with data, or first type
+  const[activeTab,setActiveTab]=useState(()=>allTypes[0]&&allTypes[0].id);
   const[downloading,setDownloading]=useState(false);
 
-  const filtered=permits.filter(p=>{
-    if(typeFilter!=="all"&&p.type!==typeFilter)return false;
-    if(statusFilter!=="all"&&p.status!==statusFilter)return false;
-    return true;
-  });
+  // Keep activeTab valid when sector changes
+  React.useEffect(()=>{ if(!allTypes.find(t=>t.id===activeTab))setActiveTab(allTypes[0]&&allTypes[0].id); },[sector]);
+
+  const tabPermits=permits.filter(p=>p.type===activeTab);
+  const activeType=allTypes.find(t=>t.id===activeTab)||{label:activeTab,color:"#1A3A5C",id:activeTab};
+  const code=PERMIT_CODES[activeTab]||activeTab.toUpperCase().slice(0,2);
+
+  const filtered=tabPermits; // alias kept for stats block below
 
   const stats={
     total:permits.length,
@@ -2933,15 +2967,7 @@ function Register({session,permits,onBack}){
       const today = new Date().toLocaleDateString("en-GB");
       const now = new Date().toLocaleString();
 
-      const TYPES=[
-        {id:"hot_work",    code:"HW", label:"Hot Work",                     color:"#D85A30"},
-        {id:"confined_space",code:"CS",label:"Confined Space Entry",        color:"#D97B00"},
-        {id:"excavation",  code:"EX", label:"Excavation & Ground Disturbance",color:"#3B6D11"},
-        {id:"height",      code:"WH", label:"Working at Height",            color:"#0E9E6E"},
-        {id:"electrical",  code:"LO", label:"LOTO - Electrical Isolation",  color:"#7F77DD"},
-        {id:"lifting",     code:"LF", label:"Lifting Operations",           color:"#7F77DD"},
-        {id:"cold_work",   code:"CW", label:"Cold Work - General",          color:"#185FA5"},
-      ];
+      const TYPES=allTypes.map(t=>({...t,code:PERMIT_CODES[t.id]||t.id.toUpperCase().slice(0,2)}));
 
       function fmtD(s){return s?new Date(s).toLocaleDateString("en-GB"):"—";}
       function fmtT(s){return s?new Date(s).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"—";}
@@ -3172,138 +3198,209 @@ ${typeSections}
     setDownloading(false);
   }
 
-  const TYPES_FILTER=[
-    {id:"all",label:"All Types"},
-    {id:"hot_work",label:"🔥 Hot Work"},
-    {id:"cold_work",label:"📋 Cold Work"},
-    {id:"confined_space",label:"⚠️ Confined Space"},
-    {id:"electrical",label:"🔒 LOTO"},
-    {id:"height",label:"🏗️ Height"},
-    {id:"excavation",label:"⛏️ Excavation"},
-    {id:"lifting",label:"🏋️ Lifting"},
+  // Columns matching PTW_LOG_DOC sample
+  const COLS=[
+    {key:"sn",       label:"S/N",                   w:36,  align:"center"},
+    {key:"ref",      label:"PTW Ref. No.",           w:110, align:"left"},
+    {key:"authority",label:"Permit Authority",       w:120, align:"left"},
+    {key:"issuer",   label:"Permit Issuer",          w:120, align:"left"},
+    {key:"holder",   label:"Permit Holder / Job Performer", w:130, align:"left"},
+    {key:"desc",     label:"Activity / Work Description",   w:200, align:"left"},
+    {key:"location", label:"Location / Zone",        w:110, align:"left"},
+    {key:"tra",      label:"TRA Ref.",               w:80,  align:"center"},
+    {key:"ms",       label:"Method Statement Ref.",  w:90,  align:"center"},
+    {key:"issued",   label:"Date Issued",            w:88,  align:"center"},
+    {key:"start",    label:"Start Time",             w:70,  align:"center"},
+    {key:"closed",   label:"Date Closed",            w:88,  align:"center"},
+    {key:"closeTime",label:"Close-out Time",         w:70,  align:"center"},
+    {key:"ext",      label:"Extended? (Y/N)",        w:80,  align:"center"},
+    {key:"susp",     label:"Suspended? (Y/N)",       w:80,  align:"center"},
+    {key:"status",   label:"Closure Status",         w:90,  align:"center"},
+    {key:"nc",       label:"Non-Compliance?",        w:85,  align:"center"},
+    {key:"remarks",  label:"Remarks",                w:130, align:"left"},
   ];
 
+  function cellVal(p,key){
+    const fd=p.form_data||{};
+    const extended=(p.extensions||0)>0;
+    const suspended=p.status==="revoked";
+    switch(key){
+      case"sn":      return null; // rendered separately
+      case"ref":     return p.permit_number||"";
+      case"authority":return fd.permit_authority||fd.area_authority||p.authority_name||"";
+      case"issuer":  return fd.permit_issuer||p.issuer_name||"";
+      case"holder":  return p.requester_name||"";
+      case"desc":    return p.title||"";
+      case"location":return p.area||"";
+      case"tra":     return fd.tra_ref||"";
+      case"ms":      return fd.ms_ref||"";
+      case"issued":  return fmtDate(p.issued_at||p.created_at);
+      case"start":   return fd.work_time_from||"";
+      case"closed":  return p.closed_at?fmtDate(p.closed_at):"";
+      case"closeTime":return p.closed_at?fmtTime(p.closed_at):"";
+      case"ext":     return extended?"Y":"N";
+      case"susp":    return suspended?"Y":"N";
+      case"status":  return p.status==="active"?"Open":p.status==="closed"?"Closed":p.status==="revoked"?"Revoked":(p.status||"").replace(/_/g," ");
+      case"nc":      return fd.non_compliance||"";
+      case"remarks": return fd.remarks||"";
+      default:       return "";
+    }
+  }
+
   return(
-    <div>
+    <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"#F0F2F5"}}>
       <Topbar title="PTW Register" onBack={onBack} right={
         <button onClick={downloadExcel} disabled={downloading} style={{border:"0.5px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:11,cursor:downloading?"not-allowed":"pointer",fontWeight:600}}>
-          {downloading?"Generating PDF…":"⬇ Download Register (PDF)"}
+          {downloading?"Generating…":"⬇ Export PDF"}
         </button>
       }/>
-      <div style={{padding:"1.25rem"}}>
 
-        {/* Header */}
-        <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderRadius:10,padding:"12px 14px",marginBottom:"1rem"}}>
-          <p style={{fontSize:13,fontWeight:700,color:B.text}}>{session.org.name}</p>
-          <p style={{fontSize:11,color:B.textSub}}>PTW Log Register · Permit Coordinator: {session.profile.full_name}</p>
-        </div>
+      {/* Org header bar */}
+      <div style={{background:"#1A3A5C",color:"#fff",padding:"6px 16px",fontSize:11,display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.12)"}}>
+        <span style={{fontWeight:700,letterSpacing:0.4}}>{session.org.name} — Permit to Work Log Register</span>
+        <span style={{opacity:0.6,fontSize:10}}>Coordinator: {session.profile.full_name} · HSE-PTW-002</span>
+      </div>
 
-        {/* Stats */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:"1rem"}}>
-          {[["Total",stats.total,B.primary],["Active",stats.active,B.accent],["Pending",stats.pending,B.warn],["Closed",stats.closed,B.textSub],["Revoked",stats.revoked,B.danger]].map(([l,v,c])=>(
-            <div key={l} style={{background:B.neutral,borderRadius:8,padding:"10px",borderTop:`3px solid ${c}`,textAlign:"center"}}>
-              <p style={{fontSize:18,fontWeight:700,color:c}}>{v}</p>
-              <p style={{fontSize:10,color:B.textSub}}>{l}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
-          {TYPES_FILTER.map(t=>(
-            <button key={t.id} onClick={()=>setTypeFilter(t.id)} style={{border:`0.5px solid ${typeFilter===t.id?B.primary:B.neutralBorder}`,background:typeFilter===t.id?B.primary:"transparent",color:typeFilter===t.id?"#fff":B.textSub,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>{t.label}</button>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:6,marginBottom:"1rem",flexWrap:"wrap"}}>
-          {["all","active","pending","closed","revoked"].map(s=>(
-            <button key={s} onClick={()=>setStatusFilter(s)} style={{border:`0.5px solid ${statusFilter===s?B.accent:B.neutralBorder}`,background:statusFilter===s?B.accentLight:"transparent",color:statusFilter===s?B.accentBorder:B.textSub,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",textTransform:"capitalize"}}>{s==="all"?"All Status":s}</button>
-          ))}
-        </div>
-
-        {/* Register table */}
-        <p style={{fontSize:11,color:B.textSub,marginBottom:8}}>{filtered.length} permit{filtered.length!==1?"s":""} {typeFilter!=="all"||statusFilter!=="all"?"(filtered)":""}</p>
-
-        {filtered.length===0&&(
-          <div style={{textAlign:"center",padding:"3rem 1rem"}}>
-            <p style={{fontSize:32}}>📋</p>
-            <p style={{fontSize:14,fontWeight:600,color:B.text,marginTop:8}}>No permits match this filter</p>
+      {/* Summary stats strip */}
+      <div style={{background:"#fff",borderBottom:"1px solid #D8DEE6",padding:"6px 16px",display:"flex",gap:16,fontSize:11}}>
+        {[["Total",permits.length,"#1A3A5C"],["Active",permits.filter(p=>p.status==="active").length,"#0E9E6E"],["Pending",permits.filter(p=>p.status==="pending"||p.status==="extension_pending").length,"#D97B00"],["Closed",permits.filter(p=>p.status==="closed").length,"#5A6A7A"],["Revoked",permits.filter(p=>p.status==="revoked").length,"#C0392B"]].map(([l,v,c])=>(
+          <div key={l} style={{display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontWeight:700,color:c,fontSize:14}}>{v}</span>
+            <span style={{color:"#7A8AA0",fontSize:10}}>{l}</span>
+            <span style={{color:"#D8DEE6",marginLeft:4}}>|</span>
           </div>
-        )}
+        ))}
+        <span style={{color:"#7A8AA0",fontSize:10,marginLeft:"auto",alignSelf:"center"}}>{tabPermits.length} on this sheet</span>
+      </div>
 
-        {/* Table — scrollable horizontally */}
-        {filtered.length>0&&(
-          <div style={{overflowX:"auto",borderRadius:10,border:`0.5px solid ${B.neutralBorder}`}}>
-            <table style={{borderCollapse:"collapse",width:"100%",minWidth:900,fontSize:11}}>
-              <thead>
-                <tr style={{background:B.primary,color:"#fff"}}>
-                  {["S/N","PTW Ref No.","Type","Work Description","Location","Work In-charge","Date Issued","Date Closed","Extended","Suspended","Status"].map(h=>(
-                    <th key={h} style={{padding:"8px 10px",textAlign:"left",fontWeight:600,fontSize:10,whiteSpace:"nowrap",borderRight:`0.5px solid rgba(255,255,255,0.15)`}}>{h}</th>
-                  ))}
+      {/* Sheet tabs — Excel style */}
+      <div style={{background:"#E8EBF0",borderBottom:"2px solid #C8CDD8",display:"flex",overflowX:"auto",padding:"0 8px",gap:0,flexShrink:0}}>
+        {allTypes.map(t=>{
+          const count=permits.filter(p=>p.type===t.id).length;
+          const isActive=activeTab===t.id;
+          return(
+            <button key={t.id} onClick={()=>setActiveTab(t.id)}
+              style={{
+                border:"none",borderTop:`3px solid ${isActive?t.color:"transparent"}`,
+                background:isActive?"#fff":"transparent",
+                color:isActive?t.color:"#5A6A7A",
+                padding:"7px 14px 6px 14px",
+                fontSize:11,fontWeight:isActive?700:500,
+                cursor:"pointer",
+                whiteSpace:"nowrap",
+                borderRight:"1px solid #C8CDD8",
+                marginBottom:isActive?"-2px":0,
+                borderBottom:isActive?"2px solid #fff":"none",
+                position:"relative",
+                zIndex:isActive?2:1,
+                transition:"all 0.1s",
+                display:"flex",gap:5,alignItems:"center",
+              }}>
+              <span>{PERMIT_ICONS[t.id]||"📄"}</span>
+              <span>{t.label.split("(")[0].trim()}</span>
+              {count>0&&<span style={{background:isActive?t.color+"22":"#E0E4EA",color:isActive?t.color:"#7A8AA0",borderRadius:10,padding:"0 5px",fontSize:9,fontWeight:700}}>{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sheet name bar — mimics Excel sheet header row */}
+      <div style={{background:activeType.color,color:"#fff",padding:"5px 16px",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+        <span>{PERMIT_ICONS[activeTab]||"📄"} {activeType.label.toUpperCase()} PERMIT LOG</span>
+        <span style={{opacity:0.7,fontWeight:400,fontSize:10}}>Code: {code} · {session.org.name} · ADOSH-SF: CoP 21.0</span>
+      </div>
+
+      {/* Spreadsheet body — horizontally and vertically scrollable */}
+      <div style={{flex:1,overflow:"auto",background:"#fff"}}>
+        <table style={{borderCollapse:"collapse",tableLayout:"fixed",minWidth:COLS.reduce((a,c)=>a+c.w,0)}}>
+          {/* Frozen column header row */}
+          <thead>
+            <tr style={{background:"#1A3A5C",position:"sticky",top:0,zIndex:10}}>
+              {COLS.map(col=>(
+                <th key={col.key} style={{
+                  width:col.w,minWidth:col.w,
+                  padding:"7px 8px",
+                  color:"#fff",fontSize:10,fontWeight:700,
+                  textAlign:col.align,
+                  borderRight:"1px solid rgba(255,255,255,0.12)",
+                  whiteSpace:"normal",lineHeight:1.25,
+                  letterSpacing:0.2,
+                }}>{col.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tabPermits.length===0&&(
+              <tr>
+                <td colSpan={COLS.length} style={{padding:"3rem",textAlign:"center",color:"#7A8AA0",fontSize:13,background:"#FAFBFC"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>📋</div>
+                  <div style={{fontWeight:600}}>No permits recorded for {activeType.label}</div>
+                  <div style={{fontSize:11,marginTop:4,opacity:0.7}}>Permits issued under this type will appear here</div>
+                </td>
+              </tr>
+            )}
+            {tabPermits.map((p,idx)=>{
+              const fd=p.form_data||{};
+              const extended=(p.extensions||0)>0;
+              const suspended=p.status==="revoked";
+              const statusVal=cellVal(p,"status");
+              const isEven=idx%2===0;
+              const rowBg=isEven?"#fff":"#F7F9FB";
+              return(
+                <tr key={p.id} style={{background:rowBg,borderBottom:"1px solid #E8ECF2"}}>
+                  {COLS.map(col=>{
+                    if(col.key==="sn"){
+                      return <td key="sn" style={{padding:"6px 8px",textAlign:"center",color:"#9AA4B2",fontSize:10,borderRight:"1px solid #E8ECF2",background:isEven?"#F7F9FB":"#EEF1F6",fontWeight:600}}>{idx+1}</td>;
+                    }
+                    if(col.key==="ref"){
+                      return <td key="ref" style={{padding:"6px 8px",fontWeight:700,color:activeType.color,fontSize:11,borderRight:"1px solid #E8ECF2",whiteSpace:"nowrap"}}>
+                        {p.permit_number}
+                        {extended&&<span style={{background:activeType.color+"22",color:activeType.color,border:`0.5px solid ${activeType.color}`,borderRadius:4,padding:"1px 5px",fontSize:8,fontWeight:800,marginLeft:5}}>+EXT</span>}
+                      </td>;
+                    }
+                    if(col.key==="ext"){
+                      return <td key="ext" style={{padding:"6px 8px",textAlign:"center",fontWeight:700,color:extended?"#D97B00":"#9AA4B2",fontSize:11,borderRight:"1px solid #E8ECF2"}}>{extended?"Y":"N"}</td>;
+                    }
+                    if(col.key==="susp"){
+                      return <td key="susp" style={{padding:"6px 8px",textAlign:"center",fontWeight:700,color:suspended?"#C0392B":"#9AA4B2",fontSize:11,borderRight:"1px solid #E8ECF2"}}>{suspended?"Y":"N"}</td>;
+                    }
+                    if(col.key==="status"){
+                      const sc=statusBadgeColor(p.status);
+                      return <td key="status" style={{padding:"6px 8px",textAlign:"center",borderRight:"1px solid #E8ECF2"}}>
+                        <span style={{background:sc+"22",color:sc,border:`0.5px solid ${sc}`,borderRadius:10,padding:"2px 8px",fontSize:10,fontWeight:700}}>{statusVal}</span>
+                      </td>;
+                    }
+                    if(col.key==="nc"){
+                      const hasNC=!!cellVal(p,"nc");
+                      return <td key="nc" style={{padding:"6px 8px",textAlign:"center",color:hasNC?"#C0392B":"#9AA4B2",fontWeight:hasNC?700:400,fontSize:11,borderRight:"1px solid #E8ECF2"}}>{hasNC?"Y":"N"}</td>;
+                    }
+                    const val=cellVal(p,col.key);
+                    return <td key={col.key} style={{
+                      padding:"6px 8px",
+                      fontSize:10,
+                      color:val?"#1A2B3C":"#B0B8C4",
+                      borderRight:"1px solid #E8ECF2",
+                      textAlign:col.align,
+                      overflow:"hidden",
+                      textOverflow:"ellipsis",
+                      whiteSpace:col.key==="desc"||col.key==="remarks"?"normal":"nowrap",
+                      maxWidth:col.w,
+                    }}>{val||"—"}</td>;
+                  })}
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p,idx)=>{
-                  const fd=p.form_data||{};
-                  const code=PERMIT_CODES[p.type]||"??";
-                  const icon=PERMIT_ICONS[p.type]||"";
-                  const t=pt(p.type);
-                  const extended=(p.extensions||0)>0?"Y":"N";
-                  const suspended=p.status==="revoked"?"Y":"N";
-                  const sc=statusBadgeColor(p.status);
-                  const isEven=idx%2===0;
-                  return(
-                    <tr key={p.id} style={{background:isEven?"#fff":B.neutral,borderBottom:`0.5px solid ${B.neutralBorder}`}}>
-                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`}}>{idx+1}</td>
-                      <td style={{padding:"8px 10px",fontWeight:600,color:B.primary,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.permit_number}</td>
-                      <td style={{padding:"8px 10px",borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
-                        <span style={{background:t.color+"22",color:t.color,border:`0.5px solid ${t.color}`,borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:700}}>{icon} {code}</span>
-                      </td>
-                      <td style={{padding:"8px 10px",maxWidth:200,borderRight:`0.5px solid ${B.neutralBorder}`}}>
-                        <p style={{fontSize:11,color:B.text,fontWeight:500,margin:0}}>{p.title}</p>
-                      </td>
-                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.area}</td>
-                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>{p.requester_name}</td>
-                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
-                        <div>{fmtDate(p.issued_at||p.created_at)}</div>
-                        <div style={{fontSize:10}}>{fd.work_time_from||""}</div>
-                      </td>
-                      <td style={{padding:"8px 10px",color:B.textSub,borderRight:`0.5px solid ${B.neutralBorder}`,whiteSpace:"nowrap"}}>
-                        <div>{fmtDate(p.closed_at)}</div>
-                        <div style={{fontSize:10}}>{p.closed_at?fmtTime(p.closed_at):""}</div>
-                      </td>
-                      <td style={{padding:"8px 10px",textAlign:"center",borderRight:`0.5px solid ${B.neutralBorder}`}}>
-                        <span style={{color:(p.extensions||0)>0?B.warn:B.textSub,fontWeight:(p.extensions||0)>0?700:400}}>{extended}</span>
-                      </td>
-                      <td style={{padding:"8px 10px",textAlign:"center",borderRight:`0.5px solid ${B.neutralBorder}`}}>
-                        <span style={{color:suspended==="Y"?B.danger:B.textSub,fontWeight:suspended==="Y"?700:400}}>{suspended}</span>
-                      </td>
-                      <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>
-                        <span style={{background:sc+"22",color:sc,border:`0.5px solid ${sc}`,borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:600,textTransform:"capitalize"}}>{(p.status||"").replace("_"," ")}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Legend */}
-        <div style={{marginTop:"1.25rem",background:B.neutral,borderRadius:10,padding:"12px 14px"}}>
-          <p style={{fontSize:11,fontWeight:600,color:B.textSub,marginBottom:8,letterSpacing:"0.04em",textTransform:"uppercase"}}>Permit Type Codes</p>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {[["HW","Hot Work","#D85A30"],["CW","Cold Work","#185FA5"],["CS","Confined Space","#D97B00"],["LO","LOTO / Electrical","#7F77DD"],["WH","Working at Height","#0E9E6E"],["EX","Excavation","#3B6D11"],["LF","Lifting Operations","#7F77DD"]].map(([code,label,color])=>(
-              <div key={code} style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{background:color+"22",color:color,border:`0.5px solid ${color}`,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{code}</span>
-                <span style={{fontSize:11,color:B.textSub}}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p style={{fontSize:10,color:B.textSub,textAlign:"center",marginTop:"1rem"}}>
-          Download CSV for full log with all permit types on separate tabs · HSE-PTW-002
-        </p>
+      {/* Bottom status bar — Excel style */}
+      <div style={{background:"#E8EBF0",borderTop:"1px solid #C8CDD8",padding:"3px 16px",fontSize:10,color:"#5A6A7A",display:"flex",gap:16,alignItems:"center",flexShrink:0}}>
+        <span>Sheet: <strong style={{color:activeType.color}}>{activeType.label}</strong></span>
+        <span>Records: <strong>{tabPermits.length}</strong></span>
+        <span>Extended: <strong style={{color:"#D97B00"}}>{tabPermits.filter(p=>(p.extensions||0)>0).length}</strong></span>
+        <span>Open: <strong style={{color:"#0E9E6E"}}>{tabPermits.filter(p=>p.status==="active").length}</strong></span>
+        <span>Closed: <strong>{tabPermits.filter(p=>p.status==="closed").length}</strong></span>
       </div>
     </div>
   );
