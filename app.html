@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
 // ── Push Notifications (regular JS, outside Babel) ────────────────
 var VAPID_PUBLIC_KEY = "BBYtNHnx4QtdMT5TaKAqpC_eRwZePbpTtXn3OEioBb2aBcqSB56Um6fuvoSG8EuFiHUYDUyCUt6lXe-lBjakvQI";
@@ -2960,14 +2960,13 @@ function Register({session,permits,onBack}){
   function statusBadgeColor(s){return{active:"#0E9E6E",pending:"#D97B00",closed:"#5A6A7A",revoked:"#C0392B",work_complete:"#185FA5",rejected:"#C0392B",extension_pending:"#7F77DD"}[s]||"#5A6A7A";}
 
   // Generate PDF — opens in new window preserving in-app look and feel
-  function downloadXLSX(){
+  async function downloadXLSX(){
     setDownloading(true);
     try {
-      if(typeof XLSX==="undefined"){ alert("Excel library not loaded. Please check your internet connection and refresh."); setDownloading(false); return; }
+      if(typeof ExcelJS==="undefined"){ alert("Excel library not loaded. Please check your internet connection and refresh."); setDownloading(false); return; }
       const orgName = session.org.name;
       const coordinator = session.profile.full_name;
       const now = new Date().toLocaleString("en-GB");
-
       const TYPES=allTypes.map(t=>({...t,code:PERMIT_CODES[t.id]||t.id.toUpperCase().slice(0,2)}));
 
       function fmtD(s){return s?new Date(s).toLocaleDateString("en-GB"):"";}
@@ -2978,23 +2977,66 @@ function Register({session,permits,onBack}){
         if(s==="revoked")return"Revoked";
         return(s||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
       }
+      // Strip # and return ARGB (ExcelJS uses ARGB)
+      function toARGB(hex){ return "FF"+hex.replace("#",""); }
+      // Lighten a hex colour by mixing with white at pct (0–1)
+      function lighten(hex,pct){
+        let h=hex.replace("#","");
+        const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+        const mix=(c)=>Math.round(c+(255-c)*pct).toString(16).padStart(2,"0");
+        return "#"+mix(r)+mix(g)+mix(b);
+      }
+      // Status fill colours
+      const STATUS_FILL={
+        Open:   {argb:"FF1A7D44"},  // dark green
+        Closed: {argb:"FF555555"},  // grey
+        Revoked:{argb:"FF9B1C1C"},  // dark red
+      };
 
-      const wb = XLSX.utils.book_new();
-      wb.Props = { Title: "PTW Log Register", Company: orgName, Author: coordinator };
+      const wb = new ExcelJS.Workbook();
+      wb.creator = coordinator;
+      wb.company = orgName;
+      wb.created = new Date();
 
       // ── SUMMARY sheet ──────────────────────────────────────────────
-      const summaryRows=[
-        ["CONTROLIT — Permit to Work Log Register"],
-        ["Organisation:", orgName],
-        ["Coordinator:", coordinator],
-        ["Generated:", now],
-        ["Reference:", "HSE-PTW-002 Rev 00"],
-        [],
-        ["Permit Type","Code","Total","Open","Closed","Revoked","Extended"],
+      const wsSummary = wb.addWorksheet("Summary");
+      wsSummary.columns=[
+        {width:36},{width:8},{width:8},{width:8},{width:8},{width:8},{width:11}
       ];
-      TYPES.forEach(t=>{
+
+      // Title row
+      wsSummary.addRow(["CONTROLIT — Permit to Work Log Register"]);
+      wsSummary.mergeCells("A1:G1");
+      const titleCell=wsSummary.getCell("A1");
+      titleCell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF1A3A5C"}};
+      titleCell.font={bold:true,color:{argb:"FFFFFFFF"},size:13};
+      titleCell.alignment={vertical:"middle",horizontal:"center"};
+      wsSummary.getRow(1).height=24;
+
+      // Meta rows
+      const metaStyle={font:{size:10},fill:{type:"pattern",pattern:"solid",fgColor:{argb:"FFF0F4F8"}}};
+      [["Organisation:", orgName],["Coordinator:", coordinator],["Generated:", now],["Reference:", "HSE-PTW-002 Rev 00"]].forEach(arr=>{
+        const r=wsSummary.addRow(arr);
+        r.eachCell(c=>{c.fill=metaStyle.fill;c.font=metaStyle.font;});
+        r.getCell(1).font={...metaStyle.font,bold:true};
+      });
+      wsSummary.addRow([]);
+
+      // Header row
+      const summHdr=wsSummary.addRow(["Permit Type","Code","Total","Open","Closed","Revoked","Extended"]);
+      summHdr.eachCell(c=>{
+        c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF1A3A5C"}};
+        c.font={bold:true,color:{argb:"FFFFFFFF"},size:10};
+        c.alignment={horizontal:"center",vertical:"middle"};
+        c.border={bottom:{style:"thin",color:{argb:"FF93C5FD"}}};
+      });
+      summHdr.getCell(1).alignment={horizontal:"left",vertical:"middle"};
+      wsSummary.getRow(7).height=18;
+
+      // Data rows — each permit type coloured with its own colour
+      TYPES.forEach((t,i)=>{
         const tp=permits.filter(p=>p.type===t.id);
-        summaryRows.push([
+        const row=wsSummary.addRow([
           t.label, t.code,
           tp.length,
           tp.filter(p=>p.status==="active").length,
@@ -3002,17 +3044,33 @@ function Register({session,permits,onBack}){
           tp.filter(p=>p.status==="revoked").length,
           tp.filter(p=>(p.extensions||0)>0).length,
         ]);
+        const bgARGB=toARGB(lighten(t.color,0.82));
+        row.eachCell(c=>{
+          c.fill={type:"pattern",pattern:"solid",fgColor:{argb:bgARGB}};
+          c.font={size:10};
+          c.alignment={horizontal:"center"};
+        });
+        row.getCell(1).font={size:10,bold:true,color:{argb:toARGB(t.color)}};
+        row.getCell(1).alignment={horizontal:"left"};
+        row.getCell(2).font={size:10,bold:true,color:{argb:toARGB(t.color)}};
+        row.height=16;
       });
-      summaryRows.push([]);
-      summaryRows.push(["TOTAL","",permits.length,
+
+      // Total row
+      wsSummary.addRow([]);
+      const totRow=wsSummary.addRow(["TOTAL","",permits.length,
         permits.filter(p=>p.status==="active").length,
         permits.filter(p=>p.status==="closed").length,
         permits.filter(p=>p.status==="revoked").length,
         permits.filter(p=>(p.extensions||0)>0).length,
       ]);
-      const wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
-      wsSummary["!cols"]=[{wch:35},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:10}];
-      XLSX.utils.book_append_sheet(wb,wsSummary,"Summary");
+      totRow.eachCell(c=>{
+        c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF1A3A5C"}};
+        c.font={bold:true,color:{argb:"FFFFFFFF"},size:10};
+        c.alignment={horizontal:"center"};
+      });
+      totRow.getCell(1).alignment={horizontal:"left"};
+      totRow.height=18;
 
       // ── One sheet per permit type ──────────────────────────────────
       const HEADERS=["S/N","PTW Ref. No.","Permit Authority","Permit Issuer",
@@ -3020,58 +3078,128 @@ function Register({session,permits,onBack}){
         "TRA Ref.","Method Statement Ref.","Date Issued","Start Time",
         "Date Closed","Close-out Time","Extended? (Y/N)","Suspended? (Y/N)",
         "Closure Status","Non-Compliance?","Remarks"];
+      const COL_WIDTHS=[5,14,18,18,22,30,16,10,14,12,10,12,12,14,14,14,14,22];
 
       TYPES.forEach(t=>{
-        const tp=permits.filter(p=>p.type===t.id);
-        const rows=[
-          [`${t.label} Permit Log — ${orgName}`],
-          [`Coordinator: ${coordinator}   |   Code: ${t.code}   |   ADOSH-SF: CoP 21.0   |   Generated: ${now}`],
-          [],
-          HEADERS,
-        ];
-        tp.forEach((p,idx)=>{
-          const fd=p.form_data||{};
-          const extended=(p.extensions||0)>0;
-          const suspended=p.status==="revoked";
-          rows.push([
-            idx+1,
-            p.permit_number||"",
-            fd.permit_authority||fd.area_authority||p.authority_name||"",
-            fd.permit_issuer||p.issuer_name||"",
-            p.requester_name||"",
-            p.title||"",
-            p.area||"",
-            fd.tra_ref||"",
-            fd.ms_ref||"",
-            fmtD(p.issued_at||p.created_at),
-            fd.work_time_from||"",
-            fmtD(p.closed_at),
-            p.closed_at?fmtT(p.closed_at):"",
-            extended?"Y":"N",
-            suspended?"Y":"N",
-            statusLabel(p.status),
-            fd.non_compliance?"Y":"N",
-            fd.remarks||"",
-          ]);
+        const sheetName=t.label.replace(/[\/\\*?\[\]:]/g,"").slice(0,31);
+        const ws=wb.addWorksheet(sheetName,{
+          views:[{state:"frozen",xSplit:1,ySplit:4}]
         });
-        if(tp.length===0) rows.push(["(No permits recorded for this type)"]);
+        ws.columns=COL_WIDTHS.map(w=>({width:w}));
 
-        const ws=XLSX.utils.aoa_to_sheet(rows);
-        ws["!cols"]=[
-          {wch:5},{wch:14},{wch:18},{wch:18},{wch:22},{wch:30},{wch:16},
-          {wch:10},{wch:14},{wch:12},{wch:10},{wch:12},{wch:12},{wch:14},{wch:14},
-          {wch:14},{wch:14},{wch:22}
-        ];
-        // Freeze first 4 rows (title + header) and col A
-        ws["!freeze"]={xSplit:1,ySplit:4};
-        // Safe sheet name: max 31 chars, no special chars
-        const sheetName=(t.label.replace(/[\/\\*?\[\]]/g,"").slice(0,31));
-        XLSX.utils.book_append_sheet(wb,ws,sheetName);
+        // Row 1 — Permit type title bar (full colour)
+        const titleRow=ws.addRow([`${t.label} Permit Log — ${orgName}`]);
+        ws.mergeCells(`A1:R1`);
+        const tc=titleRow.getCell(1);
+        tc.fill={type:"pattern",pattern:"solid",fgColor:{argb:toARGB(t.color)}};
+        tc.font={bold:true,color:{argb:"FFFFFFFF"},size:13};
+        tc.alignment={vertical:"middle",horizontal:"center"};
+        titleRow.height=26;
+
+        // Row 2 — Sub-header / meta
+        const metaRow=ws.addRow([`Coordinator: ${coordinator}   |   Code: ${t.code}   |   ADOSH-SF: CoP 21.0   |   Generated: ${now}`]);
+        ws.mergeCells(`A2:R2`);
+        const mc=metaRow.getCell(1);
+        mc.fill={type:"pattern",pattern:"solid",fgColor:{argb:toARGB(lighten(t.color,0.88))}};
+        mc.font={size:9,italic:true,color:{argb:toARGB(t.color)}};
+        mc.alignment={vertical:"middle",horizontal:"left"};
+        metaRow.height=16;
+
+        // Row 3 — blank spacer
+        ws.addRow([]);
+
+        // Row 4 — Column headers (lighter tint of type colour)
+        const hdrARGB=toARGB(t.color);
+        const hdrLightARGB=toARGB(lighten(t.color,0.25));
+        const hdrRow=ws.addRow(HEADERS);
+        hdrRow.height=20;
+        hdrRow.eachCell((c,i)=>{
+          c.fill={type:"pattern",pattern:"solid",fgColor:{argb:hdrARGB}};
+          c.font={bold:true,color:{argb:"FFFFFFFF"},size:9};
+          c.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+          c.border={
+            top:{style:"thin",color:{argb:"FFFFFFFF"}},
+            bottom:{style:"medium",color:{argb:"FFFFFFFF"}},
+            right:{style:"thin",color:{argb:"FFAAAAAA"}},
+          };
+        });
+
+        // Data rows
+        const tp=permits.filter(p=>p.type===t.id);
+        if(tp.length===0){
+          const emptyRow=ws.addRow(["(No permits recorded for this type)"]);
+          ws.mergeCells(`A5:R5`);
+          emptyRow.getCell(1).font={italic:true,color:{argb:"FF888888"},size:9};
+          emptyRow.getCell(1).alignment={horizontal:"center"};
+        } else {
+          const stripeLightARGB=toARGB(lighten(t.color,0.94));
+          const stripeWhiteARGB="FFFFFFFF";
+          tp.forEach((p,idx)=>{
+            const fd=p.form_data||{};
+            const extended=(p.extensions||0)>0;
+            const suspended=p.status==="revoked";
+            const sl=statusLabel(p.status);
+            const rowData=[
+              idx+1,
+              p.permit_number||"",
+              fd.permit_authority||fd.area_authority||p.authority_name||"",
+              fd.permit_issuer||p.issuer_name||"",
+              p.requester_name||"",
+              p.title||"",
+              p.area||"",
+              fd.tra_ref||"",
+              fd.ms_ref||"",
+              fmtD(p.issued_at||p.created_at),
+              fd.work_time_from||"",
+              fmtD(p.closed_at),
+              p.closed_at?fmtT(p.closed_at):"",
+              extended?"Y":"N",
+              suspended?"Y":"N",
+              sl,
+              fd.non_compliance?"Y":"N",
+              fd.remarks||"",
+            ];
+            const dataRow=ws.addRow(rowData);
+            const rowBgARGB=idx%2===0?stripeWhiteARGB:stripeLightARGB;
+            dataRow.height=15;
+            dataRow.eachCell((c,ci)=>{
+              c.fill={type:"pattern",pattern:"solid",fgColor:{argb:rowBgARGB}};
+              c.font={size:9};
+              c.alignment={vertical:"middle",horizontal:"center",wrapText:false};
+              c.border={bottom:{style:"hair",color:{argb:"FFDDDDDD"}}};
+            });
+            // PTW Ref — bold, coloured, left-align
+            const refCell=dataRow.getCell(2);
+            refCell.font={bold:true,size:9,color:{argb:toARGB(t.color)}};
+            refCell.alignment={horizontal:"left",vertical:"middle"};
+            // Description & Remarks — left-align
+            dataRow.getCell(6).alignment={horizontal:"left",vertical:"middle"};
+            dataRow.getCell(18).alignment={horizontal:"left",vertical:"middle"};
+            // Closure Status — coloured fill
+            const statusCell=dataRow.getCell(16);
+            if(STATUS_FILL[sl]){
+              statusCell.fill={type:"pattern",pattern:"solid",fgColor:STATUS_FILL[sl]};
+              statusCell.font={bold:true,color:{argb:"FFFFFFFF"},size:9};
+            }
+            // Extended Y — highlight
+            if(extended){
+              const extCell=dataRow.getCell(14);
+              extCell.fill={type:"pattern",pattern:"solid",fgColor:{argb:toARGB(lighten(t.color,0.6))}};
+              extCell.font={bold:true,size:9,color:{argb:toARGB(t.color)}};
+            }
+          });
+        }
       });
 
-      // Download
-      const filename=`PTW_Register_${orgName.replace(/\s+/g,"_")}_${new Date().toISOString().slice(0,10)}.xlsx`;
-      XLSX.writeFile(wb,filename);
+      // Trigger browser download
+      const buf=await wb.xlsx.writeBuffer();
+      const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=`PTW_Register_${orgName.replace(/\s+/g,"_")}_${new Date().toISOString().slice(0,10)}.xlsx`;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
     } catch(e){ console.error("Excel export error:",e); alert("Export failed: "+e.message); }
     setDownloading(false);
