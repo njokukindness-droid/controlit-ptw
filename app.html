@@ -1711,8 +1711,59 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
 
 
 // ── New Permit ────────────────────────────────────────────────────────────────
+// ── Vessel Zone Data ──────────────────────────────────────────────────────────
+const VESSEL_ZONES=[
+  {group:"Deck Areas",icon:"🌊",zones:[
+    {id:"main_deck",label:"Main Deck",risk:"low"},
+    {id:"forecastle_deck",label:"Forecastle Deck (Foc'sle)",risk:"low"},
+    {id:"poop_deck",label:"Poop Deck (Aft)",risk:"low"},
+    {id:"upper_deck",label:"Upper Deck",risk:"low"},
+    {id:"weather_deck",label:"Weather Deck (Exposed)",risk:"medium"},
+    {id:"gangway",label:"Gangway / Accommodation Ladder",risk:"medium"},
+  ]},
+  {group:"Superstructure",icon:"🏗️",zones:[
+    {id:"bridge",label:"Bridge / Wheelhouse",risk:"low"},
+    {id:"accommodation",label:"Accommodation Block",risk:"low"},
+    {id:"funnel_casing",label:"Funnel Casing",risk:"medium"},
+    {id:"mast",label:"Mast / Radar Platform",risk:"high"},
+  ]},
+  {group:"Below Deck — Cargo & Tanks",icon:"⚠️",zones:[
+    {id:"cargo_hold",label:"Cargo Hold",risk:"high"},
+    {id:"cargo_tank",label:"Cargo Tank",risk:"high"},
+    {id:"ballast_tank",label:"Ballast Tank",risk:"high"},
+    {id:"void_space",label:"Void Space",risk:"high"},
+    {id:"chain_locker",label:"Chain Locker",risk:"high"},
+    {id:"cofferdams",label:"Cofferdams",risk:"high"},
+    {id:"forepeak_tank",label:"Forepeak Tank",risk:"high"},
+    {id:"aft_peak_tank",label:"Aft Peak Tank",risk:"high"},
+  ]},
+  {group:"Engineering Spaces",icon:"⚙️",zones:[
+    {id:"engine_room",label:"Engine Room",risk:"medium"},
+    {id:"pump_room",label:"Pump Room",risk:"high"},
+    {id:"bow_thruster_room",label:"Bow Thruster Room",risk:"high"},
+    {id:"steering_gear_room",label:"Steering Gear Room",risk:"medium"},
+    {id:"generator_room",label:"Generator Room",risk:"medium"},
+    {id:"workshop",label:"Onboard Workshop",risk:"low"},
+    {id:"co2_room",label:"CO₂ / Fire Suppression Room",risk:"high"},
+  ]},
+  {group:"Pipe & Utility Spaces",icon:"🔧",zones:[
+    {id:"pipe_duct",label:"Pipe Duct / Tunnel",risk:"high"},
+    {id:"cable_duct",label:"Cable / Shaft Tunnel",risk:"high"},
+    {id:"fuel_oil_tank",label:"Fuel Oil Tank",risk:"high"},
+    {id:"fresh_water_tank",label:"Fresh Water Tank",risk:"medium"},
+    {id:"sewage_tank",label:"Sewage / Black Water Tank",risk:"high"},
+  ]},
+];
+const GAS_TEST_ZONES=["cargo_hold","cargo_tank","ballast_tank","void_space","pump_room","bow_thruster_room","chain_locker","cofferdams","forepeak_tank","aft_peak_tank","pipe_duct","cable_duct","fuel_oil_tank","sewage_tank","co2_room"];
+const CONFINED_SPACE_ZONES=["cargo_hold","cargo_tank","ballast_tank","void_space","pump_room","bow_thruster_room","chain_locker","cofferdams","forepeak_tank","aft_peak_tank","pipe_duct","cable_duct","fuel_oil_tank","sewage_tank"];
+
 function NewPermit({session,onBack,onSuccess}){
+  const isMarine=session&&session.org&&session.org.sector==="marine";
   const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");
+  // Vessel area selector (marine only)
+  const[vesselZone,setVesselZone]=useState("");
+  const[vesselSubLocation,setVesselSubLocation]=useState("");
+  const[vesselName,setVesselName]=useState("");
   // Gas test readings — confined space + marine permits
   const GAS_TEST_TYPES=["confined_space","marine_hot_work","marine_confined_space","gas_free_certificate","diving_operations"];
   const needsGasTest=GAS_TEST_TYPES.includes(type);
@@ -1730,6 +1781,17 @@ function NewPermit({session,onBack,onSuccess}){
   const[gasRetestInterval,setGasRetestInterval]=useState("4");
   const[gasFreeRef,setGasFreeRef]=useState(""); // Gas Free Cert reference numberconst[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
   const[simopsWarnings,setSimopsWarnings]=useState([]);
+
+  // Sync vessel zone selection → area string
+  React.useEffect(()=>{
+    if(!isMarine) return;
+    if(!vesselZone){ setArea(""); return; }
+    const zoneLabel=VESSEL_ZONES.flatMap(g=>g.zones).find(z=>z.id===vesselZone)?.label||vesselZone;
+    const parts=[vesselName?`${vesselName} — `:"",zoneLabel,vesselSubLocation?` (${vesselSubLocation})`:""].join("");
+    setArea(parts);
+    checkSimops(type,parts);
+  },[vesselZone,vesselSubLocation,vesselName,isMarine]);
+
 
   // Check SIMOPS conflicts whenever type or area changes
   function checkSimops(newType, newArea){
@@ -1763,7 +1825,10 @@ function NewPermit({session,onBack,onSuccess}){
     setBusy(true);setErr("");
     const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
     const fd={tools_equipment:tools,selected_controls:sel,
-      gas_test:GAS_TEST_TYPES.includes(type)?{o2:gasO2,lel:gasLEL,co:gasCO,h2s:gasH2S,tested:gasTested,tested_by:gasTestedBy,instrument:gasInstrument,serial_no:gasSerialNo,test_date:gasTestDate,test_time:gasTestTime,retest_interval:gasRetestInterval,gas_free_ref:gasFreeRef}:null,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
+      gas_test:GAS_TEST_TYPES.includes(type)?{o2:gasO2,lel:gasLEL,co:gasCO,h2s:gasH2S,tested:gasTested,tested_by:gasTestedBy,instrument:gasInstrument,serial_no:gasSerialNo,test_date:gasTestDate,test_time:gasTestTime,retest_interval:gasRetestInterval,gas_free_ref:gasFreeRef}:null,
+      vessel_zone:isMarine?vesselZone||null:null,
+      vessel_name:isMarine?vesselName||null:null,
+      ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
     const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
     if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
     setBusy(false);
@@ -1796,7 +1861,58 @@ function NewPermit({session,onBack,onSuccess}){
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Permit type *</label><select value={type} onChange={e=>{const v=e.target.value;setType(v);setControls({});setRaMode(null);setRaGenerated("");setRaFile(null);setRaFileData(null);checkSimops(v,area);}}><option value="">Select permit type…</option>{getPermitTypes(session.org.sector).map(t=><option key={t.id} value={t.id}>{t.label}</option>)}</select></div>
           <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work title *</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Brief description of work to be performed"/></div>
-          <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>{setArea(e.target.value);checkSimops(type,e.target.value);}} placeholder="e.g. Zone A — Process Unit 3, ICAD II"/></div>
+          {isMarine?(
+            <div>
+              <label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Vessel Work Area *</label>
+              {/* Vessel name */}
+              <input value={vesselName} onChange={e=>setVesselName(e.target.value)} placeholder="Vessel name (e.g. MV Falcon, Hull 47)…" style={{marginBottom:8}}/>
+              {/* Zone picker grid */}
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {VESSEL_ZONES.map(grp=>(
+                  <div key={grp.group}>
+                    <p style={{fontSize:10,fontWeight:700,color:B.textSub,textTransform:"uppercase",letterSpacing:"0.04em",margin:"4px 0 4px"}}>{grp.icon} {grp.group}</p>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                      {grp.zones.map(z=>{
+                        const sel=vesselZone===z.id;
+                        const riskColor=z.risk==="high"?"#C0392B":z.risk==="medium"?"#D97B00":"#0E9E6E";
+                        const riskBg=z.risk==="high"?"rgba(192,57,43,0.08)":z.risk==="medium"?"rgba(217,123,0,0.08)":"rgba(14,158,110,0.08)";
+                        return(
+                          <button key={z.id} onClick={()=>setVesselZone(sel?"":z.id)}
+                            style={{padding:"5px 10px",borderRadius:20,border:`1px solid ${sel?riskColor:B.neutralBorder}`,
+                              background:sel?riskColor:riskBg,color:sel?"#fff":B.text,
+                              fontSize:11,fontWeight:sel?700:400,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"}}>
+                            {z.label}
+                            {z.risk==="high"&&<span style={{marginLeft:4,fontSize:9,opacity:sel?0.8:0.6}}>⚠</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Sub-location refinement */}
+              {vesselZone&&(
+                <div style={{marginTop:8}}>
+                  <input value={vesselSubLocation} onChange={e=>setVesselSubLocation(e.target.value)}
+                    placeholder="Sub-location / frame reference (e.g. Frame 22–28, Port side)…"
+                    style={{fontSize:12}}/>
+                </div>
+              )}
+              {/* Gas test / confined space warnings */}
+              {vesselZone&&GAS_TEST_ZONES.includes(vesselZone)&&(
+                <div style={{marginTop:6,background:"rgba(192,57,43,0.08)",border:"0.5px solid #C0392B",borderRadius:8,padding:"7px 10px",fontSize:11,color:"#C0392B",fontWeight:600}}>
+                  ⚠ This zone requires a gas test before work commences. A Gas Free Certificate or gas test records must be attached to this permit.
+                  {CONFINED_SPACE_ZONES.includes(vesselZone)&&<span> This is a <b>Confined Space</b> — ensure the appropriate confined space permit type is selected.</span>}
+                </div>
+              )}
+              {/* Selected area summary */}
+              {area&&(
+                <p style={{fontSize:11,color:B.accent,fontWeight:600,marginTop:6}}>📍 {area}</p>
+              )}
+            </div>
+          ):(
+            <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Work area / location *</label><input value={area} onChange={e=>{setArea(e.target.value);checkSimops(type,e.target.value);}} placeholder="e.g. Zone A — Process Unit 3, ICAD II"/></div>
+          )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Team leader / Work performer *</label><input value={requester} onChange={e=>setRequester(e.target.value)}/></div>
             <div><label style={{fontSize:12,color:B.textSub,display:"block",marginBottom:4}}>Supervisor / Work in-charge *</label><input value={supervisor} onChange={e=>setSupervisor(e.target.value)} placeholder="Supervisor / manager name"/></div>
@@ -2048,7 +2164,13 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         })()}
       <div style={{background:B.neutral,border:`0.5px solid ${B.neutralBorder}`,borderLeft:`3px solid ${t.color||B.textSub}`,borderRadius:10,padding:"1rem 1.25rem",marginBottom:"1rem"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div><p style={{fontSize:11,color:B.textSub,fontWeight:600}}>{t.label}</p><h2 style={{fontSize:16,fontWeight:600,color:B.text,margin:"4px 0 2px"}}>{permit.title}</h2><p style={{fontSize:12,color:B.textSub}}>{permit.area}</p></div>
+          <div><p style={{fontSize:11,color:B.textSub,fontWeight:600}}>{t.label}</p><h2 style={{fontSize:16,fontWeight:600,color:B.text,margin:"4px 0 2px"}}>{permit.title}</h2>
+            <p style={{fontSize:12,color:B.textSub}}>
+              {fd.vessel_name&&<span>🚢 <b>{fd.vessel_name}</b> — </span>}
+              📍 {permit.area}
+              {fd.vessel_zone&&GAS_TEST_ZONES.includes(fd.vessel_zone)&&<span style={{marginLeft:6,fontSize:10,background:"rgba(192,57,43,0.1)",color:"#C0392B",borderRadius:10,padding:"1px 6px",fontWeight:700}}>Gas Test Zone</span>}
+            </p>
+          </div>
           <span style={{background:B.accentLight,color:B.accentBorder,border:`0.5px solid ${B.accent}`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:600,textTransform:"capitalize",whiteSpace:"nowrap"}}>{(permit.status||"").replace("_"," ")}</span>
         </div>
       </div>
@@ -2406,7 +2528,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     <td style="width:50%">Time: From: <b>${fmtT(fd.work_time_from)}</b> &nbsp; To: <b>${fmtT(fd.work_time_to)}</b></td>
   </tr>
   <tr>
-    <td>Exact location of work: <b>${permit.area||""}</b></td>
+    <td>Exact location of work: <b>${permit.area||""}</b>${fd.vessel_name?` &nbsp;·&nbsp; <b>Vessel:</b> ${fd.vessel_name}`:""}${fd.vessel_zone&&GAS_TEST_ZONES.includes(fd.vessel_zone)?` &nbsp;<span style="background:#fdecea;color:#C0392B;font-size:8px;padding:1px 5px;border-radius:4px;font-weight:700">⚠ GAS TEST ZONE</span>`:""}</td>
     <td>No. of persons involved: <b>${fd.num_persons||"_____"}</b></td>
   </tr>
   <tr>
@@ -2717,7 +2839,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
 <table>
   <tr>
     <td style="width:50%"><span class="label">Work Title / Description</span><span class="val">${permit.title}</span></td>
-    <td style="width:50%"><span class="label">Work Area / Exact Location</span><span class="val">${permit.area}</span></td>
+    <td style="width:50%"><span class="label">Work Area / Exact Location</span><span class="val">${permit.area}${fd.vessel_name?" · Vessel: "+fd.vessel_name:""}${fd.vessel_zone&&GAS_TEST_ZONES.includes(fd.vessel_zone)?" ⚠ Gas Test Zone":""}</span></td>
   </tr>
   <tr>
     <td><span class="label">Date From</span><span class="val">${fd.work_date_from||new Date(permit.created_at).toLocaleDateString()}</span></td>
