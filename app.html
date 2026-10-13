@@ -2346,7 +2346,7 @@ async function generateQRDataURL(text, color){
 }
 
 // ── TASETI PDF Template ───────────────────────────────────────────────────────
-function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrDataUrl){
+function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrContent){
   const fmtD=(s)=>s?new Date(s).toLocaleDateString("en-GB"):"___________";
   const fmtT=(s)=>s||"___________";
   const dotline=(val,width)=>`<span style="display:inline-block;border-bottom:0.5px solid #000;min-width:${width||180}px;padding:0 4px">${val||""}</span>`;
@@ -2718,7 +2718,7 @@ ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;pa
     <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    ${qrDataUrl?`<img src="${qrDataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`:""}
+    ${qrContent||""}
     <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify authenticity</div>
   </div>
 </div>`;
@@ -2753,28 +2753,29 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const completionEntry = audit.find(a=>a.action==="Work completion signed off");
   const closureEntry = audit.find(a=>a.action==="Permit closed");
 
-  // Generate preview HTML with QR on mount
+  // Build preview immediately using external QR URL (screen only — prints use inline base64)
+  const screenQrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=${(typeColor||"#1A3A5C").replace("#","")}&bgcolor=ffffff&data=${encodeURIComponent("https://getcontrolit.com/verify.html?permit="+permit.permit_number)}`;
+  const screenQrImg=`<img src="${screenQrUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`;
   React.useEffect(()=>{
-    generateQRDataURL(
-      `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
-      typeColor||"#1A3A5C"
-    ).then(qr=>{
-      if(orgTemplate==="taseti"){
-        setTasPreviewHtml(buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qr));
-      } else {
-        setPreviewHtml(buildHtml(qr));
-      }
-    });
+    if(orgTemplate==="taseti"){
+      setTasPreviewHtml(buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,screenQrImg));
+    } else {
+      setPreviewHtml(buildHtml(screenQrImg));
+    }
   },[]);
 
   // ── TASETI Template ──────────────────────────────────────────────
   if(orgTemplate==="taseti"){
     const openPrint=async()=>{
-      const qrDataUrl=await generateQRDataURL(
-        `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
-        typeColor||"#1A3A5C"
-      );
-      const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrDataUrl);
+      let qrContent=screenQrImg; // fallback to external URL
+      try{
+        const dataUrl=await generateQRDataURL(
+          `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
+          typeColor||"#1A3A5C"
+        );
+        if(dataUrl) qrContent=`<img src="${dataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`;
+      }catch(e){}
+      const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrContent);
       const w=window.open("","_blank","width=900,height=700");
       if(w){
         w.document.write(`<!DOCTYPE html><html><head>
@@ -2852,7 +2853,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     .ft{font-size:8px;color:#888;text-align:center;border-top:0.5px solid #ccc;padding-top:6px;margin-top:12px}
   `;
 
-  function buildHtml(qrDataUrl){ return `<style>${css}</style>
+  function buildHtml(qrContent){ return `<style>${css}</style>
 
 <!-- HEADER -->
 <table style="margin-bottom:0;border:0.5px solid #999">
@@ -3011,7 +3012,7 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
     <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    ${qrDataUrl?`<img src="${qrDataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`:""}
+    ${qrContent||""}
     <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
   </div>
 </div>`; } // end buildHtml
@@ -3022,11 +3023,15 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
         <span style={{color:"#fff",fontWeight:600,fontSize:14}}>📄 {permit.permit_number} — Formal Permit Document</span>
         <div style={{display:"flex",gap:8}}>
           <button onClick={async()=>{
-          const qrDataUrl=await generateQRDataURL(
-            `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
-            typeColor||"#1A3A5C"
-          );
-          const printHtml=buildHtml(qrDataUrl);
+          let qrContent=screenQrImg;
+          try{
+            const dataUrl=await generateQRDataURL(
+              `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
+              typeColor||"#1A3A5C"
+            );
+            if(dataUrl) qrContent=`<img src="${dataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`;
+          }catch(e){}
+          const printHtml=buildHtml(qrContent);
           const w=window.open("","_blank","width=900,height=700");
           if(w){
             w.document.write(`<!DOCTYPE html><html><head>
