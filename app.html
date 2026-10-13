@@ -2703,8 +2703,8 @@ ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;pa
     <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=${secColor.replace('#','')}&bgcolor=ffffff&data=https://getcontrolit.com/app.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
-    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify</div>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=${secColor.replace('#','')}&bgcolor=ffffff&data=https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
+    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify authenticity</div>
   </div>
 </div>`;
 }
@@ -2968,7 +2968,7 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
     <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=1A3A5C&bgcolor=ffffff&data=https://getcontrolit.com/app.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=1A3A5C&bgcolor=ffffff&data=https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
     <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
   </div>
 </div>`;
@@ -3912,16 +3912,7 @@ function App(){
   },[session,fetchPermits]);
   useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
 
-  // QR code scan — auto-open permit from URL param
-  useEffect(()=>{
-    if(!session||permits.length===0)return;
-    const params=new URLSearchParams(window.location.search);
-    const pNum=params.get("permit");
-    if(pNum&&screen==="dashboard"){
-      const found=permits.find(p=>p.permit_number===pNum);
-      if(found){setSelected(found);setScreen("detail");}
-    }
-  },[session,permits]);
+  // QR verification handled by verify.html — no in-app URL param needed
 
   // Refresh when tab becomes visible — no continuous polling
   useEffect(()=>{
