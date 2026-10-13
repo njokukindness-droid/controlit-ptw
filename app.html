@@ -10,6 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 // ── Push Notifications (regular JS, outside Babel) ────────────────
 var VAPID_PUBLIC_KEY = "BBYtNHnx4QtdMT5TaKAqpC_eRwZePbpTtXn3OEioBb2aBcqSB56Um6fuvoSG8EuFiHUYDUyCUt6lXe-lBjakvQI";
@@ -2330,8 +2331,22 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
 // ── Permit PDF ────────────────────────────────────────────────────────────────
 
+// ── QR Code helper — generates inline base64 PNG (no network request, prints reliably) ──
+async function generateQRDataURL(text, color){
+  return new Promise((resolve)=>{
+    const canvas=document.createElement("canvas");
+    QRCode.toCanvas(canvas, text, {
+      width:80, margin:1,
+      color:{ dark: color||"#1A3A5C", light:"#ffffff" }
+    }, (err)=>{
+      if(err){ resolve(""); return; }
+      resolve(canvas.toDataURL("image/png"));
+    });
+  });
+}
+
 // ── TASETI PDF Template ───────────────────────────────────────────────────────
-function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry){
+function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrDataUrl){
   const fmtD=(s)=>s?new Date(s).toLocaleDateString("en-GB"):"___________";
   const fmtT=(s)=>s||"___________";
   const dotline=(val,width)=>`<span style="display:inline-block;border-bottom:0.5px solid #000;min-width:${width||180}px;padding:0 4px">${val||""}</span>`;
@@ -2703,7 +2718,7 @@ ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;pa
     <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=${secColor.replace('#','')}&bgcolor=ffffff&data=https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
+    ${qrDataUrl?`<img src="${qrDataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`:""}
     <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify authenticity</div>
   </div>
 </div>`;
@@ -2711,6 +2726,8 @@ ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;pa
 
 function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const fd=permit.form_data||{};const t=pt(permit.type);
+  const[previewHtml,setPreviewHtml]=React.useState("");
+  const[tasPreviewHtml,setTasPreviewHtml]=React.useState("");
   const allControls=[...(fd.selected_controls||[]).filter(c=>c!=="RA Required"),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[])];
   const fmtD=(s)=>s?new Date(s).toLocaleDateString():"—";
   const fmtT=(s)=>s||"—";
@@ -2736,10 +2753,28 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const completionEntry = audit.find(a=>a.action==="Work completion signed off");
   const closureEntry = audit.find(a=>a.action==="Permit closed");
 
+  // Generate preview HTML with QR on mount
+  React.useEffect(()=>{
+    generateQRDataURL(
+      `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
+      typeColor||"#1A3A5C"
+    ).then(qr=>{
+      if(orgTemplate==="taseti"){
+        setTasPreviewHtml(buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qr));
+      } else {
+        setPreviewHtml(buildHtml(qr));
+      }
+    });
+  },[]);
+
   // ── TASETI Template ──────────────────────────────────────────────
   if(orgTemplate==="taseti"){
-    const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry);
-    const openPrint=()=>{
+    const openPrint=async()=>{
+      const qrDataUrl=await generateQRDataURL(
+        `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
+        typeColor||"#1A3A5C"
+      );
+      const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrDataUrl);
       const w=window.open("","_blank","width=900,height=700");
       if(w){
         w.document.write(`<!DOCTYPE html><html><head>
@@ -2775,7 +2810,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
             <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
           </div>
         </div>
-        <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:tasHtml}}/></div>
+        <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:tasPreviewHtml}}/></div>
       </div>
     );
   }
@@ -2809,7 +2844,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     .ft{font-size:8px;color:#888;text-align:center;border-top:0.5px solid #ccc;padding-top:6px;margin-top:12px}
   `;
 
-  const html=`<style>${css}</style>
+  function buildHtml(qrDataUrl){ return `<style>${css}</style>
 
 <!-- HEADER -->
 <table style="margin-bottom:0;border:0.5px solid #999">
@@ -2968,17 +3003,22 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
     <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
   </div>
   <div style="text-align:center;flex-shrink:0;margin-left:16px">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&color=1A3A5C&bgcolor=ffffff&data=https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}" width="70" height="70" alt="QR Code" style="display:block"/>
+    ${qrDataUrl?`<img src="${qrDataUrl}" width="70" height="70" alt="QR Code" style="display:block"/>`:""}
     <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
   </div>
-</div>`;
+</div>`; } // end buildHtml
 
   return(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",flexDirection:"column"}} className="no-print">
       <div style={{background:B.primary,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
         <span style={{color:"#fff",fontWeight:600,fontSize:14}}>📄 {permit.permit_number} — Formal Permit Document</span>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>{
+          <button onClick={async()=>{
+          const qrDataUrl=await generateQRDataURL(
+            `https://getcontrolit.com/verify.html?permit=${encodeURIComponent(permit.permit_number)}`,
+            typeColor||"#1A3A5C"
+          );
+          const printHtml=buildHtml(qrDataUrl);
           const w=window.open("","_blank","width=900,height=700");
           if(w){
             w.document.write(`<!DOCTYPE html><html><head>
@@ -3013,7 +3053,7 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
                   <button class="btn-c" onclick="window.close()">✕ Close</button>
                 </div>
               </div>
-              <div class="pcontent">${html}</div>
+              <div class="pcontent">${printHtml}</div>
             </body></html>`);
             w.document.close();
             w.focus();
@@ -3023,7 +3063,7 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
           <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:html}}/></div>
+      <div style={{flex:1,overflowY:"auto",background:"#fff",padding:"20px"}}><div dangerouslySetInnerHTML={{__html:previewHtml}}/></div>
     </div>
   );
 }
