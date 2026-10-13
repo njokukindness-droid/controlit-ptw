@@ -1713,13 +1713,22 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
 // ── New Permit ────────────────────────────────────────────────────────────────
 function NewPermit({session,onBack,onSuccess}){
   const[type,setType]=useState("");const[title,setTitle]=useState("");const[area,setArea]=useState("");const[requester,setRequester]=useState(session.profile.full_name);const[supervisor,setSupervisor]=useState("");const[numPersons,setNumPersons]=useState("");
-  // Gas test readings — confined space only
+  // Gas test readings — confined space + marine permits
+  const GAS_TEST_TYPES=["confined_space","marine_hot_work","marine_confined_space","gas_free_certificate","diving_operations"];
+  const needsGasTest=GAS_TEST_TYPES.includes(type);
   const[gasO2,setGasO2]=useState("");
   const[gasLEL,setGasLEL]=useState("");
   const[gasCO,setGasCO]=useState("");
   const[gasH2S,setGasH2S]=useState("");
   const[gasTested,setGasTested]=useState(false);
-  const[gasTestedBy,setGasTestedBy]=useState("");const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
+  const[gasTestedBy,setGasTestedBy]=useState("");
+  // Marine gas test extras
+  const[gasInstrument,setGasInstrument]=useState("");
+  const[gasSerialNo,setGasSerialNo]=useState("");
+  const[gasTestDate,setGasTestDate]=useState("");
+  const[gasTestTime,setGasTestTime]=useState("");
+  const[gasRetestInterval,setGasRetestInterval]=useState("4");
+  const[gasFreeRef,setGasFreeRef]=useState(""); // Gas Free Cert reference numberconst[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
   const[simopsWarnings,setSimopsWarnings]=useState([]);
 
   // Check SIMOPS conflicts whenever type or area changes
@@ -1754,7 +1763,7 @@ function NewPermit({session,onBack,onSuccess}){
     setBusy(true);setErr("");
     const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
     const fd={tools_equipment:tools,selected_controls:sel,
-      gas_test:type==="confined_space"?{o2:gasO2,lel:gasLEL,co:gasCO,h2s:gasH2S,tested:gasTested,tested_by:gasTestedBy}:null,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
+      gas_test:GAS_TEST_TYPES.includes(type)?{o2:gasO2,lel:gasLEL,co:gasCO,h2s:gasH2S,tested:gasTested,tested_by:gasTestedBy,instrument:gasInstrument,serial_no:gasSerialNo,test_date:gasTestDate,test_time:gasTestTime,retest_interval:gasRetestInterval,gas_free_ref:gasFreeRef}:null,ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null};
     const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
     if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
     setBusy(false);
@@ -1838,44 +1847,91 @@ function NewPermit({session,onBack,onSuccess}){
           })}
         </Card>
       )}
-      {/* Gas Test Section — Confined Space only */}
-      {type==="confined_space"&&(
+      {/* Gas Test Section — Confined Space + Marine permits */}
+      {needsGasTest&&(
         <div style={{background:B.neutral,borderRadius:10,padding:"14px",border:`0.5px solid ${B.neutralBorder}`,marginBottom:8}}>
-          <p style={{fontSize:12,fontWeight:700,color:B.text,marginBottom:6}}>⚗️ Gas Test Records</p>
-          <p style={{fontSize:11,color:B.textSub,marginBottom:10}}>To be completed by Safety Officer before entry.</p>
+          <p style={{fontSize:12,fontWeight:700,color:B.text,marginBottom:2}}>⚗️ Gas Test Records</p>
+          <p style={{fontSize:11,color:B.textSub,marginBottom:10}}>
+            {type==="gas_free_certificate"
+              ?"Complete all gas readings. This Gas Free Certificate is only valid when all readings are within safe limits and signed by a certified Gas Tester."
+              :"To be completed by a certified Gas Tester / Safety Officer before work begins."}
+          </p>
+
+          {/* Marine extras — instrument + date/time */}
+          {type!=="confined_space"&&(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+              <div>
+                <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Gas Detection Instrument</label>
+                <input value={gasInstrument} onChange={e=>setGasInstrument(e.target.value)} placeholder="e.g. Dräger X-am 2500" style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Serial / Cal. No.</label>
+                <input value={gasSerialNo} onChange={e=>setGasSerialNo(e.target.value)} placeholder="Instrument serial no." style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Test Date</label>
+                <input type="date" value={gasTestDate} onChange={e=>setGasTestDate(e.target.value)} style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Test Time</label>
+                <input type="time" value={gasTestTime} onChange={e=>setGasTestTime(e.target.value)} style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12,boxSizing:"border-box"}}/>
+              </div>
+              {type==="gas_free_certificate"&&(
+                <div style={{gridColumn:"1/-1"}}>
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Gas Free Certificate No.</label>
+                  <input value={gasFreeRef} onChange={e=>setGasFreeRef(e.target.value)} placeholder="e.g. GFC-2026-001" style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12,boxSizing:"border-box"}}/>
+                </div>
+              )}
+              {["marine_hot_work","diving_operations"].includes(type)&&(
+                <div style={{gridColumn:"1/-1"}}>
+                  <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Re-test Interval</label>
+                  <select value={gasRetestInterval} onChange={e=>setGasRetestInterval(e.target.value)} style={{width:"100%",padding:"6px 10px",borderRadius:7,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}>
+                    <option value="1">Every 1 hour</option>
+                    <option value="2">Every 2 hours</option>
+                    <option value="4">Every 4 hours</option>
+                    <option value="8">Every 8 hours</option>
+                    <option value="continuous">Continuous monitoring</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Readings table */}
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
                 <tr style={{background:B.primary,color:"#fff"}}>
-                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Test</th>
-                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Actual Level</th>
+                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Gas / Hazard</th>
+                  <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11}}>Reading</th>
                   <th style={{padding:"6px 8px",textAlign:"left",fontWeight:600,fontSize:11,opacity:0.7}}>Safe Limit</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ["Oxygen (O₂)",gasO2,setGasO2,"19.5%–23.5%"],
-                  ["LEL (Flammable)",gasLEL,setGasLEL,"Below 10%"],
-                  ["Carbon Monoxide",gasCO,setGasCO,"Below 35 PPM"],
-                  ["Hydrogen Sulphide",gasH2S,setGasH2S,"Below 10 PPM"],
+                  ["Oxygen (O₂)",gasO2,setGasO2,"19.5% – 23.5%"],
+                  ["LEL (Flammable Gas)",gasLEL,setGasLEL,"Below 10%"],
+                  ["Carbon Monoxide (CO)",gasCO,setGasCO,"Below 35 PPM"],
+                  ["Hydrogen Sulphide (H₂S)",gasH2S,setGasH2S,"Below 10 PPM"],
                 ].map(([label,val,setter,limit])=>(
                   <tr key={label} style={{borderBottom:`0.5px solid ${B.neutralBorder}`}}>
-                    <td style={{padding:"6px 8px",fontWeight:500,color:B.text,fontSize:11}}>{label}</td>
+                    <td style={{padding:"6px 8px",fontWeight:500,color:B.text,fontSize:11,whiteSpace:"nowrap"}}>{label}</td>
                     <td style={{padding:"4px 6px"}}>
-                      <input value={val} onChange={e=>setter(e.target.value)} placeholder="Enter reading" style={{width:"100%",padding:"5px 8px",borderRadius:6,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
+                      <input value={val} onChange={e=>setter(e.target.value)} placeholder="e.g. 20.9%" style={{width:"100%",padding:"5px 8px",borderRadius:6,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
                     </td>
-                    <td style={{padding:"6px 8px",color:B.textSub,fontSize:11}}>{limit}</td>
+                    <td style={{padding:"6px 8px",color:B.textSub,fontSize:11,whiteSpace:"nowrap"}}>{limit}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
           <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
             <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,cursor:"pointer"}}>
               <input type="checkbox" checked={gasTested} onChange={e=>setGasTested(e.target.checked)} style={{accentColor:B.accent,width:16,height:16}}/>
-              <span>Gas test completed — results within safe limits</span>
+              <span style={{fontWeight:gasTested?700:400,color:gasTested?B.accent:B.text}}>✓ All readings within safe limits — area declared safe for work</span>
             </label>
-            <input value={gasTestedBy} onChange={e=>setGasTestedBy(e.target.value)} placeholder="Tested by (name & role)" style={{padding:"8px 12px",borderRadius:8,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
+            <input value={gasTestedBy} onChange={e=>setGasTestedBy(e.target.value)} placeholder="Tested by (name, designation & signature)" style={{padding:"8px 12px",borderRadius:8,border:`0.5px solid ${B.neutralBorder}`,fontSize:12}}/>
           </div>
         </div>
       )}
@@ -2028,27 +2084,37 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
           {fd.ra_mode==="upload"&&fd.ra_file_name&&(<div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>📄</span><div><p style={{fontSize:13,fontWeight:600,color:B.text}}>{fd.ra_file_name}</p><p style={{fontSize:11,color:B.textSub}}>Uploaded risk assessment</p></div>{fd.ra_file_data&&<a href={fd.ra_file_data} download={fd.ra_file_name} style={{marginLeft:"auto",background:B.accent,color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:600,textDecoration:"none"}}>Download</a>}</div>)}
           {fd.ra_mode==="generate"&&fd.ra_generated&&(<div><p style={{fontSize:11,color:B.textSub,marginBottom:8}}>AI-Generated 5×5 Risk Assessment</p><div style={{fontSize:11,lineHeight:1.6,maxHeight:280,overflowY:"auto"}} dangerouslySetInnerHTML={{__html:fd.ra_generated}}/></div>)}
         </Card>)}
-        {permit.type==="confined_space"&&fd.gas_test&&(<Card title="⚗️ Gas Test Records">
+        {["confined_space","marine_hot_work","marine_confined_space","gas_free_certificate","diving_operations"].includes(permit.type)&&fd.gas_test&&(<Card title="⚗️ Gas Test Records">
+            {/* Marine extras row */}
+            {(fd.gas_test.instrument||fd.gas_test.serial_no||fd.gas_test.test_date)&&(
+              <div style={{background:B.neutral,borderRadius:7,padding:"8px 10px",marginBottom:10,fontSize:11,color:B.textSub,display:"flex",flexWrap:"wrap",gap:10}}>
+                {fd.gas_test.instrument&&<span>🔬 <b>Instrument:</b> {fd.gas_test.instrument}</span>}
+                {fd.gas_test.serial_no&&<span>📋 <b>Serial/Cal:</b> {fd.gas_test.serial_no}</span>}
+                {fd.gas_test.test_date&&<span>📅 <b>Date:</b> {fd.gas_test.test_date}{fd.gas_test.test_time?` @ ${fd.gas_test.test_time}`:""}</span>}
+                {fd.gas_test.retest_interval&&<span>🔄 <b>Re-test:</b> {fd.gas_test.retest_interval==="continuous"?"Continuous":`Every ${fd.gas_test.retest_interval}h`}</span>}
+                {fd.gas_test.gas_free_ref&&<span style={{color:B.accent,fontWeight:700}}>📜 GFC Ref: {fd.gas_test.gas_free_ref}</span>}
+              </div>
+            )}
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                 <thead>
                   <tr style={{background:B.primary,color:"#fff"}}>
-                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Test</th>
-                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Actual Level</th>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Gas / Hazard</th>
+                    <th style={{padding:"6px 8px",textAlign:"left",fontSize:11}}>Reading</th>
                     <th style={{padding:"6px 8px",textAlign:"left",fontSize:11,opacity:0.8}}>Safe Limit</th>
                     <th style={{padding:"6px 8px",textAlign:"left",fontSize:11,opacity:0.8}}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    ["O₂ (Oxygen)",fd.gas_test.o2,"19.5%–23.5%"],
-                    ["LEL (Flammable)",fd.gas_test.lel,"Below 10%"],
+                    ["O₂ (Oxygen)",fd.gas_test.o2,"19.5% – 23.5%"],
+                    ["LEL (Flammable Gas)",fd.gas_test.lel,"Below 10%"],
                     ["CO (Carbon Monoxide)",fd.gas_test.co,"Below 35 PPM"],
                     ["H₂S (Hydrogen Sulphide)",fd.gas_test.h2s,"Below 10 PPM"],
                   ].map(([label,val,limit])=>(
                     <tr key={label} style={{borderBottom:`0.5px solid ${B.neutralBorder}`}}>
                       <td style={{padding:"6px 8px",fontWeight:500,fontSize:11}}>{label}</td>
-                      <td style={{padding:"6px 8px",color:val?B.text:B.textSub,fontWeight:val?600:400}}>{val||"—"}</td>
+                      <td style={{padding:"6px 8px",color:val?B.text:B.textSub,fontWeight:val?700:400}}>{val||"—"}</td>
                       <td style={{padding:"6px 8px",color:B.textSub,fontSize:11}}>{limit}</td>
                       <td style={{padding:"6px 8px"}}>
                         {val?<span style={{fontSize:10,padding:"2px 7px",borderRadius:20,background:"rgba(14,158,110,0.1)",color:B.accent,fontWeight:600}}>✓ Recorded</span>
@@ -2059,7 +2125,8 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
                 </tbody>
               </table>
             </div>
-            {fd.gas_test.tested&&<p style={{fontSize:12,color:B.accent,marginTop:8,fontWeight:600}}>✓ Gas test completed — results within safe limits</p>}
+            {fd.gas_test.tested&&<p style={{fontSize:12,color:B.accent,marginTop:10,fontWeight:700,background:"rgba(14,158,110,0.08)",padding:"6px 10px",borderRadius:7}}>✓ All readings within safe limits — area declared safe for work</p>}
+            {!fd.gas_test.tested&&<p style={{fontSize:12,color:B.warn,marginTop:8,fontWeight:600}}>⚠ Gas test not yet confirmed as safe</p>}
             {fd.gas_test.tested_by&&<p style={{fontSize:12,color:B.textSub,marginTop:4}}>Tested by: <b>{fd.gas_test.tested_by}</b></p>}
           </Card>)}
           {(permit.stage>=2||fd.osh_additional_controls)&&(<Card title="Additional Controls — OSH Manager" accent={isOSH?B.accent:undefined}>
@@ -2360,29 +2427,39 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
 ${precautionTable(precautions)}
 ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"><b>Risk Assessment:</b> ${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated (see digital record)"}</div>`:""}
 
-${permit.type==="confined_space"?`
+${["confined_space","marine_hot_work","marine_confined_space","gas_free_certificate","diving_operations"].includes(permit.type)&&fd.gas_test?`
 <!-- GAS TEST RECORDS -->
 <div style="margin-top:6px">
   <table style="width:100%;border-collapse:collapse">
     <tr>
       <td colspan="3" style="background:#f0f0f0;font-weight:700;font-size:10px;padding:4px 8px;border:0.5px solid #999">
-        Gas Test Records — To be done by Safety Officer before starting activity in confined space
+        ${permit.type==="gas_free_certificate"?"Gas Free Certificate — Gas Test Readings":"Gas Test Records — To be completed by certified Gas Tester before work commences"}
       </td>
     </tr>
+    ${(fd.gas_test.instrument||fd.gas_test.serial_no||fd.gas_test.test_date)?`
+    <tr>
+      <td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #ddd;background:#fafafa">
+        ${fd.gas_test.instrument?`<b>Instrument:</b> ${fd.gas_test.instrument}&nbsp;&nbsp;`:""}
+        ${fd.gas_test.serial_no?`<b>Serial/Cal No:</b> ${fd.gas_test.serial_no}&nbsp;&nbsp;`:""}
+        ${fd.gas_test.test_date?`<b>Date/Time:</b> ${fd.gas_test.test_date}${fd.gas_test.test_time?" @ "+fd.gas_test.test_time:""}&nbsp;&nbsp;`:""}
+        ${fd.gas_test.retest_interval?`<b>Re-test:</b> ${fd.gas_test.retest_interval==="continuous"?"Continuous monitoring":"Every "+fd.gas_test.retest_interval+"h"}`:""}
+        ${fd.gas_test.gas_free_ref?`&nbsp;&nbsp;<b>GFC Ref:</b> ${fd.gas_test.gas_free_ref}`:""}
+      </td>
+    </tr>`:""}
     <tr style="background:#1A3A5C;color:#fff">
-      <th style="padding:4px 8px;font-size:9px;width:40%">Test(s)</th>
-      <th style="padding:4px 8px;font-size:9px;width:30%">Actual Level</th>
-      <th style="padding:4px 8px;font-size:9px;width:30%">Permissible Entry Level</th>
+      <th style="padding:4px 8px;font-size:9px;width:40%">Gas / Hazard</th>
+      <th style="padding:4px 8px;font-size:9px;width:30%">Actual Reading</th>
+      <th style="padding:4px 8px;font-size:9px;width:30%">Safe Limit</th>
     </tr>
     <tr>
-      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Percent of Oxygen (O2)</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Oxygen (O₂)</td>
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.o2||"_______________"}</td>
-      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">19.5% TO 23.5%</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">19.5% – 23.5%</td>
     </tr>
     <tr>
-      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Lower Flammable Limit</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">LEL (Flammable Gas)</td>
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.lel||"_______________"}</td>
-      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Under 10%</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Below 10%</td>
     </tr>
     <tr>
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Carbon Monoxide (CO)</td>
@@ -2390,11 +2467,29 @@ ${permit.type==="confined_space"?`
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Below 35 PPM</td>
     </tr>
     <tr>
-      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Hydrogen Sulphide (H2s)</td>
+      <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Hydrogen Sulphide (H₂S)</td>
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999;font-weight:700">${fd.gas_test?.h2s||"_______________"}</td>
       <td style="padding:4px 8px;font-size:9px;border:0.5px solid #999">Below 10 PPM</td>
     </tr>
-    ${fd.gas_test?.tested_by?`<tr><td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #999"><b>Tested by:</b> ${fd.gas_test.tested_by} &nbsp;·&nbsp; <b>Status:</b> ${fd.gas_test?.tested?"✓ Safe for entry":"Pending verification"}</td></tr>`:""}
+    <tr>
+      <td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #999">
+        <b>Status:</b>&nbsp;
+        <span style="font-weight:700;color:${fd.gas_test?.tested?"#0B7A55":"#C0392B"}">${fd.gas_test?.tested?"✓ All readings within safe limits — area declared SAFE FOR WORK":"⚠ Gas test not confirmed safe — DO NOT commence work"}</span>
+        ${fd.gas_test?.tested_by?`&nbsp;&nbsp;<b>Tested by:</b> ${fd.gas_test.tested_by}`:""}
+      </td>
+    </tr>
+    ${fd.gas_test?.retest_interval&&fd.gas_test.retest_interval!=="continuous"?`
+    <tr>
+      <td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #999;background:#fffbe6">
+        ⚠ <b>Re-test required every ${fd.gas_test.retest_interval} hour(s)</b> throughout the duration of this permit. Permit is void if re-test interval is exceeded without a new valid reading.
+      </td>
+    </tr>`:""}
+    ${fd.gas_test?.retest_interval==="continuous"?`
+    <tr>
+      <td colspan="3" style="padding:4px 8px;font-size:9px;border:0.5px solid #999;background:#fffbe6">
+        ⚠ <b>Continuous gas monitoring required</b> throughout the duration of this permit.
+      </td>
+    </tr>`:""}
   </table>
 </div>`:""}
 
