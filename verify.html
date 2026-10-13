@@ -397,7 +397,10 @@ async function verify(){
       }
     );
 
-    if(!res.ok) throw new Error("Network error");
+    if(!res.ok){
+      const errText = await res.text().catch(()=>"");
+      throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0,120) : ""));
+    }
     const data = await res.json();
 
     if(!data || data.length === 0){
@@ -412,7 +415,7 @@ async function verify(){
     document.getElementById("banner").innerHTML = `
       <span class="status-icon">⚠️</span>
       <div class="status-label">VERIFICATION ERROR</div>
-      <div class="status-sub">Could not reach the CONTROLIT server.<br>Check your connection and try again.</div>
+      <div class="status-sub">Could not reach the CONTROLIT server.<br>Check your connection and try again.<br><small style="opacity:0.7;font-size:11px">${e.message}</small></div>
     `;
   }
 }
