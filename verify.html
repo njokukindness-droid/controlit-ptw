@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Permit Verification — CONTROLIT</title>
+  <meta name="theme-color" content="#1A3A5C" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:#0F1F33;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:24px 16px;
+    }
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:32px;
+    }
+    .logo-mark{
+      width:36px;height:36px;
+      background:linear-gradient(135deg,#1A7D44,#0E9E6E);
+      border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;font-weight:900;color:#fff;
+      letter-spacing:-1px;
+    }
+    .logo-text{
+      font-size:20px;font-weight:700;color:#fff;letter-spacing:1px;
+    }
+    .logo-text span{color:#0E9E6E;}
+
+    .card{
+      background:#fff;
+      border-radius:20px;
+      width:100%;
+      max-width:420px;
+      overflow:hidden;
+      box-shadow:0 24px 64px rgba(0,0,0,0.5);
+    }
+
+    /* Status banner */
+    .status-banner{
+      padding:32px 24px 24px;
+      text-align:center;
+    }
+    .status-banner.valid{background:linear-gradient(135deg,#0E9E6E,#1A7D44);}
+    .status-banner.expired{background:linear-gradient(135deg,#E67E22,#C0392B);}
+    .status-banner.revoked{background:linear-gradient(135deg,#9B1C1C,#7B0000);}
+    .status-banner.invalid{background:linear-gradient(135deg,#555,#333);}
+    .status-banner.loading{background:linear-gradient(135deg,#1A3A5C,#0F2840);}
+
+    .status-icon{
+      font-size:64px;
+      line-height:1;
+      margin-bottom:12px;
+      display:block;
+    }
+    .status-label{
+      font-size:22px;font-weight:800;color:#fff;
+      letter-spacing:0.5px;
+      text-transform:uppercase;
+    }
+    .status-sub{
+      font-size:13px;color:rgba(255,255,255,0.8);
+      margin-top:6px;
+      line-height:1.5;
+    }
+
+    /* Permit details */
+    .details{
+      padding:20px 24px 24px;
+    }
+    .permit-number{
+      font-size:13px;font-weight:700;color:#1A3A5C;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      margin-bottom:16px;
+      padding-bottom:12px;
+      border-bottom:1px solid #eee;
+    }
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      padding:9px 0;
+      border-bottom:1px solid #f0f0f0;
+      gap:12px;
+    }
+    .row:last-child{border-bottom:none;}
+    .row-label{
+      font-size:11px;font-weight:600;color:#888;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      flex-shrink:0;
+      padding-top:1px;
+    }
+    .row-value{
+      font-size:13px;font-weight:600;color:#1A3A5C;
+      text-align:right;
+      line-height:1.4;
+    }
+    .expiry-soon{color:#E67E22;}
+    .expiry-past{color:#C0392B;}
+    .expiry-ok{color:#1A7D44;}
+
+    /* Type badge */
+    .type-badge{
+      display:inline-block;
+      padding:3px 10px;
+      border-radius:20px;
+      font-size:11px;font-weight:700;
+      color:#fff;
+    }
+
+    /* Status chip for closure */
+    .closure-chip{
+      display:inline-block;
+      padding:3px 10px;
+      border-radius:20px;
+      font-size:11px;font-weight:700;
+      color:#fff;
+    }
+    .chip-open{background:#1A7D44;}
+    .chip-closed{background:#555;}
+    .chip-revoked{background:#9B1C1C;}
+
+    /* Verification stamp */
+    .stamp{
+      margin:0 24px 20px;
+      border:1.5px dashed #ddd;
+      border-radius:12px;
+      padding:12px 16px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      background:#f9fffe;
+    }
+    .stamp-icon{font-size:24px;}
+    .stamp-text{font-size:11px;color:#555;line-height:1.5;}
+    .stamp-text b{color:#1A3A5C;}
+
+    /* Footer */
+    .footer{
+      text-align:center;
+      padding:0 24px 24px;
+    }
+    .footer-text{
+      font-size:11px;color:#aaa;line-height:1.6;
+    }
+    .footer-link{
+      color:#0E9E6E;text-decoration:none;font-weight:600;
+    }
+
+    /* Loading spinner */
+    .spinner{
+      width:40px;height:40px;
+      border:3px solid rgba(255,255,255,0.3);
+      border-top-color:#fff;
+      border-radius:50%;
+      animation:spin 0.8s linear infinite;
+      margin:0 auto 16px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Not found */
+    .not-found{
+      text-align:center;
+      padding:48px 24px;
+      color:#fff;
+    }
+    .not-found h2{font-size:20px;margin-bottom:8px;}
+    .not-found p{font-size:13px;opacity:0.7;line-height:1.6;}
+
+    /* Animated entrance */
+    .card{animation:rise 0.4s ease both;}
+    @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    @media(prefers-color-scheme:dark){
+      /* verification page is always dark-bg, card stays white */
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">
+  <div class="logo-mark">C</div>
+  <div class="logo-text">CONTRO<span>LIT</span></div>
+</div>
+
+<div class="card" id="card">
+  <!-- Loading state -->
+  <div class="status-banner loading" id="banner">
+    <div class="spinner"></div>
+    <div class="status-label">Verifying Permit…</div>
+    <div class="status-sub">Checking with CONTROLIT</div>
+  </div>
+  <div class="details" id="details" style="display:none"></div>
+  <div class="stamp" id="stamp" style="display:none">
+    <span class="stamp-icon">🔒</span>
+    <span class="stamp-text">
+      <b>CONTROLIT Verified</b><br>
+      This permit was retrieved live from the CONTROLIT database at time of scan.
+    </span>
+  </div>
+  <div class="footer" id="footer" style="display:none">
+    <p class="footer-text">
+      Verified by <a href="https://getcontrolit.com" class="footer-link">CONTROLIT</a> · Digital Permit to Work Platform<br>
+      Scanned: <span id="scan-time"></span>
+    </p>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+
+const PERMIT_COLORS = {
+  hot_work:        "#E74C3C",
+  confined_space:  "#8E44AD",
+  working_at_height:"#E67E22",
+  electrical:      "#2980B9",
+  cold_work:       "#27AE60",
+  excavation:      "#795548",
+  lifting:         "#FF6B35",
+  radiation:       "#C0392B",
+  chemical:        "#16A085",
+  general:         "#1A3A5C",
+  marine_hot_work: "#E74C3C",
+  marine_confined_space:"#8E44AD",
+  gas_free_certificate:"#0E9E6E",
+  diving_operations:"#1565C0",
+  vessel_entry:    "#546E7A",
+  concert:         "#9C27B0",
+  outdoor_event:   "#2E7D32",
+  pyrotechnics:    "#F44336",
+  temporary_structure:"#795548",
+};
+
+const PERMIT_LABELS = {
+  hot_work:"Hot Work",confined_space:"Confined Space",working_at_height:"Working at Height",
+  electrical:"Electrical Work",cold_work:"Cold Work / General",excavation:"Excavation",
+  lifting:"Lifting Operations",radiation:"Radiation Work",chemical:"Chemical Handling",
+  general:"General Work",marine_hot_work:"Marine Hot Work",marine_confined_space:"Marine Confined Space",
+  gas_free_certificate:"Gas Free Certificate",diving_operations:"Diving Operations",
+  vessel_entry:"Vessel Entry",concert:"Concert / Live Event",outdoor_event:"Outdoor Event",
+  pyrotechnics:"Pyrotechnics",temporary_structure:"Temporary Structure",
+};
+
+function fmtDate(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+}
+function fmtDateTime(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})
+    + " · " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+}
+
+function expiryColor(expiry, status){
+  if(!expiry) return "";
+  const now = new Date();
+  const exp = new Date(expiry);
+  const diffDays = (exp - now) / (1000*60*60*24);
+  if(status !== "Open") return "";
+  if(diffDays < 0) return "expiry-past";
+  if(diffDays < 2) return "expiry-soon";
+  return "expiry-ok";
+}
+
+function renderValid(permit){
+  const fd = permit.form_data || {};
+  const typeColor = PERMIT_COLORS[permit.type] || "#1A3A5C";
+  const typeLabel = PERMIT_LABELS[permit.type] || permit.type;
+  const status = permit.closure_status || "Open";
+  const expClass = expiryColor(permit.end_date, status);
+
+  // Determine overall validity
+  const now = new Date();
+  const expired = permit.end_date && new Date(permit.end_date) < now;
+  const revoked = status === "Revoked";
+  const closed  = status === "Closed";
+
+  let bannerClass, icon, label, sub;
+  if(revoked){
+    bannerClass="revoked"; icon="🚫"; label="REVOKED";
+    sub="This permit has been revoked and is no longer valid.";
+  } else if(expired || closed){
+    bannerClass="expired"; icon="⏱️"; label= closed ? "CLOSED" : "EXPIRED";
+    sub= closed ? "This permit has been closed and is no longer active."
+                : "This permit has passed its end date and is no longer valid.";
+  } else {
+    bannerClass="valid"; icon="✅"; label="VALID & AUTHENTIC";
+    sub="This is a verified, active permit issued through CONTROLIT.";
+  }
+
+  document.getElementById("banner").className = "status-banner " + bannerClass;
+  document.getElementById("banner").innerHTML = `
+    <span class="status-icon">${icon}</span>
+    <div class="status-label">${label}</div>
+    <div class="status-sub">${sub}</div>
+  `;
+
+  const closureChipClass = status==="Open"?"chip-open":status==="Closed"?"chip-closed":"chip-revoked";
+
+  document.getElementById("details").innerHTML = `
+    <div class="permit-number">📋 ${permit.permit_number}</div>
+    <div class="row">
+      <span class="row-label">Permit Type</span>
+      <span class="row-value">
+        <span class="type-badge" style="background:${typeColor}">${typeLabel}</span>
+      </span>
+    </div>
+    <div class="row">
+      <span class="row-label">Status</span>
+      <span class="row-value">
+        <span class="closure-chip ${closureChipClass}">${status}</span>
+      </span>
+    </div>
+    <div class="row">
+      <span class="row-label">Work Area</span>
+      <span class="row-value">${permit.area || "—"}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Issued</span>
+      <span class="row-value">${fmtDate(permit.start_date)}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Expires</span>
+      <span class="row-value ${expClass}">${fmtDate(permit.end_date) + (expClass==="expiry-soon"?" ⚠️":"") + (expClass==="expiry-past"?" ⛔":"")}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Issued By</span>
+      <span class="row-value">${permit.coordinator_name || "—"}</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Organisation</span>
+      <span class="row-value">${permit.org_name || "—"}</span>
+    </div>
+  `;
+
+  document.getElementById("details").style.display = "block";
+  document.getElementById("stamp").style.display = "flex";
+  document.getElementById("footer").style.display = "block";
+  document.getElementById("scan-time").textContent = fmtDateTime(new Date().toISOString());
+}
+
+function renderNotFound(){
+  document.getElementById("banner").className = "status-banner invalid";
+  document.getElementById("banner").innerHTML = `
+    <span class="status-icon">❌</span>
+    <div class="status-label">NOT FOUND</div>
+    <div class="status-sub">No permit matches this QR code.<br>It may have been deleted or is invalid.</div>
+  `;
+  document.getElementById("footer").style.display = "block";
+  document.getElementById("footer").innerHTML = `
+    <p class="footer-text">
+      If you believe this is an error, contact your HSE coordinator.<br>
+      <a href="https://getcontrolit.com" class="footer-link">getcontrolit.com</a>
+    </p>
+  `;
+  document.getElementById("scan-time").textContent = fmtDateTime(new Date().toISOString());
+}
+
+function renderNoParam(){
+  document.getElementById("banner").className = "status-banner invalid";
+  document.getElementById("banner").innerHTML = `
+    <span class="status-icon">🔍</span>
+    <div class="status-label">NO PERMIT SPECIFIED</div>
+    <div class="status-sub">Scan the QR code on a printed permit to verify it.</div>
+  `;
+}
+
+async function verify(){
+  const params = new URLSearchParams(window.location.search);
+  const permitNum = params.get("permit");
+
+  if(!permitNum){ renderNoParam(); return; }
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,start_date,end_date,closure_status,coordinator_name,org_name,form_data`,
+      {
+        headers:{
+          "apikey": ANON_KEY,
+          "Authorization": "Bearer " + ANON_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    if(!res.ok) throw new Error("Network error");
+    const data = await res.json();
+
+    if(!data || data.length === 0){
+      renderNotFound();
+      return;
+    }
+
+    renderValid(data[0]);
+
+  } catch(e){
+    document.getElementById("banner").className = "status-banner invalid";
+    document.getElementById("banner").innerHTML = `
+      <span class="status-icon">⚠️</span>
+      <div class="status-label">VERIFICATION ERROR</div>
+      <div class="status-sub">Could not reach the CONTROLIT server.<br>Check your connection and try again.</div>
+    `;
+  }
+}
+
+verify();
+</script>
+</body>
+</html>
