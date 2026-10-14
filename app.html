@@ -2773,13 +2773,15 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
         </body></html>`);
         w.document.close();w.focus();
         onClose();
+        let printed=false;
+        const doPrint=()=>{if(printed)return;printed=true;setTimeout(()=>{try{w.print();}catch(e){}},300);};
         w.onload=()=>{
           const imgs=w.document.images;let loaded=0;const total=imgs.length;
-          if(total===0){setTimeout(()=>{try{w.print();}catch(e){}},300);return;}
-          const tryPrint=()=>{loaded++;if(loaded>=total)setTimeout(()=>{try{w.print();}catch(e){}},300);};
+          if(total===0){doPrint();return;}
+          const tryPrint=()=>{loaded++;if(loaded>=total)doPrint();};
           for(let i=0;i<total;i++){if(imgs[i].complete){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}
         };
-        if(w.document.readyState==="complete")setTimeout(()=>{try{w.print();}catch(e){}},1200);
+        if(w.document.readyState==="complete")setTimeout(doPrint,1200);
       }
     };
     return(
@@ -3041,13 +3043,15 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
             w.document.close();
             w.focus();
             onClose();
+            let printed2=false;
+            const doPrint2=()=>{if(printed2)return;printed2=true;setTimeout(()=>{try{w.print();}catch(e){}},300);};
             w.onload=()=>{
               const imgs=w.document.images;let loaded=0;const total=imgs.length;
-              if(total===0){setTimeout(()=>{try{w.print();}catch(e){}},300);return;}
-              const tryPrint=()=>{loaded++;if(loaded>=total)setTimeout(()=>{try{w.print();}catch(e){}},300);};
+              if(total===0){doPrint2();return;}
+              const tryPrint=()=>{loaded++;if(loaded>=total)doPrint2();};
               for(let i=0;i<total;i++){if(imgs[i].complete){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}
             };
-            if(w.document.readyState==="complete")setTimeout(()=>{try{w.print();}catch(e){}},1200);
+            if(w.document.readyState==="complete")setTimeout(doPrint2,1200);
           }
         }} style={{background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>🖨 Print / Save as PDF</button>
           <button onClick={onClose} style={{background:"transparent",border:"0.5px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:8,padding:"8px 14px",fontSize:12,cursor:"pointer"}}>✕ Close</button>
