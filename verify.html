@@ -270,7 +270,7 @@ function expiryColor(expiry, status){
   const now = new Date();
   const exp = new Date(expiry);
   const diffDays = (exp - now) / (1000*60*60*24);
-  if(status !== "Open") return "";
+  if(status !== "active") return "";
   if(diffDays < 0) return "expiry-past";
   if(diffDays < 2) return "expiry-soon";
   return "expiry-ok";
@@ -280,17 +280,17 @@ function renderValid(permit){
   const fd = permit.form_data || {};
   const typeColor = PERMIT_COLORS[permit.type] || "#1A3A5C";
   const typeLabel = PERMIT_LABELS[permit.type] || permit.type;
-  const status = permit.closure_status || "Open";
+  const status = permit.status || "pending";
   // Dates live inside form_data
-  const issuedDate = fd.work_date_from || fd.date_from || fd.start_date || permit.created_at;
-  const expiryDate = fd.work_date_to || fd.date_to || fd.end_date || fd.expiry_date || null;
+  const issuedDate = fd.work_date_from || fd.date_from || permit.created_at;
+  const expiryDate = fd.work_date_to || fd.date_to || fd.expiry_date || null;
   const expClass = expiryColor(expiryDate, status);
 
   // Determine overall validity
   const now = new Date();
-  const expired = expiryDate && new Date(expiryDate) < now;
-  const revoked = status === "Revoked";
-  const closed  = status === "Closed";
+  const expired = status === "expired" || (expiryDate && new Date(expiryDate) < now);
+  const revoked = status === "revoked";
+  const closed  = status === "closed";
 
   let bannerClass, icon, label, sub;
   if(revoked){
@@ -312,7 +312,7 @@ function renderValid(permit){
     <div class="status-sub">${sub}</div>
   `;
 
-  const closureChipClass = status==="Open"?"chip-open":status==="Closed"?"chip-closed":"chip-revoked";
+  const closureChipClass = (status==="active"||status==="pending")?"chip-open":status==="revoked"?"chip-revoked":"chip-closed";
 
   document.getElementById("details").innerHTML = `
     <div class="permit-number">📋 ${permit.permit_number}</div>
@@ -341,12 +341,12 @@ function renderValid(permit){
       <span class="row-value ${expClass}">${expiryDate ? fmtDate(expiryDate) + (expClass==="expiry-soon"?" ⚠️":"") + (expClass==="expiry-past"?" ⛔":"") : "—"}</span>
     </div>
     <div class="row">
-      <span class="row-label">Issued By</span>
-      <span class="row-value">${permit.coordinator_name || "—"}</span>
+      <span class="row-label">Requested By</span>
+      <span class="row-value">${permit.requester_name || permit.supervisor_name || "—"}</span>
     </div>
     <div class="row">
-      <span class="row-label">Organisation</span>
-      <span class="row-value">${permit.org_name || "—"}</span>
+      <span class="row-label">Supervisor</span>
+      <span class="row-value">${permit.supervisor_name || "—"}</span>
     </div>
   `;
 
@@ -390,7 +390,7 @@ async function verify(){
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,created_at,closure_status,coordinator_name,org_name,form_data`,
+      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,status,created_at,requester_name,supervisor_name,form_data`,
       {
         headers:{
           "apikey": ANON_KEY,
