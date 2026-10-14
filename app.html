@@ -2772,6 +2772,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
           <div class="pcontent">${tasHtml}</div>
         </body></html>`);
         w.document.close();w.focus();
+        onClose();
         w.onload=()=>{
           const imgs=w.document.images;let loaded=0;const total=imgs.length;
           if(total===0){setTimeout(()=>{try{w.print();}catch(e){}},300);return;}
@@ -3039,6 +3040,7 @@ ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B
             </body></html>`);
             w.document.close();
             w.focus();
+            onClose();
             w.onload=()=>{
               const imgs=w.document.images;let loaded=0;const total=imgs.length;
               if(total===0){setTimeout(()=>{try{w.print();}catch(e){}},300);return;}
