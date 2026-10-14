@@ -331,7 +331,7 @@ function renderValid(permit){
     </div>
     <div class="row">
       <span class="row-label">Issued</span>
-      <span class="row-value">${fmtDate(permit.start_date)}</span>
+      <span class="row-value">${fmtDate(permit.issued_at||permit.created_at)}</span>
     </div>
     <div class="row">
       <span class="row-label">Expires</span>
@@ -387,7 +387,7 @@ async function verify(){
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,start_date,end_date,closure_status,coordinator_name,org_name,form_data`,
+      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,issued_at,created_at,end_date,closure_status,coordinator_name,org_name,form_data`,
       {
         headers:{
           "apikey": ANON_KEY,
