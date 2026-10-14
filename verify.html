@@ -281,11 +281,14 @@ function renderValid(permit){
   const typeColor = PERMIT_COLORS[permit.type] || "#1A3A5C";
   const typeLabel = PERMIT_LABELS[permit.type] || permit.type;
   const status = permit.closure_status || "Open";
-  const expClass = expiryColor(permit.end_date, status);
+  // Dates live inside form_data
+  const issuedDate = fd.work_date_from || fd.date_from || fd.start_date || permit.created_at;
+  const expiryDate = fd.work_date_to || fd.date_to || fd.end_date || fd.expiry_date || null;
+  const expClass = expiryColor(expiryDate, status);
 
   // Determine overall validity
   const now = new Date();
-  const expired = permit.end_date && new Date(permit.end_date) < now;
+  const expired = expiryDate && new Date(expiryDate) < now;
   const revoked = status === "Revoked";
   const closed  = status === "Closed";
 
@@ -331,11 +334,11 @@ function renderValid(permit){
     </div>
     <div class="row">
       <span class="row-label">Issued</span>
-      <span class="row-value">${fmtDate(permit.issued_at||permit.created_at)}</span>
+      <span class="row-value">${fmtDate(issuedDate)}</span>
     </div>
     <div class="row">
       <span class="row-label">Expires</span>
-      <span class="row-value ${expClass}">${fmtDate(permit.end_date) + (expClass==="expiry-soon"?" ⚠️":"") + (expClass==="expiry-past"?" ⛔":"")}</span>
+      <span class="row-value ${expClass}">${expiryDate ? fmtDate(expiryDate) + (expClass==="expiry-soon"?" ⚠️":"") + (expClass==="expiry-past"?" ⛔":"") : "—"}</span>
     </div>
     <div class="row">
       <span class="row-label">Issued By</span>
@@ -387,7 +390,7 @@ async function verify(){
 
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,issued_at,created_at,end_date,closure_status,coordinator_name,org_name,form_data`,
+      `${SUPABASE_URL}/rest/v1/permits?permit_number=eq.${encodeURIComponent(permitNum)}&select=permit_number,type,area,created_at,closure_status,coordinator_name,org_name,form_data`,
       {
         headers:{
           "apikey": ANON_KEY,
