@@ -268,7 +268,10 @@ function fmtDateTime(s){
 function expiryColor(expiry, status){
   if(!expiry) return "";
   const now = new Date();
-  const exp = new Date(expiry);
+  // Treat date-only strings as 18:00 local (same logic as expiry check)
+  let exp;
+  if(expiry.length > 10){ exp = new Date(expiry); }
+  else { const [y,m,d]=expiry.split("-").map(Number); exp=new Date(y,m-1,d,18,0,0); }
   const diffDays = (exp - now) / (1000*60*60*24);
   if(status !== "active") return "";
   if(diffDays < 0) return "expiry-past";
@@ -287,8 +290,21 @@ function renderValid(permit){
   const expClass = expiryColor(expiryDate, status);
 
   // Determine overall validity
+  // expiryDate is a date-only string (e.g. "2026-10-15"). Parsing it bare gives
+  // midnight UTC, which in UAE (UTC+4) is 04:00 local — making today's permits
+  // look expired by morning. Treat the expiry as 18:00 on that date instead.
   const now = new Date();
-  const expired = status === "expired" || (expiryDate && new Date(expiryDate) < now);
+  function expiryAsEndOfDay(dateStr){
+    if(!dateStr) return null;
+    // If it already has a time component, use as-is
+    if(dateStr.length > 10) return new Date(dateStr);
+    // Date-only: set to 18:00 local time on that date
+    const [y,m,d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m-1, d, 18, 0, 0);
+    return dt;
+  }
+  const expiryDt = expiryAsEndOfDay(expiryDate);
+  const expired = status === "expired" || (expiryDt && expiryDt < now);
   const revoked = status === "revoked";
   const closed  = status === "closed";
 
