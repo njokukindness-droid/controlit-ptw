@@ -1779,14 +1779,15 @@ function NewPermit({session,onBack,onSuccess}){
   const[gasTestDate,setGasTestDate]=useState("");
   const[gasTestTime,setGasTestTime]=useState("");
   const[gasRetestInterval,setGasRetestInterval]=useState("4");
-  const[gasFreeRef,setGasFreeRef]=useState(""); // Gas Free Cert reference numberconst[workDateFrom,setWorkDateFrom]=useState("");
+  const[gasFreeRef,setGasFreeRef]=useState(""); // Gas Free Cert reference number
+  const[workDateFrom,setWorkDateFrom]=useState("");const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
   // Workers
   const[workers,setWorkers]=useState([]);
   const WORKER_COMPETENCIES=["Site Induction","Toolbox Talk Attended","PPE Issued & Checked","Trade Certification Verified","Medical Fitness Confirmed","MSDS / Chemical Awareness","Work Permit Briefed","Emergency Procedures Briefed"];
   function addWorker(){setWorkers(ws=>[...ws,{name:"",role:"",competencies:{}}]);}
   function removeWorker(i){setWorkers(ws=>ws.filter((_,idx)=>idx!==i));}
   function updateWorker(i,field,val){setWorkers(ws=>ws.map((w,idx)=>idx===i?{...w,[field]:val}:w));}
-  function toggleCompetency(i,comp){setWorkers(ws=>ws.map((w,idx)=>idx===i?{...w,competencies:{...w.competencies,[comp]:!w.competencies[comp]}}:w));}const[workDateTo,setWorkDateTo]=useState("");const[workTimeFrom,setWorkTimeFrom]=useState("");const[workTimeTo,setWorkTimeTo]=useState("");const[tools,setTools]=useState("");
+  function toggleCompetency(i,comp){setWorkers(ws=>ws.map((w,idx)=>idx===i?{...w,competencies:{...w.competencies,[comp]:!w.competencies[comp]}}:w));}
   const[simopsWarnings,setSimopsWarnings]=useState([]);
 
   // Sync vessel zone selection → area string
