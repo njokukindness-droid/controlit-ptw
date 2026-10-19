@@ -1838,7 +1838,10 @@ function NewPermit({session,onBack,onSuccess}){
       vessel_name:isMarine?vesselName||null:null,
       ra_mode:raMode,ra_generated:raGenerated||null,ra_file_name:raFile?raFile.name:null,ra_file_data:raMode==="upload"?raFileData:null,work_date_from:workDateFrom,work_date_to:workDateTo,work_time_from:workTimeFrom,work_time_to:workTimeTo,num_persons:numPersons,simops_conflicts:simopsWarnings.length>0?simopsWarnings.map(p=>({id:p.id,permit_number:p.permit_number,type:p.type,title:p.title,area:p.area})):null,workers:workers.length>0?workers:null};
     const res=await sb.insert(session.token,"permits",{org_id:session.profile.org_id,permit_number:num,type,title,area,requester_name:requester,supervisor_name:supervisor,status:"pending",stage:1,priority:"medium",extensions:0,form_data:fd});
-    if(res&&res[0]&&!res.error){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:res[0].id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,res[0].id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit.");}
+    // res is an array on success, or an error object {code,message,details} on failure
+    const inserted=Array.isArray(res)?res[0]:null;
+    const insertErr=!inserted?(res&&res.message?res.message:res&&res.code?`DB error ${res.code}: ${res.details||res.hint||"unknown"}`:null):null;
+    if(inserted){await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:inserted.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Permit submitted",note:""});await sb.notify(session.token,session.profile.org_id,inserted.id,num,title,"submitted",session.profile.full_name);onSuccess();}else{setErr("Failed to create permit"+(insertErr?": "+insertErr:".")+"\nIf this is a new permit type, ask your admin to add it to the database.");}
     setBusy(false);
   }
 
