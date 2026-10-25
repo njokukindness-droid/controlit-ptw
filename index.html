@@ -396,6 +396,52 @@ footer {
   .hero-stats { gap: 1.5rem; }
   .cf-row { grid-template-columns: 1fr; }
 }
+
+/* ── SHOWCASE ── */
+.showcase { padding: 5rem 1.5rem; background: var(--surface); }
+.showcase .centered { text-align: center; margin-bottom: 2.5rem; }
+.showcase-tabs {
+  display: flex; justify-content: center; gap: .5rem;
+  margin-bottom: 2rem; flex-wrap: wrap;
+}
+.sc-tab {
+  padding: .55rem 1.2rem; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-sub); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.sc-tab.active, .sc-tab:hover {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.sc-panel { display: none; flex-direction: column; align-items: center; gap: 1.25rem; }
+.sc-panel.active { display: flex; }
+.sc-caption {
+  max-width: 560px; text-align: center;
+  font-size: 14px; color: var(--text-sub); line-height: 1.6;
+}
+.sc-caption strong { color: var(--text); }
+.sc-img-wrap {
+  border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.sc-wide { max-width: min(900px, 100%); width: 100%; }
+.sc-portrait { max-width: 380px; width: 100%; }
+.sc-img-wrap img { display: block; width: 100%; height: auto; }
+.showcase-stats {
+  display: flex; justify-content: center; gap: 2.5rem;
+  margin-top: 3rem; flex-wrap: wrap;
+}
+.sc-stat { text-align: center; }
+.sc-num {
+  display: block; font-size: 2.4rem; font-weight: 800;
+  color: var(--accent); letter-spacing: -0.02em; line-height: 1;
+}
+.sc-lbl {
+  display: block; font-size: 12px; color: var(--text-sub);
+  margin-top: .3rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: .06em;
+}
 </style>
 
 <!-- NAV -->
@@ -694,6 +740,55 @@ footer {
   </div>
 </section>
 
+<!-- SHOWCASE -->
+<section class="showcase" id="showcase">
+  <div class="centered">
+    <div class="section-label">See it in action</div>
+    <h2 class="section-title">Built for the field.<br>Proven on site.</h2>
+    <p class="section-sub">Live with TASETI Construction &amp; Engineering LLC, Abu Dhabi — 18 permits managed, 7 permit types, zero paper.</p>
+  </div>
+
+  <div class="showcase-tabs">
+    <button class="sc-tab active" data-tab="dashboard">Dashboard</button>
+    <button class="sc-tab" data-tab="ptw">PTW Document</button>
+    <button class="sc-tab" data-tab="qr">QR Verification</button>
+  </div>
+
+  <div class="showcase-panels">
+    <div class="sc-panel active" id="sc-dashboard">
+      <div class="sc-caption">
+        <strong>Live command dashboard</strong> — 6 active permits, real-time activity feed, permit type breakdown, and instant status overview.
+      </div>
+      <div class="sc-img-wrap sc-wide">
+        <img src="assets/screen-dashboard.png" alt="CONTROLIT dashboard showing live permits, activity feed and status charts" loading="lazy"/>
+      </div>
+    </div>
+    <div class="sc-panel" id="sc-ptw">
+      <div class="sc-caption">
+        <strong>Auto-generated PTW document</strong> — every permit prints as a compliant, professional PDF with QR code, sections, and signatures built in.
+      </div>
+      <div class="sc-img-wrap sc-portrait">
+        <img src="assets/screen-ptw.png" alt="CONTROLIT generated Permit to Work document" loading="lazy"/>
+      </div>
+    </div>
+    <div class="sc-panel" id="sc-qr">
+      <div class="sc-caption">
+        <strong>Instant QR verification</strong> — anyone on site scans the permit QR code and sees live status pulled directly from the database. No app needed.
+      </div>
+      <div class="sc-img-wrap sc-portrait">
+        <img src="assets/screen-qr.png" alt="CONTROLIT QR code permit verification on mobile" loading="lazy"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="showcase-stats">
+    <div class="sc-stat"><span class="sc-num">18</span><span class="sc-lbl">Permits managed</span></div>
+    <div class="sc-stat"><span class="sc-num">7</span><span class="sc-lbl">Permit types</span></div>
+    <div class="sc-stat"><span class="sc-num">72%</span><span class="sc-lbl">Approval rate</span></div>
+    <div class="sc-stat"><span class="sc-num">0</span><span class="sc-lbl">Sheets of paper</span></div>
+  </div>
+</section>
+
 <!-- CTA -->
 <section class="cta-section">
   <h2>Ready to control your permits?</h2>
@@ -868,6 +963,16 @@ document.querySelectorAll("a[href^='#']").forEach(function(a) {
   a.addEventListener("click", function(e) {
     var target = document.querySelector(this.getAttribute("href"));
     if (target) { e.preventDefault(); target.scrollIntoView({ behavior: "smooth" }); }
+  });
+});
+
+// Showcase tabs
+document.querySelectorAll(".sc-tab").forEach(function(tab) {
+  tab.addEventListener("click", function() {
+    document.querySelectorAll(".sc-tab").forEach(function(t) { t.classList.remove("active"); });
+    document.querySelectorAll(".sc-panel").forEach(function(p) { p.classList.remove("active"); });
+    tab.classList.add("active");
+    document.getElementById("sc-" + tab.dataset.tab).classList.add("active");
   });
 });
 </script>
