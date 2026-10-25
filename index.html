@@ -397,6 +397,24 @@ footer {
   .cf-row { grid-template-columns: 1fr; }
 }
 
+/* ── PRICING SIMPLE ── */
+.pricing-simple {
+  max-width: 620px; margin: 0 auto;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem 2.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1.75rem;
+}
+.pricing-includes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .5rem; width: 100%;
+}
+.pi-item { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: .5rem; }
+.pi-check { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+.pricing-cta { padding: .8rem 2rem; font-size: 14px; display: flex; align-items: center; gap: .5rem; }
+@media (max-width: 520px) {
+  .pricing-includes { grid-template-columns: 1fr; }
+  .pricing-simple { padding: 1.5rem; }
+}
+
 /* ── SHOWCASE ── */
 .showcase { padding: 5rem 1.5rem; background: var(--surface); }
 .showcase .centered { text-align: center; margin-bottom: 2.5rem; }
@@ -602,7 +620,7 @@ footer {
     <p class="section-sub">Benchmarked against international PTW standards and built for real field conditions.</p>
   </div>
   <div class="features-grid">
-    <div class="feature-card"><div class="feature-icon">🔐</div><h3>Multi-stage approval workflow</h3><p>Requesting Party → Area Authority → Safety Officer → Issuer. Every stage digitally signed with timestamp and role verification.</p></div>
+    <div class="feature-card"><div class="feature-icon">🔐</div><h3>Multi-stage approval workflow</h3><p>Requester → Area Authority → Safety Manager → Issuer (Safety Officer). Every stage digitally signed with timestamp and role verification.</p></div>
     <div class="feature-card"><div class="feature-icon">📋</div><h3>Mandatory field verification</h3><p>The Issuer must physically verify all site controls on a permit-specific checklist before the permit can go live. No shortcuts.</p></div>
     <div class="feature-card"><div class="feature-icon">⚡</div><h3>SIMOPS conflict detection</h3><p>Automatically detects conflicting active permits in the same zone. Hot Work, Confined Space, Excavation, Lifting — all cross-checked in real time.</p></div>
     <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI risk assessment</h3><p>Claude-powered analysis generates key hazards, precautionary controls, and emergency procedures for every permit type.</p></div>
@@ -622,10 +640,10 @@ footer {
     <p class="section-sub">CONTROLIT enforces a structured, auditable permit lifecycle that mirrors international PTW standards.</p>
   </div>
   <div class="workflow-steps">
-    <div class="workflow-step"><div class="step-num">1</div><div class="step-title">Requesting Party</div><div class="step-desc">Team leader and supervisor complete and submit the permit form with all job details and hazard information.</div></div>
+    <div class="workflow-step"><div class="step-num">1</div><div class="step-title">Requester</div><div class="step-desc">Work in-charge completes the permit form with job details, hazard information, and required precautions.</div></div>
     <div class="workflow-step"><div class="step-num">2</div><div class="step-title">Area Authority</div><div class="step-desc">Confirms area readiness, checks for SIMOPS conflicts, and verifies all isolations are in place before approving.</div></div>
-    <div class="workflow-step"><div class="step-num">3</div><div class="step-title">Safety Officer</div><div class="step-desc">Reviews the risk assessment, PPE requirements, gas tests, and HSE compliance before forwarding for issuance.</div></div>
-    <div class="workflow-step"><div class="step-num">4</div><div class="step-title">Issuer</div><div class="step-desc">Goes to site, verifies all controls physically via checklist, signs digitally, and issues the permit. Work may now commence.</div></div>
+    <div class="workflow-step"><div class="step-num">3</div><div class="step-title">Safety Manager</div><div class="step-desc">Reviews the risk assessment, PPE requirements, and HSE compliance. Adds recommendations before forwarding for issuance.</div></div>
+    <div class="workflow-step"><div class="step-num">4</div><div class="step-title">Issuer — Safety Officer</div><div class="step-desc">Goes to site, verifies all controls physically, signs digitally, and issues the permit. Work may now commence.</div></div>
   </div>
 </section>
 
@@ -684,59 +702,24 @@ footer {
 <section class="pricing" id="pricing">
   <div class="centered">
     <div class="section-label">Pricing</div>
-    <h2 class="section-title">Straightforward pricing. No surprises.</h2>
-    <p class="section-sub">Every plan includes the full CONTROLIT platform for your sector. Scale as your organisation grows.</p>
+    <h2 class="section-title">Priced for your team size.</h2>
+    <p class="section-sub">Every plan includes the full CONTROLIT platform — all permit types for your sector, the complete approval workflow, audit trail, PDF generation, and QR verification. Pricing is based on your team size and deployment. Book a demo and we'll put together the right fit.</p>
   </div>
-  <div class="pricing-grid">
-    <div class="pricing-card">
-      <div class="plan-name">Starter</div>
-      <div class="plan-price">$199 <span>/ month</span></div>
-      <div class="plan-desc">For smaller teams getting started with digital PTW.</div>
-      <ul class="plan-features">
-        <li>Up to 25 users</li>
-        <li>Your sector's permit types</li>
-        <li>Full 4-stage approval workflow</li>
-        <li>AI risk assessment</li>
-        <li>Push &amp; email notifications</li>
-        <li>Audit trail &amp; PDF permits</li>
-        <li>Email support</li>
-      </ul>
-      <button class="plan-btn plan-btn-ghost" onclick="openWA('signup')">Get started via WhatsApp</button>
+  <div class="pricing-simple">
+    <div class="pricing-includes">
+      <div class="pi-item"><span class="pi-check">✓</span> Full 4-stage approval workflow</div>
+      <div class="pi-item"><span class="pi-check">✓</span> All permit types for your sector</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Auto-generated PDF permits with QR</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Real-time dashboard &amp; live feed</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Audit trail &amp; permit register export</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Push &amp; email notifications</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Custom branding &amp; PDF template</div>
+      <div class="pi-item"><span class="pi-check">✓</span> Onboarding &amp; ongoing support</div>
     </div>
-    <div class="pricing-card featured">
-      <div class="featured-badge">MOST POPULAR</div>
-      <div class="plan-name">Professional</div>
-      <div class="plan-price">$499 <span>/ month</span></div>
-      <div class="plan-desc">For growing organisations with multiple sites or zones.</div>
-      <ul class="plan-features">
-        <li>Up to 100 users</li>
-        <li>All sector permit types</li>
-        <li>Full 4-stage approval workflow</li>
-        <li>SIMOPS detection</li>
-        <li>AI risk assessment</li>
-        <li>Advanced notifications</li>
-        <li>Custom branding &amp; PDF template</li>
-        <li>Priority support</li>
-      </ul>
-      <button class="plan-btn plan-btn-wa" onclick="openWA('signup')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Get started
-      </button>
-    </div>
-    <div class="pricing-card">
-      <div class="plan-name">Enterprise</div>
-      <div class="plan-price">Custom</div>
-      <div class="plan-desc">For large organisations with complex or multi-sector requirements.</div>
-      <ul class="plan-features">
-        <li>Unlimited users</li>
-        <li>Multi-sector access</li>
-        <li>Multi-site management</li>
-        <li>Custom permit types</li>
-        <li>Dedicated support</li>
-        <li>SLA guarantee</li>
-      </ul>
-      <button class="plan-btn plan-btn-ghost" onclick="openWA('sales')">Contact sales</button>
-    </div>
+    <button class="plan-btn plan-btn-wa pricing-cta" onclick="openWA('demo')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Book a demo
+    </button>
   </div>
 </section>
 
