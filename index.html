@@ -446,6 +446,68 @@ footer {
 .sc-wide { max-width: min(900px, 100%); width: 100%; }
 .sc-portrait { max-width: 380px; width: 100%; }
 .sc-img-wrap img { display: block; width: 100%; height: auto; }
+
+/* ── Device mockup (dashboard tab) ── */
+.device-scene {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 0; position: relative; width: 100%; max-width: 860px;
+}
+/* Laptop */
+.laptop {
+  position: relative; flex-shrink: 0; width: min(620px, 88vw);
+}
+.laptop-screen {
+  background: #0f1117;
+  border-radius: 10px 10px 0 0;
+  border: 8px solid #1e2130;
+  border-bottom: none;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #2d3148, 0 24px 60px rgba(0,0,0,.55);
+  aspect-ratio: 16/10;
+}
+.laptop-screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.laptop-hinge {
+  height: 7px; background: linear-gradient(180deg,#1e2130 0%,#14161f 100%);
+  border-radius: 0 0 2px 2px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.laptop-base {
+  height: 18px;
+  background: linear-gradient(180deg,#23263a 0%,#1a1c2b 100%);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  position: relative;
+}
+.laptop-base::after {
+  content:''; position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  width:60px; height:4px; background:#14161f; border-radius:4px;
+}
+/* Phone */
+.phone {
+  position: relative; flex-shrink: 0;
+  width: min(110px, 16vw);
+  margin-left: -28px;
+  margin-bottom: 18px;
+  z-index: 2;
+}
+.phone-body {
+  background: #1e2130;
+  border-radius: 18px;
+  border: 5px solid #2a2d45;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 0 1px #3a3e5c;
+  aspect-ratio: 9/19.5;
+  position: relative;
+}
+.phone-body::before {
+  content:''; position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  width:26px; height:4px; background:#111322; border-radius:4px; z-index:3;
+}
+.phone-body img { display:block; width:100%; height:100%; object-fit:cover; }
+@media(max-width:520px){
+  .phone { width: 70px; margin-left:-18px; }
+  .laptop { width: 94vw; }
+}
 .showcase-stats {
   display: flex; justify-content: center; gap: 2.5rem;
   margin-top: 3rem; flex-wrap: wrap;
@@ -742,8 +804,21 @@ footer {
       <div class="sc-caption">
         <strong>Live command dashboard</strong> — 6 active permits, real-time activity feed, permit type breakdown, and instant status overview.
       </div>
-      <div class="sc-img-wrap sc-wide">
-        <img src="assets/screen-dashboard.png" alt="CONTROLIT dashboard showing live permits, activity feed and status charts" loading="lazy"/>
+      <div class="device-scene">
+        <!-- Laptop -->
+        <div class="laptop">
+          <div class="laptop-screen">
+            <img src="assets/screen-dashboard.png" alt="CONTROLIT dashboard on laptop" loading="lazy"/>
+          </div>
+          <div class="laptop-hinge"></div>
+          <div class="laptop-base"></div>
+        </div>
+        <!-- Phone -->
+        <div class="phone">
+          <div class="phone-body">
+            <img src="assets/screen-qr.png" alt="CONTROLIT QR verification on mobile" loading="lazy"/>
+          </div>
+        </div>
       </div>
     </div>
     <div class="sc-panel" id="sc-ptw">
