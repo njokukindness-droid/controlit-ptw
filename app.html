@@ -2426,15 +2426,6 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     const maxExt=3;
     const extCount=permit.extensions||0;
     const lastNewEnd=fd.ext_requested_date?(" &nbsp;&middot;&nbsp; Last requested new end date: <b>"+new Date(fd.ext_requested_date).toLocaleDateString("en-GB")+"</b>"):"";
-    // Controls summary block
-    const ctrlList=[...(fd.selected_controls||[]).filter(function(c){return c!=="RA Required";}),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(function(s){return s.trim();}):[] )];
-    let ctrlBlock="";
-    if(ctrlList.length){
-      const ctrlItems=ctrlList.map(function(c){return "<li style='font-size:9px;margin-bottom:2px'><span style='color:#0E9E6E;font-weight:700;margin-right:4px'>✓</span>"+c+"</li>";}).join("");
-      ctrlBlock="<div class='sec-head' style='margin-top:8px'>Control Measures Summary</div>"
-        +"<div style='border:0.5px solid #ccc;border-top:none;padding:6px 10px'>"
-        +"<ul style='margin:0;padding-left:10px;list-style:none'>"+ctrlItems+"</ul></div>";
-    }
     const rows=_extEntries.map(function(e){
       const status=e.action.toLowerCase().includes("approved")
         ?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>"
@@ -2449,8 +2440,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
         +"</tr>";
     }).join("");
     const noRows=rows?"":"<tr><td colspan='4' style='color:#888;font-style:italic;font-size:9px;padding:4px 8px'>No extension history recorded</td></tr>";
-    return ctrlBlock
-      +"<div class='sec-head' style='margin-top:8px'>Extension Record</div>"
+    return "<div class='sec-head' style='margin-top:8px'>Extension Record</div>"
       +"<table><tr><td colspan='4' style='background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic'>Extensions used: <b>"+extCount+"</b> of <b>"+maxExt+"</b> maximum allowed"+lastNewEnd+"</td></tr>"
       +"<tr style='background:#e8e8e8'>"
       +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>Date / Time</td>"
@@ -2465,8 +2455,8 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
   const allControls=(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(s=>s.trim()):[]);
 
   function ctrlTick(item){
-    const ticked=sel.some(s=>s.toLowerCase().includes(item.toLowerCase().slice(0,15)));
-    return `${ticked?checked:unchecked} ${item}`;
+    // Abass's requirement: all boxes blank for manual ticking on site
+    return `${unchecked} ${item}`;
   }
 
   // Permit-type specific precautions matching TASETI forms
