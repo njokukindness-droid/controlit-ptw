@@ -2623,7 +2623,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
 
   // Build precaution table — numbered items with DAY columns (1 per permit day) + Remarks
   function precautionTable(items){
-    const dayHeaders=_dayNums.map(function(d){return "<th style='font-size:8px;font-weight:700;padding:2px 3px;border:0.5px solid #999;width:20px;text-align:center;background:#e8e8e8'>"+d+"</th>";}).join("");
+    const dayHeaders=_dayNums.map(function(d){return "<th style='font-size:10px;font-weight:900;padding:3px 3px;border:0.5px solid #555;width:20px;text-align:center;background:#c8d6e5;color:#1a3a5c'>"+d+"</th>";}).join("");
     const emptyCells=_dayNums.map(function(){return "<td style='border:0.5px solid #999;min-width:20px;width:20px;'>&nbsp;</td>";}).join("");
     let rows="";
     items.forEach(function(item,idx){
@@ -2636,10 +2636,10 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     });
     return "<table style='width:100%;border-collapse:collapse'>"
       +"<tr>"
-      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;width:22px;background:#e8e8e8'>#</th>"
-      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #999;background:#e8e8e8'>Required Control / Precaution</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #555;width:22px;background:#c8d6e5;color:#1a3a5c'>#</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #555;background:#c8d6e5;color:#1a3a5c'>Required Control / Precaution</th>"
       +dayHeaders
-      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;background:#e8e8e8;min-width:40px'>Remarks</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #555;background:#c8d6e5;color:#1a3a5c;min-width:40px'>Remarks</th>"
       +"</tr>"
       +rows
       +"</table>";
@@ -3089,7 +3089,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const stdSection2Html=(function(){
     const ctrlItems=(fd.selected_controls||[]).filter(function(c){return c!=="RA Required";});
     if(!ctrlItems.length) return "<table><tr><td colspan='2' style='color:#888;font-style:italic'>No controls recorded</td></tr></table>";
-    const dayHeaders=_stdDayNums.map(function(d){return "<th style='font-size:8px;font-weight:700;padding:2px 3px;border:0.5px solid #999;width:22px;text-align:center;background:#e8e8e8'>"+d+"</th>";}).join("");
+    const dayHeaders=_stdDayNums.map(function(d){return "<th style='font-size:10px;font-weight:900;padding:3px 3px;border:0.5px solid #555;width:22px;text-align:center;background:#c8d6e5;color:#1a3a5c'>"+d+"</th>";}).join("");
     let rows="";
     ctrlItems.forEach(function(item,idx){
       const dayCells=_stdDayNums.map(function(d){
@@ -3106,10 +3106,10 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     });
     return "<table style='width:100%;border-collapse:collapse'>"
       +"<tr>"
-      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;width:22px;background:#e8e8e8'>#</th>"
-      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #999;background:#e8e8e8'>Required Control / Precaution</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #555;width:22px;background:#c8d6e5;color:#1a3a5c'>#</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #555;background:#c8d6e5;color:#1a3a5c'>Required Control / Precaution</th>"
       +dayHeaders
-      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;background:#e8e8e8;min-width:40px'>Remarks</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #555;background:#c8d6e5;color:#1a3a5c;min-width:40px'>Remarks</th>"
       +"</tr>"
       +rows
       +"</table>";
@@ -3147,6 +3147,31 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
 
   // Pre-compute extension section HTML (avoids nested backtick issues inside template literals)
   const extAuditEntries=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));
+
+  // Standard PDF extension sign-off blocks (no checklist — just requester + authoriser sign-off)
+  const stdExtSignOffHtml=(function(){
+    function extBlock(extNum){
+      const extAudit=extAuditEntries.find(function(a){return a.action&&a.action.includes("Extension "+extNum);});
+      const extDate=extAudit?new Date(extAudit.created_at).toLocaleDateString("en-GB"):"";
+      const extGrantedBy=extAudit?extAudit.user_name:"";
+      return "<div style='background:#fff8e1;border:0.5px solid #D97B00;padding:4px 8px;margin-top:10px;font-size:10px;font-weight:700;color:#7A4500'>Extension "+extNum+"</div>"
+        +"<table style='width:100%;border-collapse:collapse;margin-top:0'>"
+        +"<tr style='background:#fff8e1'>"
+        +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #ccc;width:28%'>New Permit End Date &amp; Time</th>"
+        +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #ccc;width:26%'>Requested By<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+        +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #ccc;width:26%'>Authorised By (Issuing Authority)<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+        +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #ccc;width:20%'>Date Signed</th>"
+        +"</tr>"
+        +"<tr>"
+        +"<td style='font-size:9px;padding:14px 8px;border:0.5px solid #ccc'>&nbsp;</td>"
+        +"<td style='font-size:9px;padding:14px 8px;border:0.5px solid #ccc'>&nbsp;</td>"
+        +"<td style='font-size:9px;padding:14px 8px;border:0.5px solid #ccc;"+(extGrantedBy?"color:#1a3a5c;font-weight:600":"")+"'>"+extGrantedBy+"&nbsp;</td>"
+        +"<td style='font-size:9px;padding:14px 8px;border:0.5px solid #ccc;color:#444'>"+extDate+"&nbsp;</td>"
+        +"</tr>"
+        +"</table>";
+    }
+    return extBlock(1)+extBlock(2);
+  })();
   const extSectionHtml=(()=>{
     if(!extAuditEntries.length&&!permit.extensions) return "";
     const maxExt=2;
@@ -3336,6 +3361,11 @@ ${fd.issuer_checklist
 <div class="sec-head">Section 6B — Daily Re-Authorisation Sign-Off</div>
 <div class="sec-sub">(This permit must be closed and re-opened each working day. The Permit Holder, Permit Authority and HSE Officer must confirm below before work resumes each day. All precautions in Section 2 must be re-ticked electronically for each day before signing. Names submitted electronically via CONTROLIT are pre-filled below.)</div>
 ${stdSection6BHtml}
+
+<!-- SECTION 6C: EXTENSION OF PERMIT -->
+<div class="sec-head" style="margin-top:10px">Section 6C — Extension of Permit</div>
+<div class="sec-sub">(Maximum 2 extensions permitted. Issuing Authority must authorise each extension. The requester must provide justification before authorisation is granted.)</div>
+${stdExtSignOffHtml}
 
 ${extSectionHtml}
 
