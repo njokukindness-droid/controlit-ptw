@@ -2622,6 +2622,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     <td>Name of Subcontractor(s) involved: <b>${fd.subcontractor||"___________________________"}</b></td>
   </tr>
 </table>
+${fd.tools_equipment?`<div style="border:0.5px solid #ccc;border-top:none;padding:6px 8px;font-size:10px"><b>Tools &amp; Equipment:</b> ${fd.tools_equipment}</div>`:""}
 
 <!-- SECTION 2: PRECAUTIONS -->
 <div class="sec-head" style="margin-top:8px">Section-2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Precautions Required</div>
@@ -2778,6 +2779,8 @@ ${fd.workers&&fd.workers.length>0?`
     <td colspan="3">Date: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleDateString("en-GB"):"___________"}</b> &nbsp;&nbsp; Time: <b>${oshEntry?new Date(oshEntry.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"___________"}</b></td>
   </tr>
 </table>
+
+${(()=>{const extAudit=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));if(!extAudit.length&&!permit.extensions)return "";const maxExt=3;const extCount=permit.extensions||0;const rows=extAudit.map(e=>`<tr><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${new Date(e.created_at).toLocaleString()}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.user_name||"—"} (${e.user_role||"—"})</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action.toLowerCase().includes("approved")?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>":e.action.toLowerCase().includes("rejected")?"<span style='color:#C0392B;font-weight:700'>Rejected</span>":"<span style='color:#D97B00;font-weight:700'>Requested</span>"}</td></tr>`).join("");return `<!-- EXTENSION RECORD --><div class="sec-head" style="margin-top:8px">Extension Record</div><table><tr><td colspan="4" style="background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic">Extensions used: <b>${extCount}</b> of <b>${maxExt}</b> maximum allowed${fd.ext_requested_date?` &nbsp;·&nbsp; Last requested new end date: <b>${new Date(fd.ext_requested_date).toLocaleDateString("en-GB")}</b>`:""}</td></tr><tr style="background:#e8e8e8"><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Date / Time</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Action</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">By (Role)</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%">Status</td></tr>${rows||`<tr><td colspan="4" style="color:#888;font-style:italic;font-size:9px;padding:4px 8px">No extension history recorded</td></tr>`}</table>`;})()}
 
 <!-- SECTION 6: COMPLETION / CANCELLATION -->
 <div class="sec-head" style="margin-top:8px">Section-6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Completion / Cancellation of PTW</div>
@@ -2987,8 +2990,8 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     <td><span class="label">No. of Persons Involved</span><span class="val">${fd.num_persons||"—"}</span></td>
     <td><span class="label">Permit Number</span><span class="val">${permit.permit_number}</span></td>
   </tr>
-  ${fd.tools_equipment?`<tr><td colspan="2"><span class="label">Tools &amp; Equipment</span><span class="val">${fd.tools_equipment}</span></td></tr>`:""}
 </table>
+${fd.tools_equipment?`<div style="border:0.5px solid #ccc;border-top:none;padding:6px 8px;font-size:10px"><span class="label">Tools &amp; Equipment:</span> <span class="val">${fd.tools_equipment}</span></div>`:""}
 
 <!-- SECTION 2 -->
 <div class="sec-head">Section 2 — Precautions Required</div>
@@ -3063,6 +3066,8 @@ ${fd.issuer_checklist
        </tr>
      </table>`
   : `<table><tr><td colspan="3" style="color:#D97B00;font-weight:600">⚠ Permit not yet issued — site verification pending.</td></tr></table>`}
+
+${(()=>{const extAudit=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));if(!extAudit.length&&!permit.extensions)return "";const maxExt=3;const extCount=permit.extensions||0;const rows=extAudit.map(e=>`<tr><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${new Date(e.created_at).toLocaleString()}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.user_name||"—"} (${e.user_role||"—"})</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action.toLowerCase().includes("approved")?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>":e.action.toLowerCase().includes("rejected")?"<span style='color:#C0392B;font-weight:700'>Rejected</span>":"<span style='color:#D97B00;font-weight:700'>Requested</span>"}</td></tr>`).join("");return `<!-- SECTION 6B: EXTENSION RECORD --><div class="sec-head">Extension Record</div><table><tr><td colspan="4" style="background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic">Extensions used: <b>${extCount}</b> of <b>${maxExt}</b> maximum allowed${fd.ext_requested_date?` &nbsp;·&nbsp; Last requested new end date: <b>${new Date(fd.ext_requested_date).toLocaleDateString("en-GB")}</b>`:""}</td></tr><tr style="background:#e8e8e8"><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Date / Time</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Action</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">By (Role)</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%">Status</td></tr>${rows||`<tr><td colspan="4" style="color:#888;font-style:italic;font-size:9px;padding:4px 8px">No extension history recorded</td></tr>`}</table>`;})()}
 
 <!-- SECTION 7 -->
 <div class="sec-head">Section 7 — Completion / Cancellation of PTW</div>
