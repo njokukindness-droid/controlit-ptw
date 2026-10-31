@@ -2423,7 +2423,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
   const _extEntries=_auditArr.filter(function(a){return a.action&&a.action.toLowerCase().includes("extension");});
   const tasetExtHtml=(function(){
     if(!_extEntries.length&&!permit.extensions) return "";
-    const maxExt=3;
+    const maxExt=2;
     const extCount=permit.extensions||0;
     const lastNewEnd=fd.ext_requested_date?(" &nbsp;&middot;&nbsp; Last requested new end date: <b>"+new Date(fd.ext_requested_date).toLocaleDateString("en-GB")+"</b>"):"";
     const rows=_extEntries.map(function(e){
@@ -2818,7 +2818,7 @@ ${fd.workers&&fd.workers.length>0?`
 
 <!-- SECTION 5B: EXTENSION OF PERMIT -->
 <div class="sec-head" style="margin-top:8px">Section-5B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extension of Permit</div>
-<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be completed by Issuing Authority each time an extension is granted. Maximum 3 extensions permitted.)</div>
+<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be completed by Issuing Authority each time an extension is granted. Maximum 2 extensions permitted.)</div>
 <table>
   <tr style="background:#e8e8e8">
     <td style="font-weight:700;font-size:9px;padding:4px 8px;border:0.5px solid #ccc;width:8%">#</td>
@@ -2834,12 +2834,6 @@ ${fd.workers&&fd.workers.length>0?`
   </tr>
   <tr>
     <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc"><b>2</b></td>
-    <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc"><b>3</b></td>
     <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
     <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
     <td style="font-size:9px;padding:6px 8px;border:0.5px solid #ccc">&nbsp;</td>
@@ -2995,7 +2989,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   const extAuditEntries=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));
   const extSectionHtml=(()=>{
     if(!extAuditEntries.length&&!permit.extensions) return "";
-    const maxExt=3;
+    const maxExt=2;
     const extCount=permit.extensions||0;
     const lastNewEnd=fd.ext_requested_date?(" &nbsp;&middot;&nbsp; Last requested new end date: <b>"+new Date(fd.ext_requested_date).toLocaleDateString("en-GB")+"</b>"):"";
     // Controls summary block
@@ -3182,7 +3176,7 @@ ${fd.issuer_checklist
 
 <!-- SECTION 6B: EXTENSION OF PERMIT -->
 <div class="sec-head">Section 6B — Extension of Permit</div>
-<div class="sec-sub">(To be completed by Issuing Authority each time an extension is granted. Maximum 3 extensions permitted.)</div>
+<div class="sec-sub">(To be completed by Issuing Authority each time an extension is granted. Maximum 2 extensions permitted.)</div>
 <table>
   <tr style="background:#e8e8e8">
     <td style="font-weight:700;font-size:9px;padding:4px 8px;border:0.5px solid #ccc;width:8%">#</td>
@@ -3198,12 +3192,6 @@ ${fd.issuer_checklist
   </tr>
   <tr>
     <td style="font-size:9px;padding:8px;border:0.5px solid #ccc"><b>2</b></td>
-    <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:8px;border:0.5px solid #ccc"><b>3</b></td>
     <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
     <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
     <td style="font-size:9px;padding:8px;border:0.5px solid #ccc">&nbsp;</td>
