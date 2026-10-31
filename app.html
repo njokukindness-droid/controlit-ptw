@@ -2411,12 +2411,54 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
 
 
 // ── TASETI PDF Template ───────────────────────────────────────────────────────
-function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrContent){
+function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrContent,audit){
   const fmtD=(s)=>s?new Date(s).toLocaleDateString("en-GB"):"___________";
   const fmtT=(s)=>s||"___________";
   const dotline=(val,width)=>`<span style="display:inline-block;border-bottom:0.5px solid #000;min-width:${width||180}px;padding:0 4px">${val||""}</span>`;
   const checked=`<span style="font-size:14px">☑</span>`;
   const unchecked=`<span style="font-size:14px">☐</span>`;
+
+  // Pre-compute extension section HTML
+  const _auditArr=audit||[];
+  const _extEntries=_auditArr.filter(function(a){return a.action&&a.action.toLowerCase().includes("extension");});
+  const tasetExtHtml=(function(){
+    if(!_extEntries.length&&!permit.extensions) return "";
+    const maxExt=3;
+    const extCount=permit.extensions||0;
+    const lastNewEnd=fd.ext_requested_date?(" &nbsp;&middot;&nbsp; Last requested new end date: <b>"+new Date(fd.ext_requested_date).toLocaleDateString("en-GB")+"</b>"):"";
+    // Controls summary block
+    const ctrlList=[...(fd.selected_controls||[]).filter(function(c){return c!=="RA Required";}),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(function(s){return s.trim();}):[] )];
+    let ctrlBlock="";
+    if(ctrlList.length){
+      const ctrlItems=ctrlList.map(function(c){return "<li style='font-size:9px;margin-bottom:2px'><span style='color:#0E9E6E;font-weight:700;margin-right:4px'>✓</span>"+c+"</li>";}).join("");
+      ctrlBlock="<div class='sec-head' style='margin-top:8px'>Control Measures Summary</div>"
+        +"<div style='border:0.5px solid #ccc;border-top:none;padding:6px 10px'>"
+        +"<ul style='margin:0;padding-left:10px;list-style:none'>"+ctrlItems+"</ul></div>";
+    }
+    const rows=_extEntries.map(function(e){
+      const status=e.action.toLowerCase().includes("approved")
+        ?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>"
+        :e.action.toLowerCase().includes("rejected")
+          ?"<span style='color:#C0392B;font-weight:700'>Rejected</span>"
+          :"<span style='color:#D97B00;font-weight:700'>Requested</span>";
+      return "<tr>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+new Date(e.created_at).toLocaleString()+"</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+e.action+"</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+(e.user_name||"—")+" ("+(e.user_role||"—")+")</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:16%'>"+status+"</td>"
+        +"</tr>";
+    }).join("");
+    const noRows=rows?"":"<tr><td colspan='4' style='color:#888;font-style:italic;font-size:9px;padding:4px 8px'>No extension history recorded</td></tr>";
+    return ctrlBlock
+      +"<div class='sec-head' style='margin-top:8px'>Extension Record</div>"
+      +"<table><tr><td colspan='4' style='background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic'>Extensions used: <b>"+extCount+"</b> of <b>"+maxExt+"</b> maximum allowed"+lastNewEnd+"</td></tr>"
+      +"<tr style='background:#e8e8e8'>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>Date / Time</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>Action</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>By (Role)</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%'>Status</td>"
+      +"</tr>"+rows+noRows+"</table>";
+  })();
 
   // Build precautions checklist from selected controls
   const sel=fd.selected_controls||[];
@@ -2780,7 +2822,7 @@ ${fd.workers&&fd.workers.length>0?`
   </tr>
 </table>
 
-${(()=>{const extAudit=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));if(!extAudit.length&&!permit.extensions)return "";const maxExt=3;const extCount=permit.extensions||0;const rows=extAudit.map(e=>`<tr><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${new Date(e.created_at).toLocaleString()}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.user_name||"—"} (${e.user_role||"—"})</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action.toLowerCase().includes("approved")?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>":e.action.toLowerCase().includes("rejected")?"<span style='color:#C0392B;font-weight:700'>Rejected</span>":"<span style='color:#D97B00;font-weight:700'>Requested</span>"}</td></tr>`).join("");return `<!-- EXTENSION RECORD --><div class="sec-head" style="margin-top:8px">Extension Record</div><table><tr><td colspan="4" style="background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic">Extensions used: <b>${extCount}</b> of <b>${maxExt}</b> maximum allowed${fd.ext_requested_date?` &nbsp;·&nbsp; Last requested new end date: <b>${new Date(fd.ext_requested_date).toLocaleDateString("en-GB")}</b>`:""}</td></tr><tr style="background:#e8e8e8"><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Date / Time</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Action</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">By (Role)</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%">Status</td></tr>${rows||`<tr><td colspan="4" style="color:#888;font-style:italic;font-size:9px;padding:4px 8px">No extension history recorded</td></tr>`}</table>`;})()}
+${tasetExtHtml}
 
 <!-- SECTION 6: COMPLETION / CANCELLATION -->
 <div class="sec-head" style="margin-top:8px">Section-6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Completion / Cancellation of PTW</div>
@@ -2851,13 +2893,13 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
 
   const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=80x80&color=${(typeColor||"#1A3A5C").replace("#","")}&bgcolor=ffffff&data=${encodeURIComponent("https://getcontrolit.com/verify.html?permit="+permit.permit_number)}`;
   const qrImg=`<img src="${qrUrl}" width="80" height="80" alt="QR Code" style="display:block"/>`;
-  const tasPreviewHtml=orgTemplate==="taseti"?buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrImg):"";
+  const tasPreviewHtml=orgTemplate==="taseti"?buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrImg,audit):"";
   const previewHtml=orgTemplate!=="taseti"?buildHtml(qrImg):"";
 
   // ── TASETI Template ──────────────────────────────────────────────
   if(orgTemplate==="taseti"){
     const openPrint=()=>{
-      const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrImg);
+      const tasHtml=buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry,completionEntry,closureEntry,qrImg,audit);
       const w=window.open("","_blank","width=900,height=700");
       if(w){
         w.document.write(`<!DOCTYPE html><html><head>
@@ -2923,6 +2965,48 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     }
     return rows.join("");
   }
+
+  // Pre-compute extension section HTML (avoids nested backtick issues inside template literals)
+  const extAuditEntries=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));
+  const extSectionHtml=(()=>{
+    if(!extAuditEntries.length&&!permit.extensions) return "";
+    const maxExt=3;
+    const extCount=permit.extensions||0;
+    const lastNewEnd=fd.ext_requested_date?(" &nbsp;&middot;&nbsp; Last requested new end date: <b>"+new Date(fd.ext_requested_date).toLocaleDateString("en-GB")+"</b>"):"";
+    // Controls summary block
+    const ctrlList=[...(fd.selected_controls||[]).filter(function(c){return c!=="RA Required";}),...(fd.osh_additional_controls?fd.osh_additional_controls.split("\n").filter(function(s){return s.trim();}):[] )];
+    let ctrlBlock="";
+    if(ctrlList.length){
+      const ctrlItems=ctrlList.map(function(c){return "<li style='font-size:9px;margin-bottom:2px'><span style='color:#0E9E6E;font-weight:700;margin-right:4px'>✓</span>"+c+"</li>";}).join("");
+      ctrlBlock="<div class='sec-head'>Control Measures Summary</div>"
+        +"<div style='border:0.5px solid #ccc;border-top:none;padding:6px 10px'>"
+        +"<ul style='margin:0;padding-left:10px;list-style:none'>"+ctrlItems+"</ul></div>";
+    }
+    // Extension audit rows
+    const rows=extAuditEntries.map(function(e){
+      const status=e.action.toLowerCase().includes("approved")
+        ?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>"
+        :e.action.toLowerCase().includes("rejected")
+          ?"<span style='color:#C0392B;font-weight:700'>Rejected</span>"
+          :"<span style='color:#D97B00;font-weight:700'>Requested</span>";
+      return "<tr>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+new Date(e.created_at).toLocaleString()+"</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+e.action+"</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:28%'>"+(e.user_name||"—")+" ("+(e.user_role||"—")+")</td>"
+        +"<td style='font-size:9px;padding:3px 8px;border:0.5px solid #ddd;width:16%'>"+status+"</td>"
+        +"</tr>";
+    }).join("");
+    const noRows=rows?"":"<tr><td colspan='4' style='color:#888;font-style:italic;font-size:9px;padding:4px 8px'>No extension history recorded</td></tr>";
+    return ctrlBlock
+      +"<div class='sec-head'>Extension Record</div>"
+      +"<table><tr><td colspan='4' style='background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic'>Extensions used: <b>"+extCount+"</b> of <b>"+maxExt+"</b> maximum allowed"+lastNewEnd+"</td></tr>"
+      +"<tr style='background:#e8e8e8'>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>Date / Time</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>Action</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%'>By (Role)</td>"
+      +"<td style='font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%'>Status</td>"
+      +"</tr>"+rows+noRows+"</table>";
+  })();
 
   const css=`
     @page{size:A4;margin:15mm}
@@ -3067,7 +3151,7 @@ ${fd.issuer_checklist
      </table>`
   : `<table><tr><td colspan="3" style="color:#D97B00;font-weight:600">⚠ Permit not yet issued — site verification pending.</td></tr></table>`}
 
-${(()=>{const extAudit=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));if(!extAudit.length&&!permit.extensions)return "";const maxExt=3;const extCount=permit.extensions||0;const rows=extAudit.map(e=>`<tr><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${new Date(e.created_at).toLocaleString()}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action}</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.user_name||"—"} (${e.user_role||"—"})</td><td style="font-size:9px;padding:3px 8px;border:0.5px solid #ddd">${e.action.toLowerCase().includes("approved")?"<span style='color:#0E9E6E;font-weight:700'>Approved</span>":e.action.toLowerCase().includes("rejected")?"<span style='color:#C0392B;font-weight:700'>Rejected</span>":"<span style='color:#D97B00;font-weight:700'>Requested</span>"}</td></tr>`).join("");return `<!-- SECTION 6B: EXTENSION RECORD --><div class="sec-head">Extension Record</div><table><tr><td colspan="4" style="background:#f4f6f9;font-size:9px;padding:4px 8px;font-style:italic">Extensions used: <b>${extCount}</b> of <b>${maxExt}</b> maximum allowed${fd.ext_requested_date?` &nbsp;·&nbsp; Last requested new end date: <b>${new Date(fd.ext_requested_date).toLocaleDateString("en-GB")}</b>`:""}</td></tr><tr style="background:#e8e8e8"><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Date / Time</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">Action</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:28%">By (Role)</td><td style="font-size:9px;font-weight:700;padding:3px 8px;border:0.5px solid #ccc;width:16%">Status</td></tr>${rows||`<tr><td colspan="4" style="color:#888;font-style:italic;font-size:9px;padding:4px 8px">No extension history recorded</td></tr>`}</table>`;})()}
+${extSectionHtml}
 
 <!-- SECTION 7 -->
 <div class="sec-head">Section 7 — Completion / Cancellation of PTW</div>
