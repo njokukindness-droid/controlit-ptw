@@ -2342,6 +2342,76 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
           </div>)}
         </Card>)}
 
+        {/* DAILY RE-VALIDATION PANEL — standard (non-TASETI) active permits only */}
+        {permit.status==="active"&&!permit.org_template&&(()=>{
+          const drv=fd.daily_revalidations||[];
+          const dateFrom=fd.work_date_from?new Date(fd.work_date_from):null;
+          const dateTo=fd.work_date_to?new Date(fd.work_date_to):null;
+          const permitDays=dateFrom&&dateTo?Math.min(7,Math.max(1,Math.ceil((dateTo-dateFrom)/(86400000))+1)):1;
+          const today=new Date().toISOString().slice(0,10);
+          // Determine today's day number relative to permit start
+          const todayDayNum=dateFrom?Math.min(7,Math.max(1,Math.ceil((new Date(today)-dateFrom)/86400000)+1)):1;
+          const alreadySubmittedToday=drv.some(function(r){return r.date===today;});
+          const ctrlList=checklistItems;
+          const[showDRV,setShowDRV]=useState(false);
+          const[drvTicks,setDrvTicks]=useState({});
+          const[drvHolder,setDrvHolder]=useState("");
+          const[drvAuthority,setDrvAuthority]=useState("");
+          const[drvHSE,setDrvHSE]=useState("");
+          const[drvBusy,setDrvBusy]=useState(false);
+          async function submitDRV(){
+            if(!drvHolder.trim()||!drvAuthority.trim()||!drvHSE.trim()){setErrMsg("All three name fields are required for daily re-validation.");return;}
+            setDrvBusy(true);
+            const entry={day:todayDayNum,date:today,ticked_controls:ctrlList.filter(function(c){return drvTicks[c];}),permit_holder_name:drvHolder.trim(),permit_authority_name:drvAuthority.trim(),hse_officer_name:drvHSE.trim(),submitted_at:new Date().toISOString()};
+            const updated=[...drv,entry];
+            await sb.update(session.token,"permits","id=eq."+permit.id,{form_data:{...fd,daily_revalidations:updated}});
+            await sb.insert(session.token,"permit_audit",{org_id:session.profile.org_id,permit_id:permit.id,user_id:session.userId,user_name:session.profile.full_name,user_role:roleLabel(session.profile.role),action:"Daily re-validation submitted — Day "+todayDayNum,note:"Permit Holder: "+drvHolder+", Authority: "+drvAuthority+", HSE: "+drvHSE});
+            setPermit(function(p){return {...p,form_data:{...fd,daily_revalidations:updated}};});
+            setShowDRV(false);setDrvTicks({});setDrvHolder("");setDrvAuthority("");setDrvHSE("");
+            setDrvBusy(false);loadAudit();
+          }
+          return(
+            <Card title={"📋 Daily Re-validation — Day "+todayDayNum+(alreadySubmittedToday?" ✓":"")} accent={alreadySubmittedToday?B.accent:B.warn}>
+              {drv.length>0&&(
+                <div style={{marginBottom:10}}>
+                  {drv.map(function(r,i){return(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"0.5px solid "+B.neutralBorder,fontSize:11}}>
+                      <span style={{color:B.accent,fontWeight:700}}>✓ Day {r.day} — {r.date}</span>
+                      <span style={{color:B.textSub}}>{r.ticked_controls.length}/{ctrlList.length} controls · {r.permit_holder_name}</span>
+                    </div>
+                  );})}
+                </div>
+              )}
+              {alreadySubmittedToday?(
+                <p style={{fontSize:12,color:B.accent,fontWeight:600}}>✓ Today's re-validation already submitted.</p>
+              ):(
+                <>
+                  <button onClick={function(){setShowDRV(!showDRV);}} style={{width:"100%",background:showDRV?B.neutral:B.warn,color:showDRV?B.text:"#fff",border:"0.5px solid "+B.warn,borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:showDRV?10:0}}>{showDRV?"▲ Hide form":"▼ Submit today's re-validation (Day "+todayDayNum+")"}</button>
+                  {showDRV&&(
+                    <div>
+                      <p style={{fontSize:11,color:B.textSub,marginBottom:8}}>Tick all controls verified on site today, then enter names and submit.</p>
+                      <div style={{marginBottom:10}}>
+                        {ctrlList.map(function(c,i){return(
+                          <label key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 0",borderBottom:"0.5px solid "+B.neutralBorder,cursor:"pointer"}}>
+                            <input type="checkbox" checked={!!drvTicks[c]} onChange={function(e){setDrvTicks(function(prev){const n={...prev};n[c]=e.target.checked;return n;});}} style={{width:"auto",marginTop:2,accentColor:B.accent}}/>
+                            <span style={{fontSize:12,color:drvTicks[c]?B.accentBorder:B.text,lineHeight:1.5}}>{c}</span>
+                          </label>
+                        );})}
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr",gap:8,marginBottom:8}}>
+                        <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Permit Holder Name *</label><input type="text" value={drvHolder} onChange={function(e){setDrvHolder(e.target.value);}} placeholder="Name of Permit Holder on site"/></div>
+                        <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>Permit Authority Name *</label><input type="text" value={drvAuthority} onChange={function(e){setDrvAuthority(e.target.value);}} placeholder="Name of Permit Authority"/></div>
+                        <div><label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:3}}>HSE Officer Name *</label><input type="text" value={drvHSE} onChange={function(e){setDrvHSE(e.target.value);}} placeholder="Name of HSE Officer"/></div>
+                      </div>
+                      <button onClick={submitDRV} disabled={drvBusy} style={{width:"100%",background:drvBusy?"#999":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:700,cursor:drvBusy?"not-allowed":"pointer"}}>{drvBusy?"Submitting…":"Submit daily re-validation"}</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          );
+        })()}
+
         {permit.status==="rejected"&&fd.rejection_reason&&(<Card title="Rejection Reason"><p style={{fontSize:13,color:B.danger,lineHeight:1.6}}>{fd.rejection_reason}</p><p style={{fontSize:11,color:B.textSub,marginTop:4}}>By {fd.rejected_by||"—"} · {fmtDate(fd.rejected_at)}</p></Card>)}
 
         <p style={{fontSize:12,color:B.textSub,marginBottom:8,marginTop:4}}>Approval progress</p>
@@ -3008,6 +3078,73 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     return rows.join("");
   }
 
+  // Pre-compute standard PDF day-column variables (avoids nested backtick issues)
+  const _stdDateFrom=fd.work_date_from?new Date(fd.work_date_from):null;
+  const _stdDateTo=fd.work_date_to?new Date(fd.work_date_to):null;
+  const _stdPermitDays=(_stdDateFrom&&_stdDateTo)?Math.min(7,Math.max(1,Math.ceil((_stdDateTo-_stdDateFrom)/(1000*60*60*24))+1)):7;
+  const _stdDayNums=Array.from({length:_stdPermitDays},function(_,i){return i+1;});
+  const _stdDRV=fd.daily_revalidations||[];
+
+  // Standard PDF Section 2: day-column table with electronic tick pre-fill
+  const stdSection2Html=(function(){
+    const ctrlItems=(fd.selected_controls||[]).filter(function(c){return c!=="RA Required";});
+    if(!ctrlItems.length) return "<table><tr><td colspan='2' style='color:#888;font-style:italic'>No controls recorded</td></tr></table>";
+    const dayHeaders=_stdDayNums.map(function(d){return "<th style='font-size:8px;font-weight:700;padding:2px 3px;border:0.5px solid #999;width:22px;text-align:center;background:#e8e8e8'>"+d+"</th>";}).join("");
+    let rows="";
+    ctrlItems.forEach(function(item,idx){
+      const dayCells=_stdDayNums.map(function(d){
+        const drvEntry=_stdDRV.find(function(r){return r.day===d;});
+        const ticked=drvEntry&&drvEntry.ticked_controls&&drvEntry.ticked_controls.includes(item);
+        return "<td style='border:0.5px solid #999;min-width:22px;width:22px;text-align:center;font-size:11px;color:#0E9E6E;font-weight:700'>"+(ticked?"&#10003;":"&nbsp;")+"</td>";
+      }).join("");
+      rows+="<tr>"
+        +"<td style='font-size:8.5px;padding:2px 4px;border:0.5px solid #999;width:22px;text-align:center;background:#f5f5f5;font-weight:600'>"+(idx+1)+".</td>"
+        +"<td style='font-size:8.5px;padding:3px 6px;border:0.5px solid #999;'>"+item+"</td>"
+        +dayCells
+        +"<td style='border:0.5px solid #999;min-width:40px;'>&nbsp;</td>"
+        +"</tr>";
+    });
+    return "<table style='width:100%;border-collapse:collapse'>"
+      +"<tr>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;width:22px;background:#e8e8e8'>#</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #999;background:#e8e8e8'>Required Control / Precaution</th>"
+      +dayHeaders
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;background:#e8e8e8;min-width:40px'>Remarks</th>"
+      +"</tr>"
+      +rows
+      +"</table>";
+  })();
+
+  // Standard PDF Section 6B: daily sign-off table pre-filled from daily_revalidations
+  const stdSection6BHtml=(function(){
+    const rows=_stdDayNums.map(function(d){
+      const drvEntry=_stdDRV.find(function(r){return r.day===d;});
+      const holder=drvEntry?drvEntry.permit_holder_name:"";
+      const authority=drvEntry?drvEntry.permit_authority_name:"";
+      const hse=drvEntry?drvEntry.hse_officer_name:"";
+      const dateStr=drvEntry&&drvEntry.date?new Date(drvEntry.date).toLocaleDateString("en-GB"):"";
+      return "<tr>"
+        +"<td style='font-size:9px;font-weight:600;padding:4px 6px;border:0.5px solid #999;width:22px;text-align:center'>"+d+".</td>"
+        +"<td style='font-size:8px;padding:4px 4px;border:0.5px solid #999;width:52px;color:#444'>"+dateStr+"</td>"
+        +"<td style='font-size:8px;padding:4px 4px;border:0.5px solid #999;width:46px'>&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;"+(holder?"color:#1a3a5c;font-weight:600":"")+"'>"+holder+"&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;"+(authority?"color:#1a3a5c;font-weight:600":"")+"'>"+authority+"&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;"+(hse?"color:#1a3a5c;font-weight:600":"")+"'>"+hse+"&nbsp;</td>"
+        +"</tr>";
+    }).join("");
+    return "<table style='width:100%;border-collapse:collapse'>"
+      +"<tr style='background:#e8e8e8'>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:22px'>Day</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:52px'>Date</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:46px'>Time<br/>Start</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>Permit Holder<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>Permit Authority<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>HSE Officer<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"</tr>"
+      +rows
+      +"</table>";
+  })();
+
   // Pre-compute extension section HTML (avoids nested backtick issues inside template literals)
   const extAuditEntries=audit.filter(a=>a.action&&a.action.toLowerCase().includes("extension"));
   const extSectionHtml=(()=>{
@@ -3125,11 +3262,9 @@ ${fd.tools_equipment?`<div style="border:0.5px solid #ccc;border-top:none;paddin
 
 <!-- SECTION 2 -->
 <div class="sec-head">Section 2 — Precautions Required</div>
-<div class="sec-sub">(To be filled by Permit Requestor) — Tick the required precautions implemented</div>
+<div class="sec-sub">(Daily Re-Authorisation): Before work resumes each day, electronically tick each applicable precaution via the CONTROLIT system. Ticks submitted electronically will appear in the day columns below. Write N/A in Remarks where a precaution is not applicable. This permit must be closed and re-opened each working day.</div>
 <table style="margin-bottom:0"><tr><td style="background:#FEF3DC;border:0.5px solid #D97B00;font-size:9px;color:#7A4500;padding:5px 8px;"><strong>Note:</strong> The controls listed below are standard requirements for this permit type and are not exhaustive. The OSH Manager may add additional site-specific controls in Section 5. All parties must ensure all controls relevant to the specific activity and environment are implemented.</td></tr></table>
-${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0
-  ? `<table>${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}</table>`
-  : `<table><tr><td colspan="2" style="color:#888;font-style:italic">No controls recorded</td></tr></table>`}
+${stdSection2Html}
 ${fd.ra_mode?`<table><tr><td style="background:#E0F5EE;border:0.5px solid #0E9E6E;font-size:10px"><span style="color:#0B7A55;font-weight:700">Risk Assessment: </span>${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated 5×5 Risk Matrix (see digital record)"}</td></tr></table>`:""}
 
 <!-- SECTION 3 -->
@@ -3197,49 +3332,10 @@ ${fd.issuer_checklist
      </table>`
   : `<table><tr><td colspan="3" style="color:#D97B00;font-weight:600">⚠ Permit not yet issued — site verification pending.</td></tr></table>`}
 
-<!-- SECTION 6B: EXTENSION OF PERMIT -->
-<div class="sec-head">Section 6B — Extension of Permit</div>
-<div class="sec-sub">(Issuing Authority must re-verify all precautions on site before each extension is granted. Maximum 2 extensions permitted.)</div>
-
-<!-- EXTENSION 1 -->
-<div style="background:#fff8e1;border:0.5px solid #D97B00;padding:4px 8px;margin-top:6px;font-size:10px;font-weight:700;color:#7A4500">Extension 1 — Pre-Extension Precautions Re-verification</div>
-<div class="sec-sub">(Issuing Authority to confirm all applicable controls remain in place before granting Extension 1.)</div>
-<table style="margin-bottom:0"><tr><td style="background:#FEF3DC;border:0.5px solid #D97B00;font-size:9px;color:#7A4500;padding:4px 8px;"><strong>Note:</strong> Ticked items reflect controls applied at initial permit issuance. Re-confirm each is still in place. Strike through any no longer applicable and initial.</td></tr></table>
-${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0
-  ? `<table>${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}</table>`
-  : `<table><tr><td colspan="2" style="color:#888;font-style:italic;font-size:9px;padding:5px 8px">No controls recorded for this permit</td></tr></table>`}
-<table style="margin-top:0">
-  <tr style="background:#fff8e1">
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:35%">New Permit End Date &amp; Time</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:40%">Issuing Authority Name &amp; Signature</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:25%">Date Signed</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-</table>
-
-<!-- EXTENSION 2 -->
-<div style="background:#fff8e1;border:0.5px solid #D97B00;padding:4px 8px;margin-top:10px;font-size:10px;font-weight:700;color:#7A4500">Extension 2 — Pre-Extension Precautions Re-verification</div>
-<div class="sec-sub">(Issuing Authority to confirm all applicable controls remain in place before granting Extension 2.)</div>
-<table style="margin-bottom:0"><tr><td style="background:#FEF3DC;border:0.5px solid #D97B00;font-size:9px;color:#7A4500;padding:4px 8px;"><strong>Note:</strong> Ticked items reflect controls applied at initial permit issuance. Re-confirm each is still in place. Strike through any no longer applicable and initial.</td></tr></table>
-${fd.selected_controls&&fd.selected_controls.filter(c=>c!=="RA Required").length>0
-  ? `<table>${ctrlRows(fd.selected_controls.filter(c=>c!=="RA Required"))}</table>`
-  : `<table><tr><td colspan="2" style="color:#888;font-style:italic;font-size:9px;padding:5px 8px">No controls recorded for this permit</td></tr></table>`}
-<table style="margin-top:0">
-  <tr style="background:#fff8e1">
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:35%">New Permit End Date &amp; Time</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:40%">Issuing Authority Name &amp; Signature</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:25%">Date Signed</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:12px 8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-</table>
+<!-- SECTION 6B: DAILY RE-AUTHORISATION SIGN-OFF -->
+<div class="sec-head">Section 6B — Daily Re-Authorisation Sign-Off</div>
+<div class="sec-sub">(This permit must be closed and re-opened each working day. The Permit Holder, Permit Authority and HSE Officer must confirm below before work resumes each day. All precautions in Section 2 must be re-ticked electronically for each day before signing. Names submitted electronically via CONTROLIT are pre-filled below.)</div>
+${stdSection6BHtml}
 
 ${extSectionHtml}
 
