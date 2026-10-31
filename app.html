@@ -2586,7 +2586,7 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
   };
   const docRef=TASETI_REFS[permit.type]||"TAS/PTW Rev 00";
   const css=`
-    @page{size:A4;margin:8mm}
+    @page{size:A4;margin:8mm 8mm 22mm 8mm}
     body{font-family:Arial,sans-serif;font-size:10px;color:#000;margin:0;padding:0}
     table{border-collapse:collapse;width:100%}
     td,th{border:0.5px solid #999;padding:5px 8px;font-size:10px;vertical-align:top}
@@ -2601,6 +2601,10 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
     .dotline{display:inline-block;border-bottom:0.5px solid #000;min-width:180px}
     .ref{font-size:9px;color:#555;text-align:right;margin-top:4px}
     h4{margin:0;font-size:10px}
+    .page-footer{position:fixed;bottom:0;left:0;right:0;height:18mm;border-top:0.5px solid #999;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:3px 8mm;font-size:7.5px;color:#555}
+    .page-footer-left{line-height:1.6}
+    .page-footer-right{text-align:center;flex-shrink:0;margin-left:12px}
+    @media screen{.page-footer{position:fixed}}
   `;
 
   return `<style>${css}</style>
@@ -2841,15 +2845,16 @@ ${tasetExtHtml}
 
 ${fd.rejection_reason?`<div style="background:#fff0f0;border:0.5px solid #c00;padding:8px;margin-top:8px;font-size:9px"><b style="color:#c00">Rejection Record:</b> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():""}</div>`:""}
 
-<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:0.5px solid #ccc;padding-top:6px;font-size:8px;color:#555">
-  <div>
-    <div><b>${docRef}</b> &nbsp;·&nbsp; Page 1</div>
-    <div style="margin-top:3px">(Original Permit: At work location with Work Performer) &nbsp;·&nbsp; (Copy of Permit: With Issuing Authority / OSH Dept.)</div>
-    <div style="margin-top:3px">Managed digitally by CONTROLIT · getcontrolit.com</div>
+<!-- FIXED FOOTER — repeats on every printed page -->
+<div class="page-footer">
+  <div class="page-footer-left">
+    <div><b>${docRef}</b> &nbsp;·&nbsp; ${permit.permit_number} &nbsp;·&nbsp; ${permit.type?t.label:""} Permit to Work</div>
+    <div>(Original: At work location with Work Performer) &nbsp;·&nbsp; (Copy: With Issuing Authority / OSH Dept.)</div>
+    <div>Managed digitally by CONTROLIT &nbsp;·&nbsp; getcontrolit.com &nbsp;·&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</div>
   </div>
-  <div style="text-align:center;flex-shrink:0;margin-left:16px">
+  <div class="page-footer-right">
     ${qrContent||""}
-    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify authenticity</div>
+    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify</div>
   </div>
 </div>`;
 }
@@ -2999,7 +3004,7 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
   })();
 
   const css=`
-    @page{size:A4;margin:15mm}
+    @page{size:A4;margin:15mm 15mm 22mm 15mm}
     body{font-family:Arial,sans-serif;font-size:10px;color:#1A2B3C;margin:0;padding:0}
     table{border-collapse:collapse;width:100%}
     td,th{border:0.5px solid #999;padding:5px 8px;font-size:10px;vertical-align:top}
@@ -3014,6 +3019,10 @@ function PermitPDF({permit,audit,orgName,orgLogo,orgTemplate,onClose}){
     .green{color:#0B7A55;font-weight:700}
     .amber{color:#D97B00;font-weight:700}
     .ft{font-size:8px;color:#888;text-align:center;border-top:0.5px solid #ccc;padding-top:6px;margin-top:12px}
+    .page-footer{position:fixed;bottom:0;left:0;right:0;height:18mm;border-top:0.5px solid #999;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:3px 15mm;font-size:7.5px;color:#555}
+    .page-footer-left{line-height:1.6}
+    .page-footer-right{text-align:center;flex-shrink:0;margin-left:12px}
+    @media screen{.page-footer{position:fixed}}
   `;
 
   function buildHtml(qrContent){ return `<style>${css}</style>
@@ -3170,15 +3179,16 @@ ${extSectionHtml}
 
 ${fd.rejection_reason?`<div style="background:#FDECEA;border:0.5px solid #C0392B;padding:8px;margin-top:8px;font-size:10px"><strong style="color:#C0392B">Rejection Record:</strong> ${fd.rejection_reason} — By ${fd.rejected_by||"—"} · ${fd.rejected_at?new Date(fd.rejected_at).toLocaleString():"—"}</div>`:""}
 
-<!-- FOOTER -->
-<div class="ft" style="display:flex;justify-content:space-between;align-items:flex-end">
-  <div>
-    <p>(Original Permit: At work location with Work Performer) &nbsp;|&nbsp; (Copy: With Issuing Authority / OSH Department)</p>
-    <p style="margin-top:2px">${permit.permit_number} &nbsp;·&nbsp; Generated: ${new Date().toLocaleString()} &nbsp;·&nbsp; Managed digitally by CONTROLIT · getcontrolit.com</p>
+<!-- FIXED FOOTER — repeats on every printed page -->
+<div class="page-footer">
+  <div class="page-footer-left">
+    <div><b>${permit.permit_number}</b> &nbsp;·&nbsp; ${permit.type?t.label:""} Permit to Work</div>
+    <div>(Original: At work location with Work Performer) &nbsp;·&nbsp; (Copy: With Issuing Authority / OSH Dept.)</div>
+    <div>Managed digitally by CONTROLIT &nbsp;·&nbsp; getcontrolit.com &nbsp;·&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</div>
   </div>
-  <div style="text-align:center;flex-shrink:0;margin-left:16px">
+  <div class="page-footer-right">
     ${qrContent||""}
-    <p style="font-size:7px;color:#888;margin-top:2px">Scan to verify</p>
+    <div style="font-size:7px;color:#888;margin-top:2px">Scan to verify</div>
   </div>
 </div>`; } // end buildHtml
 
