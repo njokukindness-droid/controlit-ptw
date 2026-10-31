@@ -2545,16 +2545,59 @@ function buildTASETIPdf(permit,fd,t,orgName,orgLogo,aaEntry,oshEntry,issuerEntry
 
   const precautions=PRECAUTIONS[permit.type]||sel;
 
-  // Build precaution rows — 2 columns
+  // Calculate permit duration in days (capped at 7)
+  const _dateFrom=fd.work_date_from?new Date(fd.work_date_from):null;
+  const _dateTo=fd.work_date_to?new Date(fd.work_date_to):null;
+  const _permitDays=(_dateFrom&&_dateTo)?Math.min(7,Math.max(1,Math.ceil((_dateTo-_dateFrom)/(1000*60*60*24))+1)):7;
+  const _dayNums=Array.from({length:_permitDays},function(_,i){return i+1;});
+
+  // Build precaution table — numbered items with DAY columns (1 per permit day) + Remarks
   function precautionTable(items){
+    const dayHeaders=_dayNums.map(function(d){return "<th style='font-size:8px;font-weight:700;padding:2px 3px;border:0.5px solid #999;width:20px;text-align:center;background:#e8e8e8'>"+d+"</th>";}).join("");
+    const emptyCells=_dayNums.map(function(){return "<td style='border:0.5px solid #999;min-width:20px;width:20px;'>&nbsp;</td>";}).join("");
     let rows="";
-    for(let i=0;i<items.length;i+=2){
-      rows+=`<tr>
-        <td style="padding:4px 8px;border:0.5px solid #999;width:50%;font-size:10px">${ctrlTick(items[i])}</td>
-        <td style="padding:4px 8px;border:0.5px solid #999;width:50%;font-size:10px">${items[i+1]?ctrlTick(items[i+1]):"&nbsp;"}</td>
-      </tr>`;
-    }
-    return `<table style="width:100%;border-collapse:collapse">${rows}</table>`;
+    items.forEach(function(item,idx){
+      rows+="<tr>"
+        +"<td style='font-size:8.5px;padding:2px 4px;border:0.5px solid #999;width:22px;text-align:center;background:#f5f5f5;font-weight:600'>"+(idx+1)+".</td>"
+        +"<td style='font-size:8.5px;padding:3px 6px;border:0.5px solid #999;'>"+item+"</td>"
+        +emptyCells
+        +"<td style='border:0.5px solid #999;min-width:40px;'>&nbsp;</td>"
+        +"</tr>";
+    });
+    return "<table style='width:100%;border-collapse:collapse'>"
+      +"<tr>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;width:22px;background:#e8e8e8'>#</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:2px 6px;border:0.5px solid #999;background:#e8e8e8'>Required Control / Precaution</th>"
+      +dayHeaders
+      +"<th style='font-size:8px;font-weight:700;padding:2px 4px;border:0.5px solid #999;background:#e8e8e8;min-width:40px'>Remarks</th>"
+      +"</tr>"
+      +rows
+      +"</table>";
+  }
+
+  // Build daily re-authorisation sign-off table (Section 4 style)
+  function dailySignOffTable(){
+    const rows=_dayNums.map(function(d){
+      return "<tr>"
+        +"<td style='font-size:9px;font-weight:600;padding:4px 6px;border:0.5px solid #999;width:22px;text-align:center'>"+d+".</td>"
+        +"<td style='font-size:8px;padding:4px 4px;border:0.5px solid #999;width:46px'>&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 4px;border:0.5px solid #999;width:46px'>&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;'>&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;'>&nbsp;</td>"
+        +"<td style='font-size:8px;padding:4px 6px;border:0.5px solid #999;'>&nbsp;</td>"
+        +"</tr>";
+    }).join("");
+    return "<table style='width:100%;border-collapse:collapse'>"
+      +"<tr style='background:#e8e8e8'>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:22px'>Day</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:46px'>Time<br/>Start</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 4px;border:0.5px solid #999;width:46px'>Time<br/>End</th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>Permit Holder<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>Permit Authority<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"<th style='font-size:8px;font-weight:700;padding:3px 6px;border:0.5px solid #999;'>HSE Officer<br/><span style='font-weight:400;font-style:italic'>Name / Company / Signature</span></th>"
+      +"</tr>"
+      +rows
+      +"</table>";
   }
 
   // TASETI permit type colours — matching physical form colours
@@ -2662,7 +2705,7 @@ ${fd.tools_equipment?`<div style="border:0.5px solid #ccc;border-top:none;paddin
 
 <!-- SECTION 2: PRECAUTIONS -->
 <div class="sec-head" style="margin-top:8px">Section-2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Precautions Required</div>
-<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be filled by Permit requestor): Tick the required precautions taken. Write N/A to the precautions not applicable.</div>
+<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(Daily Re-Authorisation): Tick the applicable precaution column for each working day before re-opening the permit. Write N/A where not applicable. This permit must be closed and re-opened each day.</div>
 ${precautionTable(precautions)}
 ${fd.ra_mode?`<div style="padding:5px 8px;border:0.5px solid #ccc;font-size:9px"><b>Risk Assessment:</b> ${fd.ra_mode==="upload"?`Document attached — ${fd.ra_file_name||"see file"}`:"AI-Generated (see digital record)"}</div>`:""}
 
@@ -2816,44 +2859,10 @@ ${fd.workers&&fd.workers.length>0?`
   </tr>
 </table>
 
-<!-- SECTION 5B: EXTENSION OF PERMIT -->
-<div class="sec-head" style="margin-top:8px">Section-5B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extension of Permit</div>
-<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(To be completed by Issuing Authority before each extension is granted. Precautions must be re-verified on site. Maximum 2 extensions permitted.)</div>
-
-<!-- EXTENSION 1 -->
-<div style="background:#fff8e1;border:0.5px solid #f0c040;padding:4px 8px;margin-top:6px;font-size:10px;font-weight:700">Extension 1 — Pre-Extension Precautions Re-verification</div>
-<div style="font-size:9px;padding:3px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(Issuing Authority to re-tick all applicable precautions before granting Extension 1. Write N/A where not applicable.)</div>
-${precautionTable(precautions)}
-<table style="margin-top:0">
-  <tr style="background:#fff8e1">
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:35%">New Permit End Date &amp; Time</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:40%">Issuing Authority Name &amp; Signature</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:25%">Date Signed</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-</table>
-
-<!-- EXTENSION 2 -->
-<div style="background:#fff8e1;border:0.5px solid #f0c040;padding:4px 8px;margin-top:10px;font-size:10px;font-weight:700">Extension 2 — Pre-Extension Precautions Re-verification</div>
-<div style="font-size:9px;padding:3px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(Issuing Authority to re-tick all applicable precautions before granting Extension 2. Write N/A where not applicable.)</div>
-${precautionTable(precautions)}
-<table style="margin-top:0">
-  <tr style="background:#fff8e1">
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:35%">New Permit End Date &amp; Time</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:40%">Issuing Authority Name &amp; Signature</td>
-    <td style="font-size:9px;font-weight:700;padding:4px 8px;border:0.5px solid #ccc;width:25%">Date Signed</td>
-  </tr>
-  <tr>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-    <td style="font-size:9px;padding:10px 8px;border:0.5px solid #ccc">&nbsp;</td>
-  </tr>
-</table>
-
+<!-- SECTION 5B: DAILY RE-AUTHORISATION -->
+<div class="sec-head" style="margin-top:8px">Section-5B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Daily Re-Authorisation Sign-Off</div>
+<div style="font-size:9px;padding:4px 8px;border:0.5px solid #ccc;border-top:none;font-style:italic">(This permit must be closed and re-opened each working day. The Permit Holder, Permit Authority and HSE Officer must sign below before work resumes each day. All precautions in Section 2 must be re-ticked for each day before signing.)</div>
+${dailySignOffTable()}
 ${tasetExtHtml}
 
 <!-- SECTION 6: COMPLETION / CANCELLATION -->
