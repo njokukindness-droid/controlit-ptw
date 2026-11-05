@@ -66,9 +66,28 @@ function showLocalNotification(title, body, url) {
 }
 
 // Send cross-device push to all org members via Edge Function
-function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, actorId, actorName) {
+// Roles that should receive email for each permit event.
+// "requester" here means the permit's own submitter (looked up server-side by permitId).
+// Listed roles are fetched from profiles; "permit_requester" is a special sentinel
+// meaning the Edge Function should also include the user who submitted the permit.
+var EMAIL_TARGETS = {
+  submitted:      ["area_authority", "admin"],
+  aa_approved:    ["safety_officer", "admin"],
+  osh_approved:   ["issuer", "admin"],
+  issued:         ["permit_requester", "admin"],
+  rejected:       ["permit_requester", "admin"],
+  suspended:      ["permit_requester", "area_authority", "safety_officer", "admin"],
+  closed:         ["permit_requester", "admin"],
+  work_complete:  ["issuer", "admin"],
+  ext_requested:  ["issuer", "admin"],
+  ext_approved:   ["permit_requester", "admin"],
+  ext_rejected:   ["permit_requester", "admin"],
+};
+
+function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, actorId, actorName, permitId) {
   var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  var targetRoles = EMAIL_TARGETS[eventType] || ["admin"];
   fetch(SUPABASE_URL + "/functions/v1/send-email", {
     method: "POST",
     headers: {
@@ -83,6 +102,8 @@ function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, acto
       eventType: eventType,
       actorId: actorId || "",
       actorName: actorName || "",
+      permitId: permitId || "",
+      targetRoles: targetRoles,
     }),
   })
   .then(function(r) { return r.json(); })
@@ -178,7 +199,7 @@ const PERMIT_TYPES=[
   {id:"electrical",label:"Electrical Isolation (LOTO)",color:"#7F77DD"},
   {id:"height",label:"Working at Height",color:"#0E9E6E"},
   {id:"excavation",label:"Excavation & Ground Disturbance",color:"#3B6D11"},
-  {id:"lifting",label:"Critical Lifting Operation",color:"#4472C4"},
+  {id:"lifting",label:"Lifting Operations",color:"#4472C4"},
   {id:"dewatering",label:"Dewatering Works",color:"#0097A7"},
   {id:"pressure_testing",label:"Pressure Testing",color:"#922B21"},
 ];
@@ -2192,7 +2213,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     // Send cross-device push to all other org members
     const evtMap={approve:permit.stage===2?"osh_approved":"aa_approved",issue:"issued",reject:"rejected",suspend:"suspended",close:"closed",work_complete:"work_complete",ext_request:"ext_requested",ext_approve:"ext_approved",ext_reject:"ext_rejected"};
     sendCrossDevicePush(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId);
-    sendEmailNotification(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId,session.profile.full_name);
+    sendEmailNotification(session.profile.org_id,permit.permit_number,permit.title,evtMap[act]||act,session.userId,session.profile.full_name,permit.id);
     setPermit({...permit,status:ns,stage:st,extensions:ex,...extra});setRejectReason("");setShowRejectBox(false);loadAudit();await onRefresh();setBusy(false);
   }
 
