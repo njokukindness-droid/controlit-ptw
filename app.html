@@ -2176,8 +2176,8 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
     if(act==="issue"&&!allChecked){setErrMsg("Complete all site verification checklist items before issuing.");return;}
     // Work complete: only requester or admin
     if(act==="work_complete"&&!isAdmin&&role!=="requester"){setErrMsg("Only the Work In-charge can sign off work completion.");return;}
-    // Close: only issuer or admin
-    if(act==="close"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can close a permit.");return;}
+    // Close: only issuer or admin — but anyone can close an expired permit
+    if(act==="close"&&!isAdmin&&role!=="issuer"&&permit.status!=="expired"){setErrMsg("Only the Issuing Authority can close a permit.");return;}
     // Suspend: only issuer or admin
     if(act==="suspend"&&!isAdmin&&role!=="issuer"){setErrMsg("Only the Issuing Authority can suspend a permit.");return;}
     // Extension request: only requester or admin
@@ -2491,9 +2491,7 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
         {permit.status==="extension_pending"&&(session.profile.role==="admin"||session.profile.role==="safety_officer")&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
         {permit.status==="expired"&&(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {(session.profile.role==="issuer"||session.profile.role==="admin")&&(
-              <button onClick={()=>action("close")} disabled={busy} style={{width:"100%",background:"#5A6A7A",color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>✓ Close expired permit</button>
-            )}
+            <button onClick={()=>action("close")} disabled={busy} style={{width:"100%",background:"#5A6A7A",color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>✓ Close expired permit</button>
             <button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>
           </div>
         )}
