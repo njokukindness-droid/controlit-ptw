@@ -2489,7 +2489,15 @@ function PermitDetail({permit:init,session,onBack,onRefresh}){
   </div>
 )}
         {permit.status==="extension_pending"&&(session.profile.role==="admin"||session.profile.role==="safety_officer")&&(<div style={{display:"flex",gap:8}}><button onClick={()=>action("ext_approve")} disabled={busy} style={{flex:1,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Approve extension</button><button onClick={()=>setShowRejectBox(true)} disabled={busy} style={{flex:1,border:`0.5px solid ${B.danger}`,background:B.dangerLight,color:B.danger,borderRadius:8,padding:"10px",fontSize:12,cursor:"pointer"}}>Reject</button></div>)}
-        {(permit.status==="active"||permit.status==="closed")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
+        {permit.status==="expired"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {(session.profile.role==="issuer"||session.profile.role==="admin")&&(
+              <button onClick={()=>action("close")} disabled={busy} style={{width:"100%",background:"#5A6A7A",color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>✓ Close expired permit</button>
+            )}
+            <button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>
+          </div>
+        )}
+        {(permit.status==="active"||permit.status==="closed"||permit.status==="work_complete")&&(<button onClick={()=>setShowPDF(true)} style={{width:"100%",background:B.primary,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:"pointer"}}>📄 Generate & Download Permit PDF</button>)}
       </div>
       {showPDF&&<PermitPDF permit={permit} audit={audit} orgName={session.org.name} orgLogo={session.org.logo||null} orgTemplate={session.org.pdf_template||"standard"} onClose={()=>setShowPDF(false)}/>}
     </div></div>
