@@ -764,25 +764,69 @@ footer {
 <section class="pricing" id="pricing">
   <div class="centered">
     <div class="section-label">Pricing</div>
-    <h2 class="section-title">Priced for your team size.</h2>
-    <p class="section-sub">Every plan includes the full CONTROLIT platform — all permit types for your sector, the complete approval workflow, audit trail, PDF generation, and QR verification. Pricing is based on your team size and deployment. Book a demo and we'll put together the right fit.</p>
+    <h2 class="section-title">Start free. Scale when ready.</h2>
+    <p class="section-sub">Every plan includes the full CONTROLIT platform — all permit types, 4-stage approval workflow, PDF generation, QR verification, and audit trail. Try it free for 30 days, no card required.</p>
   </div>
-  <div class="pricing-simple">
-    <div class="pricing-includes">
-      <div class="pi-item"><span class="pi-check">✓</span> Full 4-stage approval workflow</div>
-      <div class="pi-item"><span class="pi-check">✓</span> All permit types for your sector</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Auto-generated PDF permits with QR</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Real-time dashboard &amp; live feed</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Audit trail &amp; permit register export</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Push &amp; email notifications</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Custom branding &amp; PDF template</div>
-      <div class="pi-item"><span class="pi-check">✓</span> Onboarding &amp; ongoing support</div>
+  <div class="pricing-grid">
+
+    <!-- STARTER -->
+    <div class="pricing-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$49<span>/month</span></div>
+      <div class="plan-desc">For small teams getting started with digital PTW.</div>
+      <ul class="plan-features">
+        <li>Up to 10 users</li>
+        <li>All permit types for your sector</li>
+        <li>Full 4-stage approval workflow</li>
+        <li>PDF permits with QR verification</li>
+        <li>Real-time dashboard &amp; audit trail</li>
+        <li>Push &amp; email notifications</li>
+        <li>Onboarding support</li>
+      </ul>
+      <button class="plan-btn plan-btn-wa" onclick="openWA('trial')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Start 1-month free trial
+      </button>
     </div>
-    <button class="plan-btn plan-btn-wa pricing-cta" onclick="openWA('demo')">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      Book a demo
-    </button>
+
+    <!-- PROFESSIONAL -->
+    <div class="pricing-card featured">
+      <div class="plan-badge">Most popular</div>
+      <div class="plan-name">Professional</div>
+      <div class="plan-price">$99<span>/month</span></div>
+      <div class="plan-desc">For growing teams managing multiple permit workflows.</div>
+      <ul class="plan-features">
+        <li>Up to 30 users</li>
+        <li>Everything in Starter</li>
+        <li>Custom branding &amp; PDF template</li>
+        <li>Priority onboarding support</li>
+        <li>Permit register export</li>
+        <li>Dedicated WhatsApp support line</li>
+      </ul>
+      <button class="plan-btn plan-btn-wa" onclick="openWA('trial')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Start 1-month free trial
+      </button>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="pricing-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">Custom<span></span></div>
+      <div class="plan-desc">For large organisations with complex deployment needs.</div>
+      <ul class="plan-features">
+        <li>Unlimited users</li>
+        <li>Everything in Professional</li>
+        <li>Multi-site deployment</li>
+        <li>Dedicated account manager</li>
+        <li>Custom onboarding &amp; training</li>
+        <li>SLA &amp; contract support</li>
+      </ul>
+      <button class="plan-btn plan-btn-ghost" onclick="openWA('sales')">Contact us</button>
+    </div>
+
   </div>
+  <p style="text-align:center;font-size:12px;color:var(--sub);margin-top:1.5rem;">All plans start with a <strong style="color:var(--accent)">1-month free trial</strong> — no credit card required. Contact <a href="mailto:hello@getcontrolit.com" style="color:var(--accent)">hello@getcontrolit.com</a> to get started.</p>
 </section>
 
 <!-- SHOWCASE -->
@@ -985,6 +1029,7 @@ function openWA(type) {
   var msgs = {
     demo: "Hi Kindness, I'd like to request a CONTROLIT demo. Please get in touch.",
     signup: "Hi Kindness, I'd like to sign up my organisation on CONTROLIT. Can we discuss?",
+    trial: "Hi Kindness, I'd like to start a 1-month free trial of CONTROLIT for my organisation. Can we get started?",
     sales: "Hi Kindness, I'd like to discuss CONTROLIT Enterprise pricing for a large deployment."
   };
   var text = encodeURIComponent(msgs[type] || msgs.demo);

@@ -1851,6 +1851,12 @@ function NewPermit({session,onBack,onSuccess}){
     if(!type||!title||!area||!requester||!supervisor||!workDateFrom||!workDateTo||!workTimeFrom||!workTimeTo||!numPersons){setErr("Fill all required fields including work duration and number of persons.");return;}
     const sel=typeControls.filter(c=>controls[c]);if(sel.length===0){setErr("Select at least one control measure.");return;}
     if(isRARequired){if(!raMode){setErr("RA Required is checked — upload or generate a risk assessment.");return;}if(raMode==="upload"&&!raFileData){setErr("Upload the RA document.");return;}if(raMode==="generate"&&!raGenerated){setErr("Generate the RA first.");return;}}
+    // Trial expiry check
+    const org=session.org||{};
+    if(org.trial_ends_at&&new Date(org.trial_ends_at)<new Date()){
+      setErr("Your 1-month free trial has expired. Contact hello@getcontrolit.com to continue using CONTROLIT.");
+      return;
+    }
     setBusy(true);setErr("");
     const num="PTW-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-4);
     const fd={tools_equipment:tools,selected_controls:sel,
@@ -3589,7 +3595,29 @@ function Admin({session,onBack}){
 
   function load(){setLoading(true);sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&order=full_name.asc").then(d=>{if(Array.isArray(d))setUsers(d);setLoading(false);});}
   useEffect(()=>{load();},[]);
-  async function invite(){if(!nm||!em){setErr("Name and email required.");return;}setBusy(true);setErr("");setResult(null);try{const au=await sb.createUser(em,pw);if(!au||!au.id){setErr("Failed: "+(au&&au.message?au.message:"Unknown"));setBusy(false);return;}await sb.insert(session.token,"profiles",{id:au.id,org_id:session.profile.org_id,full_name:nm,email:em,role:rl,active:true});setResult({name:nm,email:em,pass:pw,role:rl});setNm("");setEm("");setPw("Controlit@2024!");setRl("requester");load();}catch(e){setErr("Error: "+e.message);}setBusy(false);}
+  async function invite(){
+    if(!nm||!em){setErr("Name and email required.");return;}
+    setBusy(true);setErr("");setResult(null);
+    try{
+      // Plan guard: check current member count vs max_users
+      const org=session.org||{};
+      const maxUsers=org.max_users||10;
+      const members=await sb.select(session.token,"profiles","org_id=eq."+session.profile.org_id+"&active=eq.true&select=id");
+      const currentCount=Array.isArray(members)?members.length:0;
+      if(currentCount>=maxUsers){
+        const tier=org.plan_tier||"trial";
+        const nextPlan=tier==="trial"||tier==="starter"?"Professional ($99/mo)":"an Enterprise plan";
+        setErr("User limit reached ("+maxUsers+" users on your "+tier+" plan). Contact hello@getcontrolit.com to upgrade to "+nextPlan+".");
+        setBusy(false);return;
+      }
+      const au=await sb.createUser(em,pw);
+      if(!au||!au.id){setErr("Failed: "+(au&&au.message?au.message:"Unknown"));setBusy(false);return;}
+      await sb.insert(session.token,"profiles",{id:au.id,org_id:session.profile.org_id,full_name:nm,email:em,role:rl,active:true});
+      setResult({name:nm,email:em,pass:pw,role:rl});
+      setNm("");setEm("");setPw("Controlit@2024!");setRl("requester");load();
+    }catch(e){setErr("Error: "+e.message);}
+    setBusy(false);
+  }
   async function updRole(uid,r){await sb.update(session.token,"profiles",`id=eq.${uid}`,{role:r});setUsers(p=>p.map(u=>u.id===uid?{...u,role:r}:u));}
   async function toggle(u){const n=!u.active;await sb.update(session.token,"profiles",`id=eq.${u.id}`,{active:n});setUsers(p=>p.map(x=>x.id===u.id?{...x,active:n}:x));}
   return(<div><Topbar title="Admin Panel" onBack={onBack}/><div style={{padding:"1.25rem"}}>

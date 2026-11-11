@@ -129,7 +129,15 @@ function OnboardModal({token,onClose,onSuccess}){
   var [adminName,setAdminName]=useState(""); var [adminEmail,setAdminEmail]=useState(""); var [tempPass,setTempPass]=useState("Controlit@2024!");
   var [kp1,setKp1]=useState(""); var [kp2,setKp2]=useState(""); var [kp3,setKp3]=useState("");
   var [showKey,setShowKey]=useState(false);
+  var [planTier,setPlanTier]=useState("trial");
   var [busy,setBusy]=useState(false); var [err,setErr]=useState(""); var [result,setResult]=useState(null);
+
+  var PLAN_CONFIG={
+    trial:   {max_users:10, label:"Trial (1 month free)",   trial_days:30},
+    starter: {max_users:10, label:"Starter — $49/mo",       trial_days:0},
+    pro:     {max_users:30, label:"Professional — $99/mo",  trial_days:0},
+    enterprise:{max_users:9999,label:"Enterprise — Custom", trial_days:0}
+  };
 
   async function onboard(){
     if(!orgName||!adminName||!adminEmail||!tempPass){setErr("All fields are required.");return;}
@@ -146,7 +154,9 @@ function OnboardModal({token,onClose,onSuccess}){
       }
 
       // Step 2: Insert org — use silent insert (no return=representation) then fetch back by slug
-      await sb.insertSilent(SUPABASE_SECRET,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey,sector:sector,pdf_template:sector==="marine"?"standard":"standard"});
+      var cfg = PLAN_CONFIG[planTier];
+      var trialEnds = cfg.trial_days>0 ? new Date(Date.now()+cfg.trial_days*86400000).toISOString() : null;
+      await sb.insertSilent(SUPABASE_SECRET,"organisations",{name:orgName,slug,industry,country,active:true,anthropic_key:encodedKey,sector:sector,pdf_template:sector==="marine"?"standard":"standard",plan_tier:planTier,max_users:cfg.max_users,trial_ends_at:trialEnds});
 
       // Step 3: Always fetch the org back by slug (works regardless of RLS response)
       var fetched = await sb.select(SUPABASE_SECRET,"organisations","slug=eq."+slug+"&order=created_at.desc&limit=1");
@@ -217,6 +227,19 @@ function OnboardModal({token,onClose,onSuccess}){
                     <option value="events">🎪 CONTROLIT Events</option>
                   </select>
                 </div>
+              </div>
+
+              <div style={{marginBottom:"1.25rem"}}>
+                <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Plan *</label>
+                <select value={planTier} onChange={function(e){setPlanTier(e.target.value);}} style={{fontWeight:600}}>
+                  {Object.entries(PLAN_CONFIG).map(function([k,v]){return <option key={k} value={k}>{v.label}</option>;})}
+                </select>
+                <p style={{fontSize:11,color:B.textSub,marginTop:5}}>
+                  {planTier==="trial"&&"30-day free trial · up to 10 users · trial expires "+new Date(Date.now()+30*86400000).toLocaleDateString()}
+                  {planTier==="starter"&&"Up to 10 users · paying customer"}
+                  {planTier==="pro"&&"Up to 30 users · paying customer"}
+                  {planTier==="enterprise"&&"Unlimited users · custom contract"}
+                </p>
               </div>
 
               <p style={{fontSize:12,fontWeight:600,color:B.accent,marginBottom:10,letterSpacing:"0.04em"}}>ADMIN ACCOUNT</p>
