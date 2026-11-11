@@ -319,6 +319,25 @@ function OwnerDashboard({token,onLogout}){
   var [loading,setLoading]=useState(true); var [tab,setTab]=useState("orgs"); var [showOnboard,setShowOnboard]=useState(false);
   var [fixOrg,setFixOrg]=useState(null); var [fixName,setFixName]=useState(""); var [fixEmail,setFixEmail]=useState(""); var [fixPass,setFixPass]=useState("Controlit@2024!"); var [fixBusy,setFixBusy]=useState(false); var [fixErr,setFixErr]=useState(""); var [fixDone,setFixDone]=useState(null);
   var [editKeyOrg,setEditKeyOrg]=useState(null); var [editKp1,setEditKp1]=useState(""); var [editKp2,setEditKp2]=useState(""); var [editKp3,setEditKp3]=useState(""); var [editKeyBusy,setEditKeyBusy]=useState(false); var [editKeyErr,setEditKeyErr]=useState(""); var [editKeyDone,setEditKeyDone]=useState(false);
+  var [editPlanOrg,setEditPlanOrg]=useState(null); var [editPlanTier,setEditPlanTier]=useState("trial"); var [editPlanMaxUsers,setEditPlanMaxUsers]=useState(10); var [editPlanTrialEnds,setEditPlanTrialEnds]=useState(""); var [editPlanBusy,setEditPlanBusy]=useState(false); var [editPlanErr,setEditPlanErr]=useState(""); var [editPlanDone,setEditPlanDone]=useState(false);
+
+  var PLAN_PRESETS={
+    trial:    {max_users:10},
+    starter:  {max_users:10},
+    pro:      {max_users:30},
+    enterprise:{max_users:9999}
+  };
+
+  async function savePlan(org){
+    setEditPlanBusy(true);setEditPlanErr("");
+    try{
+      var trialVal=editPlanTrialEnds?new Date(editPlanTrialEnds).toISOString():null;
+      await sb.update(SUPABASE_SECRET,"organisations","id=eq."+org.id,{plan_tier:editPlanTier,max_users:editPlanMaxUsers,trial_ends_at:trialVal});
+      setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,{plan_tier:editPlanTier,max_users:editPlanMaxUsers,trial_ends_at:trialVal}):o;});});
+      setEditPlanDone(true);
+    }catch(e){setEditPlanErr("Error: "+e.message);}
+    setEditPlanBusy(false);
+  }
 
   async function saveApiKey(org){
     if((!editKp1||!editKp2||!editKp3)&&(editKp1||editKp2||editKp3)){setEditKeyErr("Enter all 3 parts or leave all blank to clear the key.");return;}
@@ -436,6 +455,52 @@ function OwnerDashboard({token,onLogout}){
           </div>
         </div>
       )}
+      {editPlanOrg&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
+          <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:420,padding:"1.5rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem"}}>
+              <div><p style={{fontSize:14,fontWeight:700,color:B.text}}>Edit Plan</p><p style={{fontSize:11,color:B.textSub}}>{editPlanOrg.name}</p></div>
+              <button onClick={function(){setEditPlanOrg(null);setEditPlanDone(false);setEditPlanErr("");}} style={{background:"none",border:"none",color:B.textSub,cursor:"pointer",fontSize:20}}>×</button>
+            </div>
+            {editPlanDone?(
+              <div style={{textAlign:"center",padding:"1rem 0"}}>
+                <p style={{fontSize:14,fontWeight:700,color:B.accent,marginBottom:8}}>✓ Plan updated successfully</p>
+                <button onClick={function(){setEditPlanOrg(null);setEditPlanDone(false);}} style={{marginTop:4,width:"100%",background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Done</button>
+              </div>
+            ):(
+              <>
+                {editPlanErr&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:B.danger}}>{editPlanErr}</div>}
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div>
+                    <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Plan tier</label>
+                    <select value={editPlanTier} onChange={function(e){
+                      var t=e.target.value; setPlanTier&&null; setEditPlanTier(t);
+                      setEditPlanMaxUsers(PLAN_PRESETS[t]?PLAN_PRESETS[t].max_users:10);
+                      if(t==="trial"&&!editPlanTrialEnds){var d=new Date();d.setDate(d.getDate()+30);setEditPlanTrialEnds(d.toISOString().slice(0,10));}
+                      if(t!=="trial"){setEditPlanTrialEnds("");}
+                    }} style={{width:"100%",background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:8,padding:"9px 12px",color:B.text,fontSize:13}}>
+                      <option value="trial">Trial (1 month free)</option>
+                      <option value="starter">Starter — $49/mo</option>
+                      <option value="pro">Professional — $99/mo</option>
+                      <option value="enterprise">Enterprise — Custom / Internal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Max users</label>
+                    <input type="number" value={editPlanMaxUsers} onChange={function(e){setEditPlanMaxUsers(parseInt(e.target.value)||1);}} style={{width:"100%",background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:8,padding:"9px 12px",color:B.text,fontSize:13}}/>
+                    <p style={{fontSize:10,color:B.textSub,marginTop:3}}>Set to 9999 for unlimited (Enterprise/Internal)</p>
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Trial expiry date <span style={{color:"#3A5060"}}>(leave blank = no expiry)</span></label>
+                    <input type="date" value={editPlanTrialEnds} onChange={function(e){setEditPlanTrialEnds(e.target.value);}} style={{width:"100%",background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:8,padding:"9px 12px",color:B.text,fontSize:13}}/>
+                  </div>
+                  <button onClick={function(){savePlan(editPlanOrg);}} disabled={editPlanBusy} style={{width:"100%",background:editPlanBusy?"#2A3F55":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:editPlanBusy?"not-allowed":"pointer"}}>{editPlanBusy?"Saving…":"Save plan"}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       {fixOrg&&(
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
           <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:460,padding:"1.5rem"}}>
@@ -500,6 +565,7 @@ function OwnerDashboard({token,onLogout}){
                     <p style={{fontSize:11,color:B.textSub}}>{o.industry} · {o.country}</p>
                     <p style={{fontSize:11,color:"rgba(100,180,255,0.85)",fontWeight:600,marginTop:2}}>{o.sector==="marine"?"🚢 CONTROLIT Marine":o.sector==="events"?"🎪 CONTROLIT Events":o.sector==="oil_gas"?"⛽ CONTROLIT Oil & Gas":o.sector==="aviation"?"✈️ CONTROLIT Aviation":"🏗️ CONTROLIT Construction"}</p>
                     <p style={{fontSize:10,color:o.anthropic_key?B.accent:"#3A5060",marginTop:2}}>{o.anthropic_key?"🤖 AI enabled":"🤖 AI not configured"}</p>
+                    <p style={{fontSize:10,color:"#D4920A",marginTop:2}}>📋 {o.plan_tier==="enterprise"?"Enterprise / Internal":o.plan_tier==="pro"?"Professional — $99/mo":o.plan_tier==="starter"?"Starter — $49/mo":"Trial"} · {o.max_users>=9999?"unlimited":o.max_users+" users"}{o.trial_ends_at?" · expires "+new Date(o.trial_ends_at).toLocaleDateString():""}</p>
                     {!o.active&&<p style={{fontSize:11,color:B.danger,fontWeight:600,marginTop:4}}>⚠ Suspended</p>}
                   </div>
                   <span style={{background:o.active?"rgba(14,158,110,0.15)":"rgba(192,57,43,0.15)",color:o.active?B.accent:B.danger,border:"0.5px solid "+(o.active?B.accent:B.danger),borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:600}}>{o.active?"Active":"Suspended"}</span>
@@ -511,6 +577,7 @@ function OwnerDashboard({token,onLogout}){
                   <p style={{fontSize:10,color:"#2A3F55",flex:1}}>ID: {o.id}</p>
                   <button onClick={function(){toggleSuspend(o);}} style={{background:o.active?B.warnLight:B.accentLight,color:o.active?B.warn:B.accent,border:"0.5px solid "+(o.active?B.warn:B.accent),borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.active?"Suspend":"Reactivate"}</button>
                   {!admin&&<button onClick={function(){setFixOrg(o);setFixDone(null);setFixErr("");}} style={{background:"rgba(127,119,221,0.15)",color:"#7F77DD",border:"0.5px solid #7F77DD",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Add admin</button>}
+                  <button onClick={function(){setEditPlanOrg(o);setEditPlanTier(o.plan_tier||"trial");setEditPlanMaxUsers(o.max_users||10);setEditPlanTrialEnds(o.trial_ends_at?o.trial_ends_at.slice(0,10):"");setEditPlanErr("");setEditPlanDone(false);}} style={{background:"rgba(212,146,10,0.12)",color:"#D4920A",border:"0.5px solid #D4920A",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>📋 Edit plan</button>
                   <button onClick={function(){setEditKeyOrg(o);setEditKp1("");setEditKp2("");setEditKp3("");setEditKeyErr("");setEditKeyDone(false);}} style={{background:"rgba(14,158,110,0.12)",color:B.accent,border:"0.5px solid "+B.accent,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.anthropic_key?"🤖 Edit key":"🤖 Add key"}</button>
                   <button onClick={function(){deleteOrg(o);}} style={{background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Delete</button>
                 </div>
