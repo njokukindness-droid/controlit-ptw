@@ -474,7 +474,7 @@ function OwnerDashboard({token,onLogout}){
                   <div>
                     <label style={{fontSize:11,color:B.textSub,display:"block",marginBottom:4}}>Plan tier</label>
                     <select value={editPlanTier} onChange={function(e){
-                      var t=e.target.value; setPlanTier&&null; setEditPlanTier(t);
+                      var t=e.target.value; setEditPlanTier(t);
                       setEditPlanMaxUsers(PLAN_PRESETS[t]?PLAN_PRESETS[t].max_users:10);
                       if(t==="trial"&&!editPlanTrialEnds){var d=new Date();d.setDate(d.getDate()+30);setEditPlanTrialEnds(d.toISOString().slice(0,10));}
                       if(t!=="trial"){setEditPlanTrialEnds("");}
