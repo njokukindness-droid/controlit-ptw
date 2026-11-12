@@ -342,6 +342,7 @@ function OwnerDashboard({token,onLogout}){
         if(Array.isArray(members)&&members.length>0){
           await sb.update(SUPABASE_SECRET,"profiles","id=eq."+members[0].id,{full_name:editAdminName.trim()});
           updates.adminName=editAdminName.trim();
+          setUsers(function(prev){return prev.map(function(u){return u.id===members[0].id?Object.assign({},u,{full_name:editAdminName.trim()}):u;});});
         } else {
           setEditNameErr("No admin user found for this org.");setEditNameBusy(false);return;
         }
