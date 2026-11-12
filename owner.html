@@ -320,6 +320,7 @@ function OwnerDashboard({token,onLogout}){
   var [fixOrg,setFixOrg]=useState(null); var [fixName,setFixName]=useState(""); var [fixEmail,setFixEmail]=useState(""); var [fixPass,setFixPass]=useState("Controlit@2024!"); var [fixBusy,setFixBusy]=useState(false); var [fixErr,setFixErr]=useState(""); var [fixDone,setFixDone]=useState(null);
   var [editKeyOrg,setEditKeyOrg]=useState(null); var [editKp1,setEditKp1]=useState(""); var [editKp2,setEditKp2]=useState(""); var [editKp3,setEditKp3]=useState(""); var [editKeyBusy,setEditKeyBusy]=useState(false); var [editKeyErr,setEditKeyErr]=useState(""); var [editKeyDone,setEditKeyDone]=useState(false);
   var [editPlanOrg,setEditPlanOrg]=useState(null); var [editPlanTier,setEditPlanTier]=useState("trial"); var [editPlanMaxUsers,setEditPlanMaxUsers]=useState(10); var [editPlanTrialEnds,setEditPlanTrialEnds]=useState(""); var [editPlanBusy,setEditPlanBusy]=useState(false); var [editPlanErr,setEditPlanErr]=useState(""); var [editPlanDone,setEditPlanDone]=useState(false);
+  var [editNameOrg,setEditNameOrg]=useState(null); var [editOrgName,setEditOrgName]=useState(""); var [editAdminName,setEditAdminName]=useState(""); var [editNameBusy,setEditNameBusy]=useState(false); var [editNameErr,setEditNameErr]=useState(""); var [editNameDone,setEditNameDone]=useState(false);
 
   var PLAN_PRESETS={
     trial:    {max_users:10},
@@ -327,6 +328,30 @@ function OwnerDashboard({token,onLogout}){
     pro:      {max_users:30},
     enterprise:{max_users:9999}
   };
+
+  async function saveNames(org){
+    setEditNameBusy(true);setEditNameErr("");
+    try{
+      var updates={};
+      if(editOrgName.trim()&&editOrgName.trim()!==org.name){
+        updates.orgName=editOrgName.trim();
+        await sb.update(SUPABASE_SECRET,"organisations","id=eq."+org.id,{name:editOrgName.trim()});
+      }
+      if(editAdminName.trim()){
+        var members=await sb.select(SUPABASE_SECRET,"profiles","org_id=eq."+org.id+"&role=eq.hse_manager&select=id,full_name");
+        if(Array.isArray(members)&&members.length>0){
+          await sb.update(SUPABASE_SECRET,"profiles","id=eq."+members[0].id,{full_name:editAdminName.trim()});
+          updates.adminName=editAdminName.trim();
+        } else {
+          setEditNameErr("No admin user found for this org.");setEditNameBusy(false);return;
+        }
+      }
+      if(Object.keys(updates).length===0){setEditNameErr("Nothing changed.");setEditNameBusy(false);return;}
+      setOrgs(function(prev){return prev.map(function(o){return o.id===org.id?Object.assign({},o,updates.orgName?{name:updates.orgName}:{}):o;});});
+      setEditNameDone(true);
+    }catch(e){setEditNameErr("Error: "+e.message);}
+    setEditNameBusy(false);
+  }
 
   async function savePlan(org){
     setEditPlanBusy(true);setEditPlanErr("");
@@ -455,6 +480,36 @@ function OwnerDashboard({token,onLogout}){
           </div>
         </div>
       )}
+      {editNameOrg&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
+          <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:420,padding:"1.5rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem"}}>
+              <div><p style={{fontSize:14,fontWeight:700,color:B.text}}>✏️ Edit Names</p><p style={{fontSize:11,color:B.textSub}}>{editNameOrg.name}</p></div>
+              <button onClick={function(){setEditNameOrg(null);}} style={{background:"none",border:"none",color:B.textSub,fontSize:20,cursor:"pointer",lineHeight:1}}>×</button>
+            </div>
+            {editNameDone?(
+              <div style={{textAlign:"center",padding:"1rem 0"}}>
+                <p style={{fontSize:28,marginBottom:8}}>✅</p>
+                <p style={{fontSize:14,fontWeight:600,color:B.accent}}>Names updated!</p>
+                <button onClick={function(){setEditNameOrg(null);}} style={{marginTop:16,background:B.accent,color:"#fff",border:"none",borderRadius:8,padding:"9px 24px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Done</button>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {editNameErr&&<div style={{background:B.dangerLight,border:"0.5px solid "+B.danger,borderRadius:8,padding:"8px 12px",fontSize:12,color:B.danger}}>{editNameErr}</div>}
+                <div>
+                  <p style={{fontSize:11,color:B.textSub,marginBottom:4}}>Organisation name</p>
+                  <input value={editOrgName} onChange={function(e){setEditOrgName(e.target.value);}} placeholder="Leave blank to keep current" style={{background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:8,padding:"9px 12px",color:B.text,fontSize:13,width:"100%"}}/>
+                </div>
+                <div>
+                  <p style={{fontSize:11,color:B.textSub,marginBottom:4}}>Admin display name</p>
+                  <input value={editAdminName} onChange={function(e){setEditAdminName(e.target.value);}} placeholder="Leave blank to keep current" style={{background:"#0F2A3E",border:"0.5px solid "+B.border,borderRadius:8,padding:"9px 12px",color:B.text,fontSize:13,width:"100%"}}/>
+                </div>
+                <button onClick={function(){saveNames(editNameOrg);}} disabled={editNameBusy} style={{width:"100%",background:editNameBusy?"#2A3F55":B.accent,color:"#fff",border:"none",borderRadius:8,padding:"11px",fontSize:13,fontWeight:700,cursor:editNameBusy?"not-allowed":"pointer"}}>{editNameBusy?"Saving…":"Save changes"}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {editPlanOrg&&(
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"}}>
           <div style={{background:B.card,border:"0.5px solid "+B.border,borderRadius:16,width:"100%",maxWidth:420,padding:"1.5rem"}}>
@@ -577,6 +632,7 @@ function OwnerDashboard({token,onLogout}){
                   <p style={{fontSize:10,color:"#2A3F55",flex:1}}>ID: {o.id}</p>
                   <button onClick={function(){toggleSuspend(o);}} style={{background:o.active?B.warnLight:B.accentLight,color:o.active?B.warn:B.accent,border:"0.5px solid "+(o.active?B.warn:B.accent),borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.active?"Suspend":"Reactivate"}</button>
                   {!admin&&<button onClick={function(){setFixOrg(o);setFixDone(null);setFixErr("");}} style={{background:"rgba(127,119,221,0.15)",color:"#7F77DD",border:"0.5px solid #7F77DD",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Add admin</button>}
+                  <button onClick={function(){setEditNameOrg(o);setEditOrgName(o.name||"");var adm=users.find(function(u){return u.org_id===o.id&&u.role==="hse_manager";});setEditAdminName(adm?adm.full_name:"");setEditNameErr("");setEditNameDone(false);}} style={{background:"rgba(100,180,255,0.12)",color:"#64B4FF",border:"0.5px solid #64B4FF",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>✏️ Edit names</button>
                   <button onClick={function(){setEditPlanOrg(o);setEditPlanTier(o.plan_tier||"trial");setEditPlanMaxUsers(o.max_users||10);setEditPlanTrialEnds(o.trial_ends_at?o.trial_ends_at.slice(0,10):"");setEditPlanErr("");setEditPlanDone(false);}} style={{background:"rgba(212,146,10,0.12)",color:"#D4920A",border:"0.5px solid #D4920A",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>📋 Edit plan</button>
                   <button onClick={function(){setEditKeyOrg(o);setEditKp1("");setEditKp2("");setEditKp3("");setEditKeyErr("");setEditKeyDone(false);}} style={{background:"rgba(14,158,110,0.12)",color:B.accent,border:"0.5px solid "+B.accent,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{o.anthropic_key?"🤖 Edit key":"🤖 Add key"}</button>
                   <button onClick={function(){deleteOrg(o);}} style={{background:B.dangerLight,color:B.danger,border:"0.5px solid "+B.danger,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Delete</button>
