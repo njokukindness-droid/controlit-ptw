@@ -129,33 +129,33 @@
 
   <!-- ROLES -->
   <div class="section">
-    <div class="section-title">User Roles</div>
+    <div class="section-title">The Four Login Roles</div>
     <div class="roles-grid">
       <div class="role-card">
-        <div class="role-card-icon">📋</div>
-        <div class="role-card-title">Permit Issuer <span class="role role-issuer">Issuer</span></div>
-        <div class="role-card-desc">Raises and submits the permit request. Usually the HSE Engineer or Permit Coordinator responsible for the work activity.</div>
+        <div class="role-card-icon">📝</div>
+        <div class="role-card-title">Requester <span class="role role-issuer">Requester</span></div>
+        <div class="role-card-desc">The person performing the job or supervising it. Fills in the permit form and submits the request. At the end of the job, they become the <strong>Receiver</strong> — accepting the issued permit and initiating closeout.</div>
       </div>
       <div class="role-card">
         <div class="role-card-icon">🏗️</div>
         <div class="role-card-title">Area Authority <span class="role role-aa">AA</span></div>
-        <div class="role-card-desc">The "landlord" of the work environment — typically the Project Manager. Gives permission for the activity to happen in their area and can identify SIMOP conflicts.</div>
+        <div class="role-card-desc">The owner of the asset or work environment — typically the Project Manager. Gives permission for the activity to happen in their area and can identify dangerous SIMOP conflicts before approving.</div>
       </div>
       <div class="role-card">
         <div class="role-card-icon">👤</div>
         <div class="role-card-title">HSE Manager <span class="role role-admin">HSE Mgr</span></div>
-        <div class="role-card-desc">Verifies HSE compliance after the Area Authority approves. Reviews control measures and can add additional controls before the HSE Officer proceeds.</div>
+        <div class="role-card-desc">Senior issuing authority. Reviews and verifies HSE compliance after the Area Authority approves. Can add mandatory extra controls before the HSE Officer proceeds to site.</div>
       </div>
       <div class="role-card">
         <div class="role-card-icon">🦺</div>
-        <div class="role-card-title">HSE Officer <span class="role role-officer">Officer</span></div>
-        <div class="role-card-desc">Carries out the physical site check — walks the area, confirms controls are in place, and formally issues the permit.</div>
+        <div class="role-card-title">HSE Officer <span class="role role-officer">HSE Officer</span></div>
+        <div class="role-card-desc">The issuer. Receives the HSE-Manager-verified permit, goes to the physical work location, ticks off every control measure on site, and formally issues the permit. Also verifies the closeout at the end.</div>
       </div>
-      <div class="role-card">
-        <div class="role-card-icon">🪖</div>
-        <div class="role-card-title">Permit Receiver <span class="role role-receiver">Receiver</span></div>
-        <div class="role-card-desc">The worker or supervisor on site who accepts the issued permit, confirms understanding of the conditions, and activates it to begin work.</div>
-      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:8px;">
+      <h3>🔄 Requester becomes Receiver</h3>
+      <p style="font-size:13px;color:var(--sub);">The person who raises the permit request is the same person who receives and activates it once it is issued. They are called the <strong style="color:var(--text)">Requester</strong> at the start and the <strong style="color:var(--text)">Receiver</strong> at the end. The permit form also captures the <strong style="color:var(--text)">Supervisor's name</strong> (construction manager, site engineer, or foreman) as a field — the supervisor does not need a separate login.</p>
     </div>
   </div>
 
@@ -179,7 +179,7 @@
         <span class="flow-arrow">→</span>
         <span class="status status-closed">Closed</span>
       </div>
-      <p style="font-size:12px;color:var(--sub);margin-top:8px;">Each permit passes through every stage in order. Work cannot legally begin until the permit is <strong style="color:#0ED48E">Active</strong>. A unique permit number is generated the moment a permit is submitted — no WhatsApp screenshots needed.</p>
+      <p style="font-size:12px;color:var(--sub);margin-top:8px;">Each permit must pass through every stage in this exact order. Work cannot begin until the permit is <strong style="color:#0ED48E">Active</strong>. A unique permit number is generated the moment the permit is submitted — no WhatsApp screenshots needed.</p>
     </div>
   </div>
 
@@ -213,9 +213,9 @@
     </div>
   </div>
 
-  <!-- STEP 1: RAISING -->
+  <!-- STEP 1: REQUESTING -->
   <div class="section">
-    <div class="section-title">Step 1 — Raising a Permit <span class="role role-issuer">Issuer</span></div>
+    <div class="section-title">Step 1 — Submitting a Permit Request <span class="role role-issuer">Requester</span></div>
 
     <div class="step">
       <div class="step-num">1</div>
@@ -229,8 +229,9 @@
       <div class="step-num">2</div>
       <div class="step-body">
         <div class="step-title">Fill in the permit details</div>
-        <div class="step-desc">Complete all required fields: work description, location, start and end date/time, risk level, and the name of the permit receiver (the worker on site).</div>
-        <div class="step-tip">⚠️ Be specific with the location — write the grid reference, floor level, or area name so reviewers can verify without coming to site.</div>
+        <div class="step-desc">Complete all required fields: work description, location, start and end date/time, risk level, and your supervisor's name (construction manager, site engineer, or foreman). The supervisor's name is captured here as a field — they do not need a separate login.</div>
+        <div class="step-tip">💡 If the person performing the job cannot read or write, the supervisor can log in with their own credentials and fill in the form on their behalf — entering the job performer's name in the performer field and their own name in the supervisor field. The printed permit will show the declaration: <em>"I am fully in charge of this job and have designated [name] as the person performing the work."</em></div>
+        <div class="step-tip">⚠️ Be specific with the location — write the grid reference, floor level, or area name so reviewers can understand the exact scope without coming to site first.</div>
       </div>
     </div>
 
@@ -238,16 +239,16 @@
       <div class="step-num">3</div>
       <div class="step-body">
         <div class="step-title">Select hazards and control measures</div>
-        <div class="step-desc">Tick all relevant hazards and confirm the control measures that will be in place. This forms the HSE risk record attached to the permit.</div>
+        <div class="step-desc">Tick all relevant hazards (working at height, hot surfaces, electrical hazards, etc.) and confirm the control measures that will be in place. Be thorough — the HSE Manager may add extra controls if they feel this section is incomplete.</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">4</div>
       <div class="step-body">
-        <div class="step-title">Submit the permit</div>
-        <div class="step-desc">Tap <strong>Submit for Approval</strong>. A unique permit number is generated instantly. The permit moves to <span class="status status-submitted">Submitted</span> and the Area Authority is notified.</div>
-        <div class="step-note">✅ Your permit number appears on screen immediately — no need to post screenshots in WhatsApp groups and wait for a reply.</div>
+        <div class="step-title">Submit the request</div>
+        <div class="step-desc">Tap <strong>Submit</strong>. A unique permit number is generated instantly and the permit moves to <span class="status status-submitted">Submitted</span>. The Area Authority receives a notification to review the request.</div>
+        <div class="step-note">✅ Your permit number appears on screen immediately — no need to post screenshots in a WhatsApp group and wait for someone to reply with a number.</div>
       </div>
     </div>
   </div>
@@ -259,8 +260,8 @@
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <div class="step-title">Review the permit request</div>
-        <div class="step-desc">The Area Authority (typically the Project Manager) receives a notification. As the owner of the work environment, they review the activity — where it is happening, when, and who is doing it.</div>
+        <div class="step-title">Log in and review the request</div>
+        <div class="step-desc">The Area Authority (typically the Project Manager) receives a notification and logs in to review. As the owner of the work environment — the asset, the zone, the floor — they check what activity is being requested, where, when, and by whom.</div>
       </div>
     </div>
 
@@ -268,8 +269,8 @@
       <div class="step-num">2</div>
       <div class="step-body">
         <div class="step-title">Check for SIMOP conflicts</div>
-        <div class="step-desc">CONTROLIT shows other active and approved permits in the same area. If another job is already running in the same location at the same time (a Simultaneous Operation — SIMOP), the Area Authority can decline and prevent a dangerous clash.</div>
-        <div class="step-tip">⚠️ A SIMOP can be fatal. If you see a conflict, decline the permit and ask the issuer to reschedule or coordinate with the other team first.</div>
+        <div class="step-desc">CONTROLIT displays other active and approved permits in the same area. If another team is already working in the same location at the same time — a Simultaneous Operation (SIMOP) — the Area Authority can spot the clash and decline before it becomes dangerous.</div>
+        <div class="step-tip">⚠️ SIMOPs can be fatal — hot work next to a confined space entry, lifting over an active work area. If you see a conflict, decline and ask the teams to coordinate and resubmit at a safe time.</div>
       </div>
     </div>
 
@@ -277,7 +278,7 @@
       <div class="step-num">3</div>
       <div class="step-body">
         <div class="step-title">Approve or decline</div>
-        <div class="step-desc">Tap <strong>Approve</strong> to confirm that the activity may proceed in your area. Tap <strong>Decline</strong> and add a reason if there is a conflict or the work is not suitable at this time. The permit then moves to the HSE Manager for verification.</div>
+        <div class="step-desc">Tap <strong>Approve</strong> to confirm the activity may proceed in your area. Tap <strong>Decline</strong> and add a reason if there is a conflict or the timing is not right. On approval, the HSE Manager is notified automatically.</div>
       </div>
     </div>
   </div>
@@ -289,8 +290,8 @@
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <div class="step-title">Review HSE compliance</div>
-        <div class="step-desc">The HSE Manager receives the Area-Authority-approved permit. They verify that the hazards are correctly identified, the control measures are adequate, and the right people are assigned.</div>
+        <div class="step-title">Review the Area-Authority-approved permit</div>
+        <div class="step-desc">The HSE Manager receives the permit after the Area Authority approves. Their job is not to approve the job itself — the Area Authority already did that — but to verify that the HSE side is properly covered: hazards correctly identified, controls adequate, right people assigned.</div>
       </div>
     </div>
 
@@ -298,37 +299,37 @@
       <div class="step-num">2</div>
       <div class="step-body">
         <div class="step-title">Add extra controls if needed</div>
-        <div class="step-desc">If additional precautions are required — a gas test, PPE upgrade, isolation certificate — the HSE Manager can add these before passing the permit forward. These become mandatory conditions.</div>
+        <div class="step-desc">If additional precautions are required — a gas test before entry, specific PPE, an isolation certificate, a toolbox talk — the HSE Manager can add these as mandatory conditions on the permit before it goes forward.</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <div class="step-title">Verify and pass to HSE Officer</div>
-        <div class="step-desc">Once satisfied, the HSE Manager marks the permit as <span class="status status-approved">HSE Verified</span> and it moves to the HSE Officer for the physical site check.</div>
+        <div class="step-title">Approve and pass to HSE Officer</div>
+        <div class="step-desc">Once satisfied, the HSE Manager approves. The permit status moves to <span class="status status-approved">HSE Verified</span> and the HSE Officer is notified to carry out the physical site check.</div>
       </div>
     </div>
   </div>
 
   <!-- STEP 4: HSE OFFICER -->
   <div class="section">
-    <div class="section-title">Step 4 — Site Check &amp; Issuance <span class="role role-officer">HSE Officer</span></div>
+    <div class="section-title">Step 4 — Physical Site Check &amp; Issuance <span class="role role-officer">HSE Officer</span></div>
 
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
         <div class="step-title">Go to the work location</div>
-        <div class="step-desc">The HSE Officer physically visits the site where the work will take place. They check that the area is safe, barriers are in place, PPE is available, and the conditions match what was described in the permit.</div>
+        <div class="step-desc">The HSE Officer physically goes to the site where the work will take place. Open CONTROLIT on your phone, pull up the permit, and use it as your checklist while you inspect the area.</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
-        <div class="step-title">Confirm all controls are in place</div>
-        <div class="step-desc">Verify every control measure listed on the permit — including any additional ones added by the HSE Manager. Do not issue the permit if any control is missing.</div>
-        <div class="step-tip">⚠️ This is the last line of defence before work begins. If something is not right on site, hold the permit until it is corrected.</div>
+        <div class="step-title">Tick off every control measure</div>
+        <div class="step-desc">Verify every control listed on the permit — including any extras added by the HSE Manager. Check that barriers are erected, PPE is on site, gas tests have been done, isolations are in place, and the area matches the permit description.</div>
+        <div class="step-tip">⚠️ This is the final check before work begins. If any control is missing or the site conditions differ from the permit, do not issue. Hold the permit and notify the requester to correct it first.</div>
       </div>
     </div>
 
@@ -336,20 +337,20 @@
       <div class="step-num">3</div>
       <div class="step-body">
         <div class="step-title">Issue the permit</div>
-        <div class="step-desc">Tap <strong>Issue Permit</strong>. The permit status changes to <span class="status" style="background:rgba(100,180,255,0.15);color:#64B4FF;border:0.5px solid #64B4FF;">Issued</span>. The receiver is notified that the permit is ready to be accepted.</div>
+        <div class="step-desc">When everything is in order, tap <strong>Issue Permit</strong>. The status changes to <span class="status" style="background:rgba(100,180,255,0.15);color:#64B4FF;border:0.5px solid #64B4FF;">Issued</span> and the requester is notified that their permit is ready to be accepted.</div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 5: ACCEPTING & ACTIVATING -->
+  <!-- STEP 5: RECEIVER ACCEPTS -->
   <div class="section">
-    <div class="section-title">Step 5 — Accepting &amp; Activating Work <span class="role role-receiver">Receiver</span></div>
+    <div class="section-title">Step 5 — Accepting &amp; Starting Work <span class="role role-issuer">Receiver</span></div>
 
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <div class="step-title">Receive the issued permit</div>
-        <div class="step-desc">The receiver sees the permit in their <strong>My Permits</strong> tab with status <span class="status" style="background:rgba(100,180,255,0.15);color:#64B4FF;border:0.5px solid #64B4FF;">Issued</span>. Open it and read all conditions carefully before accepting.</div>
+        <div class="step-title">Receive and read the issued permit</div>
+        <div class="step-desc">The requester — now acting as the Receiver — sees the permit in their <strong>My Permits</strong> tab with status <span class="status" style="background:rgba(100,180,255,0.15);color:#64B4FF;border:0.5px solid #64B4FF;">Issued</span>. Open it and read all conditions and controls carefully before accepting.</div>
       </div>
     </div>
 
@@ -357,38 +358,38 @@
       <div class="step-num">2</div>
       <div class="step-body">
         <div class="step-title">Accept and activate</div>
-        <div class="step-desc">Tap <strong>Accept &amp; Activate</strong>. The permit moves to <span class="status status-active">Active</span>. Work can now begin. By accepting, you confirm that you have read and understood all permit conditions.</div>
-        <div class="step-note">✅ All stakeholders — Issuer, Area Authority, HSE Manager, and Officer — can see the permit is Active and work is in progress.</div>
+        <div class="step-desc">Tap <strong>Accept &amp; Activate</strong>. The permit moves to <span class="status status-active">Active</span>. Work can now begin. By accepting, you confirm you have read and understood every condition on the permit.</div>
+        <div class="step-note">✅ All parties — Area Authority, HSE Manager, and HSE Officer — can now see the permit is Active and work is in progress on their dashboards.</div>
       </div>
     </div>
   </div>
 
-  <!-- CLOSING A PERMIT -->
+  <!-- STEP 6: CLOSING -->
   <div class="section">
-    <div class="section-title">Step 6 — Closing a Permit</div>
+    <div class="section-title">Step 6 — Closeout <span class="role role-issuer">Receiver</span> + <span class="role role-officer">HSE Officer</span></div>
 
     <div class="step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <div class="step-title">Work is complete — request closure</div>
-        <div class="step-desc">When the work is finished, the receiver taps <strong>Request Closure</strong> on the active permit. Add any completion notes (what was done, any issues encountered).</div>
+        <div class="step-title">Receiver initiates closeout</div>
+        <div class="step-desc">When the work is finished and the area is made safe, the Receiver taps <strong>Request Closure</strong> on the active permit. Add completion notes — what was done, any issues encountered, whether the area has been restored.</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-body">
-        <div class="step-title">HSE Officer / HSE Manager confirms closure</div>
-        <div class="step-desc">The HSE Officer or HSE Manager reviews the closure request and taps <strong>Close Permit</strong>. The permit status changes to <span class="status status-closed">Closed</span> and is archived with a full audit trail.</div>
+        <div class="step-title">HSE Officer verifies and closes</div>
+        <div class="step-desc">The HSE Officer reviews the closure request, confirms the work is complete and the area is safe, and taps <strong>Close Permit</strong>. The permit moves to <span class="status status-closed">Closed</span> and is archived with the full audit trail.</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <div class="step-title">Permit is archived automatically</div>
-        <div class="step-desc">All closed permits remain searchable in the <strong>History</strong> tab with dates, signatories, and all details intact — ready for audits or incident investigations at any time.</div>
-        <div class="step-note">✅ Full digital audit trail: who raised it, who approved it, who accepted it, when work started, and when it was closed.</div>
+        <div class="step-title">Permit archived with full history</div>
+        <div class="step-desc">All closed permits remain permanently searchable in the <strong>History</strong> tab — every name, date, control measure, and sign-off recorded. Ready for audits, incident investigations, or client reviews at any time.</div>
+        <div class="step-note">✅ Complete digital audit trail: who requested it, who the supervisor was, who the Area Authority was, what HSE controls were added, who issued it, who accepted it, and when it was closed.</div>
       </div>
     </div>
   </div>
