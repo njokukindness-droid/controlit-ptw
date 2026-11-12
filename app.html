@@ -4448,7 +4448,44 @@ function App(){
     }
     if(toExpire.length>0)await fetchPermits();
   },[session,fetchPermits]);
-  useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0)checkExpiry(permits);},[permits]);
+
+  // Escalation check — 24hr reminder, 48hr auto-reject for stale pending permits
+  const checkEscalation=useCallback(async(loadedPermits)=>{
+    if(!session||!loadedPermits)return;
+    const now=new Date();
+    const HR24=24*60*60*1000;
+    const HR48=48*60*60*1000;
+    // Stage → role that needs to act
+    const STAGE_ROLE={1:"area_authority",2:"safety_officer",3:"issuer"};
+    const STAGE_LABEL={1:"Area Authority",2:"HSE Manager",3:"HSE Officer"};
+    const pending=loadedPermits.filter(p=>p.status==="pending"&&p.stage>=1&&p.stage<=3);
+    for(const p of pending){
+      const stageAt=new Date(p.updated_at||p.created_at);
+      const elapsed=now-stageAt;
+      const role=STAGE_ROLE[p.stage];
+      const roleLabel=STAGE_LABEL[p.stage];
+      if(elapsed>=HR48){
+        // Auto-reject
+        const alreadyRejected=await sb.select(session.token,"permit_audit",`permit_id=eq.${p.id}&action=eq.Auto-rejected (48hr timeout)&select=id`);
+        if(Array.isArray(alreadyRejected)&&alreadyRejected.length>0)continue;
+        await sb.update(session.token,"permits",`id=eq.${p.id}`,{status:"rejected",updated_at:new Date().toISOString()});
+        await sb.insert(session.token,"permit_audit",{org_id:p.org_id,permit_id:p.id,user_id:session.userId,user_name:"System",user_role:"Auto-escalation",action:"Auto-rejected (48hr timeout)",note:`Permit sat at ${roleLabel} stage for 48 hours with no action. Automatically rejected.`});
+        // Notify requester
+        try{const req=await sb.select(session.token,"profiles",`org_id=eq.${p.org_id}&role=eq.requester&select=id`);if(Array.isArray(req))await sb.insert(session.token,"notifications",req.map(u=>({user_id:u.id,org_id:p.org_id,permit_id:p.id,reference:p.permit_number,title:"Permit auto-rejected",message:`Permit ${p.permit_number} was automatically rejected — ${roleLabel} did not act within 48 hours. Please resubmit.`,event_type:"rejected",actor_name:"System",is_read:false,created_at:new Date().toISOString()})));}catch(e){}
+        // Notify the approver who failed to act
+        try{const approver=await sb.select(session.token,"profiles",`org_id=eq.${p.org_id}&role=eq.${role}&select=id`);if(Array.isArray(approver))await sb.insert(session.token,"notifications",approver.map(u=>({user_id:u.id,org_id:p.org_id,permit_id:p.id,reference:p.permit_number,title:"Permit auto-rejected — action overdue",message:`Permit ${p.permit_number} was automatically rejected because no action was taken within 48 hours at your stage (${roleLabel}).`,event_type:"rejected",actor_name:"System",is_read:false,created_at:new Date().toISOString()})));}catch(e){}
+      } else if(elapsed>=HR24){
+        // 24hr reminder — only send once
+        const alreadyReminded=await sb.select(session.token,"permit_audit",`permit_id=eq.${p.id}&action=eq.Escalation reminder sent (24hr)&select=id`);
+        if(Array.isArray(alreadyReminded)&&alreadyReminded.length>0)continue;
+        await sb.insert(session.token,"permit_audit",{org_id:p.org_id,permit_id:p.id,user_id:session.userId,user_name:"System",user_role:"Auto-escalation",action:"Escalation reminder sent (24hr)",note:`Reminder sent to ${roleLabel} — permit awaiting action for 24 hours.`});
+        try{const approver=await sb.select(session.token,"profiles",`org_id=eq.${p.org_id}&role=eq.${role}&select=id`);if(Array.isArray(approver))await sb.insert(session.token,"notifications",approver.map(u=>({user_id:u.id,org_id:p.org_id,permit_id:p.id,reference:p.permit_number,title:"⏰ Action required — permit pending 24hrs",message:`Permit ${p.permit_number} has been waiting at your stage (${roleLabel}) for 24 hours. Please approve or reject. It will be auto-rejected if no action is taken within the next 24 hours.`,event_type:"submitted",actor_name:"System",is_read:false,created_at:new Date().toISOString()})));}catch(e){}
+      }
+    }
+    if(pending.length>0)await fetchPermits();
+  },[session,fetchPermits]);
+
+  useEffect(()=>{fetchPermits();},[fetchPermits]);useEffect(()=>{fetchUnread();},[fetchUnread]);useEffect(()=>{if(permits.length>0){checkExpiry(permits);checkEscalation(permits);}},[permits]);
 
   // QR verification handled by verify.html — no in-app URL param needed
 
