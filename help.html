@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CONTROLIT — How It Works</title>
+  <meta name="description" content="Step-by-step guide to using CONTROLIT digital Permit to Work system"/>
+  <style>
+    :root {
+      --bg: #0F1F2E;
+      --card: #152535;
+      --border: #1E3448;
+      --accent: #0E9E6E;
+      --accent-light: rgba(14,158,110,0.12);
+      --warn: #D97B00;
+      --warn-light: rgba(217,123,0,0.12);
+      --danger: #C0392B;
+      --text: #E8EDF2;
+      --sub: #7A9AB0;
+      --navy: #0A1824;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* Header */
+    .header { background: var(--navy); border-bottom: 0.5px solid var(--border); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-icon { width: 32px; height: 32px; }
+    .logo-name { font-weight: 800; font-size: 17px; letter-spacing: 0.05em; color: var(--text); }
+    .logo-sub { font-size: 10px; color: var(--sub); letter-spacing: 0.08em; }
+    .back-btn { background: var(--accent-light); color: var(--accent); border: 0.5px solid var(--accent); border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #0A1824 0%, #152535 100%); border-bottom: 0.5px solid var(--border); padding: 2.5rem 1.25rem 2rem; text-align: center; }
+    .hero h1 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .hero p { font-size: 14px; color: var(--sub); max-width: 500px; margin: 0 auto; }
+
+    /* Role tabs */
+    .role-tabs { display: flex; gap: 8px; padding: 1.25rem 1.25rem 0; overflow-x: auto; scrollbar-width: none; }
+    .role-tabs::-webkit-scrollbar { display: none; }
+    .role-tab { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .role-tab.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+    /* Content */
+    .content { max-width: 720px; margin: 0 auto; padding: 1.25rem; }
+
+    /* Section */
+    .section { margin-bottom: 2rem; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--sub); text-transform: uppercase; margin-bottom: 0.75rem; padding-left: 4px; }
+
+    /* Step card */
+    .step { display: flex; gap: 14px; background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 8px; }
+    .step-num { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: var(--accent-light); border: 0.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--accent); margin-top: 1px; }
+    .step-body { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .step-desc { font-size: 13px; color: var(--sub); line-height: 1.55; }
+    .step-tip { margin-top: 8px; background: var(--warn-light); border: 0.5px solid var(--warn); border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--warn); }
+    .step-note { margin-top: 8px; background: var(--accent-light); border: 0.5px solid var(--accent); border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--accent); }
+
+    /* Info box */
+    .info-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 8px; }
+    .info-box h3 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .info-box p { font-size: 13px; color: var(--sub); }
+
+    /* Role badge */
+    .role { display: inline-block; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+    .role-admin { background: rgba(127,119,221,0.15); color: #9F97FF; border: 0.5px solid #9F97FF; }
+    .role-issuer { background: var(--accent-light); color: var(--accent); border: 0.5px solid var(--accent); }
+    .role-receiver { background: var(--warn-light); color: var(--warn); border: 0.5px solid var(--warn); }
+
+    /* Roles grid */
+    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+    .role-card { background: var(--card); border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem; }
+    .role-card-icon { font-size: 22px; margin-bottom: 6px; }
+    .role-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .role-card-desc { font-size: 12px; color: var(--sub); line-height: 1.5; }
+
+    /* Status pill */
+    .status { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; margin: 2px 2px 2px 0; }
+    .status-draft { background: rgba(122,154,176,0.15); color: var(--sub); border: 0.5px solid var(--sub); }
+    .status-submitted { background: var(--warn-light); color: var(--warn); border: 0.5px solid var(--warn); }
+    .status-approved { background: var(--accent-light); color: var(--accent); border: 0.5px solid var(--accent); }
+    .status-active { background: rgba(14,158,110,0.25); color: #0ED48E; border: 0.5px solid #0ED48E; }
+    .status-closed { background: rgba(192,57,43,0.12); color: #E74C3C; border: 0.5px solid #E74C3C; }
+
+    /* Flow diagram */
+    .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+    .flow-arrow { color: var(--sub); font-size: 16px; }
+
+    /* Contact */
+    .contact { background: var(--accent-light); border: 0.5px solid var(--accent); border-radius: 12px; padding: 1rem 1.1rem; margin-top: 1.5rem; text-align: center; }
+    .contact p { font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+    .contact a { color: var(--accent); font-weight: 700; text-decoration: none; font-size: 14px; }
+
+    /* Footer */
+    .footer { text-align: center; padding: 2rem 1rem; font-size: 11px; color: var(--sub); border-top: 0.5px solid var(--border); margin-top: 1rem; }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 21px; }
+      .step { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a class="logo" href="/">
+    <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#0E9E6E"/>
+      <path d="M8 16 L14 22 L24 10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="16" cy="16" r="10" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.35"/>
+    </svg>
+    <div>
+      <div class="logo-name">CONTROLIT</div>
+      <div class="logo-sub">USER GUIDE</div>
+    </div>
+  </a>
+  <a class="back-btn" href="/app.html">← Back to App</a>
+</div>
+
+<div class="hero">
+  <h1>How CONTROLIT Works</h1>
+  <p>A complete guide to raising, approving, and closing digital Permits to Work — from first login to final sign-off.</p>
+</div>
+
+<div class="content">
+
+  <!-- ROLES -->
+  <div class="section">
+    <div class="section-title">User Roles</div>
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-card-icon">👤</div>
+        <div class="role-card-title">HSE Manager <span class="role role-admin">Admin</span></div>
+        <div class="role-card-desc">Sets up the organisation. Approves permits, manages users, and has full visibility of all active permits on site.</div>
+      </div>
+      <div class="role-card">
+        <div class="role-card-icon">📋</div>
+        <div class="role-card-title">Permit Issuer <span class="role role-issuer">Issuer</span></div>
+        <div class="role-card-desc">The authorised HSE officer or engineer who raises and submits permit requests on behalf of the team.</div>
+      </div>
+      <div class="role-card">
+        <div class="role-card-icon">🪖</div>
+        <div class="role-card-title">Permit Receiver <span class="role role-receiver">Receiver</span></div>
+        <div class="role-card-desc">The worker or supervisor who accepts the permit, confirms the work is complete, and requests closure.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERMIT STATUS FLOW -->
+  <div class="section">
+    <div class="section-title">Permit Lifecycle</div>
+    <div class="info-box">
+      <h3>Status flow</h3>
+      <div class="flow">
+        <span class="status status-draft">Draft</span>
+        <span class="flow-arrow">→</span>
+        <span class="status status-submitted">Submitted</span>
+        <span class="flow-arrow">→</span>
+        <span class="status status-approved">Approved</span>
+        <span class="flow-arrow">→</span>
+        <span class="status status-active">Active</span>
+        <span class="flow-arrow">→</span>
+        <span class="status status-closed">Closed</span>
+      </div>
+      <p style="font-size:12px;color:var(--sub);margin-top:8px;">Each permit moves through these stages. Work cannot legally begin until the permit is <strong style="color:#0ED48E">Active</strong>. A permit number is auto-generated the moment a permit is submitted — no WhatsApp required.</p>
+    </div>
+  </div>
+
+  <!-- GETTING STARTED -->
+  <div class="section">
+    <div class="section-title">Getting Started — First-time Setup</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Receive your login credentials</div>
+        <div class="step-desc">Your HSE Manager or organisation administrator will send you an email with your CONTROLIT login email and a temporary password. Keep these safe.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Log in at getcontrolit.com</div>
+        <div class="step-desc">Open <strong>getcontrolit.com</strong> in any browser — Chrome, Safari, or Edge on your phone or laptop. Enter your email and password. You will land directly on your organisation's dashboard.</div>
+        <div class="step-tip">💡 Add getcontrolit.com to your phone's home screen for quick access — tap Share → Add to Home Screen on iPhone, or the browser menu on Android.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Change your password (recommended)</div>
+        <div class="step-desc">Go to <strong>Settings → Change Password</strong> and set a personal password. Use something you will remember — minimum 8 characters.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAISING A PERMIT -->
+  <div class="section">
+    <div class="section-title">Raising a Permit <span class="role role-issuer">Issuer</span></div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Tap "New Permit"</div>
+        <div class="step-desc">From the dashboard, tap the green <strong>+ New Permit</strong> button. Select the permit type: Work at Height, Hot Work, Confined Space, Electrical Isolation, Lifting Operations, or Excavation.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Fill in the permit details</div>
+        <div class="step-desc">Complete all required fields: work description, location, start date and time, expected end date and time, risk level, and the name of the permit receiver (the worker on site).</div>
+        <div class="step-tip">⚠️ Be specific with the location — write the grid reference, floor level, or area name so the approver can verify the work without coming to site.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Select hazards and control measures</div>
+        <div class="step-desc">Tick all relevant hazards (working at height, hot surfaces, electrical, etc.) and confirm the control measures are in place. This becomes the risk record for the permit.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Submit the permit</div>
+        <div class="step-desc">Tap <strong>Submit for Approval</strong>. A unique permit number is generated instantly and the permit moves to <span class="status status-submitted">Submitted</span>. The HSE Manager is notified.</div>
+        <div class="step-note">✅ No more posting screenshots in WhatsApp groups. Your permit number appears on screen immediately.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVING A PERMIT -->
+  <div class="section">
+    <div class="section-title">Approving a Permit <span class="role role-admin">HSE Manager</span></div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Review pending permits</div>
+        <div class="step-desc">On your dashboard, the <strong>Pending</strong> tab shows all permits waiting for your approval. Each card shows the permit type, location, issuer name, and risk level at a glance.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Open and review the permit</div>
+        <div class="step-desc">Tap a permit card to view the full details — work description, hazards, control measures, and receiver. Scroll through carefully before making a decision.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Approve or reject</div>
+        <div class="step-desc">Tap <strong>Approve</strong> to authorise the work. The permit moves to <span class="status status-approved">Approved</span>. If there is an issue, tap <strong>Reject</strong> and add a comment explaining what needs to change.</div>
+        <div class="step-tip">⚠️ Approving a permit is a legal authorisation. Only approve when you are satisfied the controls are adequate and the receiver is competent.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCEPTING & ACTIVATING -->
+  <div class="section">
+    <div class="section-title">Accepting & Activating Work <span class="role role-receiver">Receiver</span></div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Receive the approved permit</div>
+        <div class="step-desc">Once the HSE Manager approves, the permit receiver (the worker on site) can see the permit in their <strong>My Permits</strong> tab with status <span class="status status-approved">Approved</span>.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Confirm receipt and activate</div>
+        <div class="step-desc">Open the permit, read the conditions, then tap <strong>Accept &amp; Activate</strong>. The permit moves to <span class="status status-active">Active</span>. Work can now begin.</div>
+        <div class="step-note">✅ Both the issuer and the HSE Manager can see the permit is now Active and work is in progress.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOSING A PERMIT -->
+  <div class="section">
+    <div class="section-title">Closing a Permit</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Work is complete — request closure</div>
+        <div class="step-desc">When the work is finished, the receiver taps <strong>Request Closure</strong> on the active permit. Add any completion notes (what was done, any issues encountered).</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">HSE Manager confirms closure</div>
+        <div class="step-desc">The HSE Manager reviews the closure request and taps <strong>Close Permit</strong>. The permit status changes to <span class="status status-closed">Closed</span> and is archived with a full audit trail.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Permit is archived automatically</div>
+        <div class="step-desc">All closed permits remain searchable in the <strong>History</strong> tab with dates, signatories, and all details intact — ready for audits or incident investigations at any time.</div>
+        <div class="step-note">✅ Full digital audit trail: who raised it, who approved it, who accepted it, when work started, and when it was closed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="section">
+    <div class="section-title">Important Rules & Reminders</div>
+
+    <div class="info-box" style="border-color:var(--warn);margin-bottom:8px;">
+      <h3 style="color:var(--warn);">⚠️ Never start work without an Active permit</h3>
+      <p>A permit that is Submitted or Approved does NOT authorise work to begin. The receiver must Accept &amp; Activate the permit first. Work before activation is an unauthorised activity.</p>
+    </div>
+
+    <div class="info-box" style="margin-bottom:8px;">
+      <h3>🕐 Permits expire at the end date</h3>
+      <p>If work is not complete before the permit end date, the permit expires and a new one must be raised. Never continue work on an expired permit.</p>
+    </div>
+
+    <div class="info-box" style="margin-bottom:8px;">
+      <h3>🔒 One permit per activity</h3>
+      <p>Each distinct work activity in each location requires its own permit. If you are doing hot work in two different locations, raise two separate permits.</p>
+    </div>
+
+    <div class="info-box">
+      <h3>📱 Works on any device</h3>
+      <p>CONTROLIT works on any smartphone, tablet, or computer with a browser. No app download needed. Add getcontrolit.com to your home screen for the fastest access on site.</p>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="contact">
+    <p>Need help or have a question about your account?</p>
+    <a href="mailto:hello@getcontrolit.com">hello@getcontrolit.com</a>
+    <p style="margin-top:8px;font-size:12px;">Response within 24 hours on business days.</p>
+  </div>
+
+</div>
+
+<div class="footer">
+  © 2026 CONTROLIT · Digital Permit to Work · <a href="/" style="color:var(--sub);">getcontrolit.com</a>
+</div>
+
+</body>
+</html>

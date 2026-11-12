@@ -1318,6 +1318,7 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <button onClick={onWorkflow} className="cp-navbtn">Workflow</button>
             <button onClick={onRegister} className="cp-navbtn">Register</button>
             <button onClick={onChangePass} className="cp-navbtn">🔑</button>
+            <a href="/help.html" target="_blank" className="cp-navbtn" style={{textDecoration:"none",color:"rgba(14,158,110,0.9)"}}>? Help</a>
             <div style={{width:1,height:20,background:"rgba(255,255,255,0.08)",margin:"0 2px"}}/>
             <button onClick={onLogout} className="cp-navbtn" style={{color:"rgba(255,100,100,0.6)"}}>Sign out</button>
           </div>
@@ -1407,6 +1408,9 @@ function Dashboard({session,permits,loading,error,onSelect,onNew,onNotifs,unread
             <button className="cp-navitem" onClick={onChangePass}>
               <span className="cp-navitem-icon">🔑</span>Change Password
             </button>
+            <a href="/help.html" target="_blank" className="cp-navitem" style={{textDecoration:"none",color:"rgba(14,158,110,0.9)"}}>
+              <span className="cp-navitem-icon">❓</span>Help &amp; User Guide
+            </a>
             <button className="cp-navitem" onClick={onLogout} style={{color:"rgba(226,100,100,0.6)"}}>
               <span className="cp-navitem-icon">🚪</span>Sign Out
             </button>
