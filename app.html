@@ -40,7 +40,7 @@ function subscribeToPush(token, userId, orgId) {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4",
+            "apikey": "sb_publishable_X1RdxeiireI5gVYBMtsp9Q_LCZ7HxyE",
             "Authorization": "Bearer " + token
           },
           body: JSON.stringify({ push_subscription: subJson })
@@ -86,7 +86,7 @@ var EMAIL_TARGETS = {
 
 function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, actorId, actorName, permitId) {
   var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
-  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  var ANON_KEY = "sb_publishable_X1RdxeiireI5gVYBMtsp9Q_LCZ7HxyE";
   var targetRoles = EMAIL_TARGETS[eventType] || ["admin"];
   fetch(SUPABASE_URL + "/functions/v1/send-email", {
     method: "POST",
@@ -113,7 +113,7 @@ function sendEmailNotification(orgId, permitNumber, permitTitle, eventType, acto
 
 function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorId) {
   var SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
-  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
+  var ANON_KEY = "sb_publishable_X1RdxeiireI5gVYBMtsp9Q_LCZ7HxyE";
   console.log("Sending cross-device push:", eventType, "orgId:", orgId, "actorId:", actorId);
   fetch(SUPABASE_URL + "/functions/v1/push-notify", {
     method: "POST",
@@ -165,8 +165,7 @@ function sendCrossDevicePush(orgId, permitNumber, permitTitle, eventType, actorI
 <div id="root"></div>
 <script type="text/babel">
 const SUPABASE_URL="https://sguptjhsfyygwazmxfpk.supabase.co";
-const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNzM2OTQsImV4cCI6MjA5Mjk0OTY5NH0.PBuRFrM4T1WifAtapK0wEHHlDCOVvR--Xe54vib8yw4";
-const SERVICE_KEY=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",".","eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndXB0amhzZnl5Z3dhem14ZnBrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM3MzY5NCwiZXhwIjoyMDkyOTQ5Njk0fQ",".","7GUaZkrXxDDc_yVvK6DIviwEm-xb7TgrvHjwdBygO0k"].join("");
+const SUPABASE_ANON_KEY="sb_publishable_X1RdxeiireI5gVYBMtsp9Q_LCZ7HxyE";
 
 const sb={
   h:(t)=>({"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${t||SUPABASE_ANON_KEY}`,"Prefer":"return=representation"}),
@@ -176,7 +175,7 @@ const sb={
   select:async(t,table,q)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q||""}`,{headers:sb.h(t)});return r.json();},
   insert:async(t,table,data)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{method:"POST",headers:sb.h(t),body:JSON.stringify(data)});return r.json();},
   update:async(t,table,match,data)=>{const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${match}`,{method:"PATCH",headers:sb.h(t),body:JSON.stringify(data)});return r.json();},
-  createUser:async(email,password)=>{const r=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SERVICE_KEY,"Authorization":`Bearer ${SERVICE_KEY}`},body:JSON.stringify({email,password,email_confirm:true})});return r.json();},
+  createUser:async(email,password)=>{const r=await fetch(`${SUPABASE_URL}/functions/v1/create-user`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`},body:JSON.stringify({email,password})});return r.json();},
   notify:async(token,orgId,permitId,ref,title,eventType,actorName)=>{
     const msgs={submitted:"New permit submitted — awaiting Area Authority approval",aa_approved:"Permit approved by Area Authority — forwarded to OSH Manager",osh_approved:"Permit approved by OSH Manager — forwarded to Issuer",issued:"Permit issued — work may now commence",rejected:`Permit rejected by ${actorName}`,suspended:`Permit suspended by ${actorName}`,closed:`Permit closed by ${actorName}`,ext_requested:`Extension requested by ${actorName}`,ext_approved:`Extension approved by ${actorName}`,ext_rejected:`Extension rejected by ${actorName}`};
     try{const members=await sb.select(token,"profiles",`org_id=eq.${orgId}&active=eq.true&select=id`);if(!Array.isArray(members)||!members.length)return;await sb.insert(token,"notifications",members.map(m=>({user_id:m.id,org_id:orgId,permit_id:permitId,reference:ref,title,message:msgs[eventType]||`Permit updated by ${actorName}`,event_type:eventType,actor_name:actorName,is_read:false,created_at:new Date().toISOString()})));}catch(e){console.warn("notify failed",e);}
