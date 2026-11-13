@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const SUPABASE_URL = "https://sguptjhsfyygwazmxfpk.supabase.co";
-const SECRET_KEY   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SECRET_KEY   = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
